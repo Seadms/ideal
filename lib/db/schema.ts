@@ -67,8 +67,28 @@ export const userStats = sqliteTable('user_stats', {
   createdAt: text('created_at').notNull().default(sql`(datetime('now'))`),
 })
 
+export const bonusTaskPool = sqliteTable('bonus_task_pool', {
+  id: text('id').primaryKey(),
+  title: text('title').notNull(),
+  category: text('category').notNull().default('general'),
+  points: integer('points').notNull().default(50),
+  isActive: integer('is_active', { mode: 'boolean' }).notNull().default(true),
+})
+
+// One row per suggestion per day; state drives the UI machine
+export const bonusTaskSessions = sqliteTable('bonus_task_sessions', {
+  id: text('id').primaryKey(),
+  taskId: text('task_id').notNull(),
+  date: text('date').notNull(), // YYYY-MM-DD
+  state: text('state').notNull().default('suggested'), // 'suggested' | 'accepted' | 'completed' | 'skipped'
+  pointsEarned: integer('points_earned'),
+  createdAt: text('created_at').notNull().default(sql`(datetime('now'))`),
+})
+
 export type Habit = typeof habits.$inferSelect
 export type Task = typeof tasks.$inferSelect
 export type Reward = typeof rewards.$inferSelect
 export type HabitCompletion = typeof habitCompletions.$inferSelect
 export type UserStats = typeof userStats.$inferSelect
+export type BonusTaskPoolItem = typeof bonusTaskPool.$inferSelect
+export type BonusTaskSession = typeof bonusTaskSessions.$inferSelect

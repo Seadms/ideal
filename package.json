@@ -10,6 +10,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@google/generative-ai": "^0.24.1",
     "@libsql/client": "^0.10.0",
     "clsx": "^2.1.1",
     "drizzle-orm": "^0.31.2",

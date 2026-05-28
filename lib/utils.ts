@@ -154,6 +154,9 @@ export function categoryEmoji(category: string): string {
     food: '🍗',
     hobby: '🧱',
     luxury: '💍',
+    chore: '🧹',
+    social: '💬',
+    creative: '🎨',
     general: '⚡',
   }
   return map[category] ?? '⚡'

@@ -86,6 +86,21 @@ export async function initDb() {
       streak_freeze_count INTEGER NOT NULL DEFAULT 0,
       created_at TEXT NOT NULL DEFAULT (datetime('now'))
     )`,
+    `CREATE TABLE IF NOT EXISTS bonus_task_pool (
+      id TEXT PRIMARY KEY,
+      title TEXT NOT NULL,
+      category TEXT NOT NULL DEFAULT 'general',
+      points INTEGER NOT NULL DEFAULT 50,
+      is_active INTEGER NOT NULL DEFAULT 1
+    )`,
+    `CREATE TABLE IF NOT EXISTS bonus_task_sessions (
+      id TEXT PRIMARY KEY,
+      task_id TEXT NOT NULL,
+      date TEXT NOT NULL,
+      state TEXT NOT NULL DEFAULT 'suggested',
+      points_earned INTEGER,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    )`,
   ], 'write')
 
   const migrations = [

@@ -1,7 +1,7 @@
 import { Suspense } from 'react'
 import { and, asc, eq, gte } from 'drizzle-orm'
 import { db } from '@/lib/db'
-import { habits, habitCompletions, tasks, userStats } from '@/lib/db/schema'
+import { habits, habitCompletions, tasks, userStats, bonusTaskSessions, bonusTaskPool } from '@/lib/db/schema'
 import { seedDatabase } from '@/lib/db/seed'
 import { checkStreakOnLoad } from '@/lib/actions/habits'
 import {
@@ -16,6 +16,7 @@ import { TaskItem } from '@/components/dashboard/task-item'
 import { DashboardActions } from '@/components/dashboard/dashboard-actions'
 import { ClearCompletedButton } from '@/components/dashboard/clear-completed-button'
 import { StreakAtRisk } from '@/components/dashboard/streak-at-risk'
+import { BonusTaskCard } from '@/components/dashboard/bonus-task-card'
 
 export const dynamic = 'force-dynamic'
 
@@ -49,6 +50,19 @@ async function DashboardContent({ mvdMode }: { mvdMode: boolean }) {
       ? and(eq(tasks.isActive, true), eq(tasks.isCompleted, false))
       : eq(tasks.isActive, true),
     )
+
+  // Bonus task — find today's active (non-skipped) session
+  const todayBonusSessions = await db.select().from(bonusTaskSessions)
+    .where(eq(bonusTaskSessions.date, today))
+  const activeSession = todayBonusSessions.find(s => s.state !== 'skipped') ?? null
+  let activeBonusTask = null
+  if (activeSession) {
+    const rows = await db.select().from(bonusTaskPool).where(eq(bonusTaskPool.id, activeSession.taskId))
+    activeBonusTask = rows[0] ?? null
+  }
+  const bonusInitial = activeSession && activeBonusTask
+    ? { session: activeSession, task: activeBonusTask }
+    : null
 
   // Stats
   const statsRows = await db.select().from(userStats).where(eq(userStats.id, 1))
@@ -208,6 +222,8 @@ async function DashboardContent({ mvdMode }: { mvdMode: boolean }) {
           </div>
         </section>
       )}
+
+      {!mvdMode && <BonusTaskCard initial={bonusInitial} />}
 
       <DashboardActions />
     </div>
