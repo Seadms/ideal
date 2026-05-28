@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install *)",
+      "Bash(npx tsc *)",
+      "Bash(npm run *)",
+      "Bash(curl -s http://localhost:3000)",
+      "Bash(echo \"PID: $!\")",
+      "Bash(curl -sf http://localhost:3000)",
+      "Bash(npx playwright *)",
+      "Bash(node /tmp/screenshot.mjs)"
+    ]
+  }
+}

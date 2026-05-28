@@ -1,0 +1,7 @@
+{
+  "/rewards/page": "app/rewards/page.js",
+  "/manifest.webmanifest/route": "app/manifest.webmanifest/route.js",
+  "/page": "app/page.js",
+  "/history/page": "app/history/page.js",
+  "/settings/page": "app/settings/page.js"
+}

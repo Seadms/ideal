@@ -1,0 +1,80 @@
+'use client'
+
+import { useState, useTransition } from 'react'
+import { createReward } from '@/lib/actions/rewards'
+import { Dialog } from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
+import { Input, Textarea, Select } from '@/components/ui/input'
+
+interface AddRewardDialogProps {
+  open: boolean
+  onClose: () => void
+}
+
+const CATEGORIES = ['general', 'food', 'rest', 'hobby', 'luxury', 'experience', 'digital']
+
+export function AddRewardDialog({ open, onClose }: AddRewardDialogProps) {
+  const [isPending, startTransition] = useTransition()
+  const [form, setForm] = useState({ title: '', description: '', cost: 200, category: 'general' })
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!form.title.trim()) return
+    startTransition(async () => {
+      await createReward(form)
+      setForm({ title: '', description: '', cost: 200, category: 'general' })
+      onClose()
+    })
+  }
+
+  return (
+    <Dialog open={open} onClose={onClose} title="New Reward">
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <label className="block text-xs text-zinc-500 mb-1.5">Title *</label>
+          <Input
+            placeholder="e.g. Weekend camping trip"
+            value={form.title}
+            onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
+            autoFocus
+          />
+        </div>
+        <div>
+          <label className="block text-xs text-zinc-500 mb-1.5">Description</label>
+          <Textarea
+            placeholder="What does this reward mean to you?"
+            rows={2}
+            value={form.description}
+            onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
+          />
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="block text-xs text-zinc-500 mb-1.5">Cost (pts)</label>
+            <Input
+              type="number"
+              min={1}
+              value={form.cost}
+              onChange={e => setForm(f => ({ ...f, cost: Number(e.target.value) }))}
+            />
+          </div>
+          <div>
+            <label className="block text-xs text-zinc-500 mb-1.5">Category</label>
+            <Select
+              value={form.category}
+              onChange={e => setForm(f => ({ ...f, category: e.target.value }))}
+            >
+              {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+            </Select>
+          </div>
+        </div>
+        <div className="flex gap-2 pt-1">
+          <Button type="button" variant="ghost" onClick={onClose} className="flex-1">Cancel</Button>
+          <Button type="submit" disabled={isPending || !form.title.trim()} className="flex-1">
+            {isPending ? 'Adding...' : 'Add Reward'}
+          </Button>
+        </div>
+      </form>
+    </Dialog>
+  )
+}
