@@ -5,13 +5,18 @@ import { pushSubscriptions, userStats, habits, habitCompletions } from '@/lib/db
 import { eq, and } from 'drizzle-orm'
 import { todayString } from '@/lib/utils'
 
-webpush.setVapidDetails(
-  process.env.VAPID_SUBJECT ?? 'mailto:admin@example.com',
-  process.env.VAPID_PUBLIC_KEY ?? '',
-  process.env.VAPID_PRIVATE_KEY ?? '',
-)
+export const dynamic = 'force-dynamic'
 
 export async function GET(request: Request) {
+  if (!process.env.VAPID_PUBLIC_KEY || !process.env.VAPID_PRIVATE_KEY) {
+    return NextResponse.json({ sent: 0, reason: 'VAPID keys not configured' })
+  }
+  webpush.setVapidDetails(
+    process.env.VAPID_SUBJECT ?? 'mailto:admin@example.com',
+    process.env.VAPID_PUBLIC_KEY,
+    process.env.VAPID_PRIVATE_KEY,
+  )
+
   // Verify this is a legitimate Vercel cron call or an authorized request
   const authHeader = request.headers.get('authorization')
   const cronSecret = process.env.CRON_SECRET
