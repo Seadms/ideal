@@ -127,6 +127,40 @@ export async function initDb() {
       points_earned INTEGER,
       created_at TEXT NOT NULL DEFAULT (datetime('now'))
     )`,
+    `CREATE TABLE IF NOT EXISTS split_days (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      day_order INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    )`,
+    `CREATE TABLE IF NOT EXISTS split_exercises (
+      id TEXT PRIMARY KEY,
+      split_day_id TEXT NOT NULL,
+      name TEXT NOT NULL,
+      exercise_order INTEGER NOT NULL DEFAULT 0,
+      default_sets INTEGER NOT NULL DEFAULT 3,
+      default_reps INTEGER NOT NULL DEFAULT 8,
+      default_weight REAL NOT NULL DEFAULT 0,
+      default_unit TEXT NOT NULL DEFAULT 'lbs',
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    )`,
+    `CREATE TABLE IF NOT EXISTS exercise_logs (
+      id TEXT PRIMARY KEY,
+      exercise_id TEXT NOT NULL,
+      date TEXT NOT NULL,
+      sets INTEGER NOT NULL,
+      reps INTEGER NOT NULL,
+      weight REAL NOT NULL,
+      unit TEXT NOT NULL DEFAULT 'lbs',
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    )`,
+    `CREATE TABLE IF NOT EXISTS nutrition_goals (
+      id INTEGER PRIMARY KEY DEFAULT 1,
+      calories_goal INTEGER NOT NULL DEFAULT 2500,
+      protein_goal INTEGER NOT NULL DEFAULT 180,
+      carbs_goal INTEGER NOT NULL DEFAULT 280,
+      fats_goal INTEGER NOT NULL DEFAULT 70
+    )`,
     `CREATE TABLE IF NOT EXISTS workout_entries (
       id TEXT PRIMARY KEY,
       date TEXT NOT NULL,

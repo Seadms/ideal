@@ -114,6 +114,44 @@ export const bonusTaskSessions = sqliteTable('bonus_task_sessions', {
   createdAt: text('created_at').notNull().default(sql`(datetime('now'))`),
 })
 
+export const splitDays = sqliteTable('split_days', {
+  id: text('id').primaryKey(),
+  name: text('name').notNull(),
+  dayOrder: integer('day_order').notNull().default(0),
+  createdAt: text('created_at').notNull().default(sql`(datetime('now'))`),
+})
+
+export const splitExercises = sqliteTable('split_exercises', {
+  id: text('id').primaryKey(),
+  splitDayId: text('split_day_id').notNull(),
+  name: text('name').notNull(),
+  exerciseOrder: integer('exercise_order').notNull().default(0),
+  defaultSets: integer('default_sets').notNull().default(3),
+  defaultReps: integer('default_reps').notNull().default(8),
+  defaultWeight: real('default_weight').notNull().default(0),
+  defaultUnit: text('default_unit').notNull().default('lbs'),
+  createdAt: text('created_at').notNull().default(sql`(datetime('now'))`),
+})
+
+export const exerciseLogs = sqliteTable('exercise_logs', {
+  id: text('id').primaryKey(),
+  exerciseId: text('exercise_id').notNull(),
+  date: text('date').notNull(),
+  sets: integer('sets').notNull(),
+  reps: integer('reps').notNull(),
+  weight: real('weight').notNull(),
+  unit: text('unit').notNull().default('lbs'),
+  createdAt: text('created_at').notNull().default(sql`(datetime('now'))`),
+})
+
+export const nutritionGoals = sqliteTable('nutrition_goals', {
+  id: integer('id').primaryKey().default(1),
+  caloriesGoal: integer('calories_goal').notNull().default(2500),
+  proteinGoal: integer('protein_goal').notNull().default(180),
+  carbsGoal: integer('carbs_goal').notNull().default(280),
+  fatsGoal: integer('fats_goal').notNull().default(70),
+})
+
 export const workoutEntries = sqliteTable('workout_entries', {
   id: text('id').primaryKey(),
   date: text('date').notNull(),
@@ -147,3 +185,7 @@ export type ScheduledTask = typeof scheduledTasks.$inferSelect
 export type ScheduledTaskCompletion = typeof scheduledTaskCompletions.$inferSelect
 export type WorkoutEntry = typeof workoutEntries.$inferSelect
 export type NutritionEntry = typeof nutritionEntries.$inferSelect
+export type SplitDay = typeof splitDays.$inferSelect
+export type SplitExercise = typeof splitExercises.$inferSelect
+export type ExerciseLog = typeof exerciseLogs.$inferSelect
+export type NutritionGoals = typeof nutritionGoals.$inferSelect
