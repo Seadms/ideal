@@ -102,7 +102,13 @@ export async function getTodayBonusData(): Promise<BonusSessionWithTask | null> 
   const today = todayString()
   const sessions = await db.select().from(bonusTaskSessions)
     .where(eq(bonusTaskSessions.date, today))
-  const active = sessions.find(s => s.state !== 'skipped')
+
+  // Prefer in-progress sessions (suggested/accepted) over completed ones
+  const active =
+    sessions.find(s => s.state === 'suggested' || s.state === 'accepted') ??
+    sessions.find(s => s.state === 'completed') ??
+    null
+
   if (!active) return null
   const taskRows = await db.select().from(bonusTaskPool).where(eq(bonusTaskPool.id, active.taskId))
   const task = taskRows[0]

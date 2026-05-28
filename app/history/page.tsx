@@ -1,6 +1,6 @@
 import { and, eq, gte } from 'drizzle-orm'
 import { db, initDb } from '@/lib/db'
-import { habits, habitCompletions, tasks, rewards, rewardRedemptions } from '@/lib/db/schema'
+import { habits, habitCompletions, tasks, rewards, rewardRedemptions, bonusTaskSessions, bonusTaskPool } from '@/lib/db/schema'
 import { todayString, daysAgoString, formatPoints, categoryEmoji } from '@/lib/utils'
 import { cn } from '@/lib/utils'
 
@@ -22,7 +22,7 @@ export default async function HistoryPage() {
   const since34 = daysAgoString(34)
 
   // Fetch all history data in parallel
-  const [completions, allHabits, completedTasks, allRedemptions, allRewards] = await Promise.all([
+  const [completions, allHabits, completedTasks, allRedemptions, allRewards, bonusSessions, bonusPool] = await Promise.all([
     db.select().from(habitCompletions).where(gte(habitCompletions.completedDate, since60)),
     db.select().from(habits),
     // All completed tasks (active or soft-deleted) completed in the last 60 days
@@ -31,7 +31,13 @@ export default async function HistoryPage() {
     ),
     db.select().from(rewardRedemptions),
     db.select({ id: rewards.id, title: rewards.title, category: rewards.category }).from(rewards),
+    db.select().from(bonusTaskSessions).where(
+      and(eq(bonusTaskSessions.state, 'completed'), gte(bonusTaskSessions.date, since60)),
+    ),
+    db.select().from(bonusTaskPool),
   ])
+
+  const bonusPoolMap = new Map(bonusPool.map(t => [t.id, t]))
 
   const habitMap = new Map(allHabits.map(h => [h.id, h]))
   const rewardMap = new Map(allRewards.map(r => [r.id, r]))
@@ -48,11 +54,19 @@ export default async function HistoryPage() {
   completedTasks
     .filter(t => t.completedAt && t.completedAt.slice(0, 10) >= since34)
     .forEach(t => addPts(t.completedAt!.slice(0, 10), t.points))
+  bonusSessions
+    .filter(s => s.date >= since34)
+    .forEach(s => addPts(s.date, s.pointsEarned ?? 0))
 
   // ── Activity list ──────────────────────────────────────────────────────────
-  type Entry =
-    | { kind: 'habit' | 'task'; title: string; category: string; date: string; pts: number; sortKey: string }
-    | { kind: 'reward'; title: string; category: string; date: string; pts: number; sortKey: string }
+  type Entry = {
+    kind: 'habit' | 'task' | 'bonus' | 'reward'
+    title: string
+    category: string
+    date: string
+    pts: number
+    sortKey: string
+  }
 
   const entries: Entry[] = [
     ...completions.map(c => ({
@@ -73,6 +87,14 @@ export default async function HistoryPage() {
         pts: t.points,
         sortKey: t.completedAt!,
       })),
+    ...bonusSessions.map(s => ({
+      kind: 'bonus' as const,
+      title: bonusPoolMap.get(s.taskId)?.title ?? 'Bonus task',
+      category: bonusPoolMap.get(s.taskId)?.category ?? 'general',
+      date: s.date,
+      pts: s.pointsEarned ?? 0,
+      sortKey: s.createdAt,
+    })),
     ...allRedemptions
       .filter(r => r.redeemedAt.slice(0, 10) >= since60)
       .map(r => ({
@@ -105,7 +127,8 @@ export default async function HistoryPage() {
   const taskPtsEarned = completedTasks
     .filter(t => t.completedAt && t.completedAt.slice(0, 10) >= since60)
     .reduce((s, t) => s + t.points, 0)
-  const totalPtsEarned = habitPtsEarned + taskPtsEarned
+  const bonusPtsEarned = bonusSessions.reduce((s, b) => s + (b.pointsEarned ?? 0), 0)
+  const totalPtsEarned = habitPtsEarned + taskPtsEarned + bonusPtsEarned
   const totalRedemptions = allRedemptions.length
   const totalPtsSpent = allRedemptions.reduce((s, r) => s + r.pointsSpent, 0)
 
@@ -208,14 +231,17 @@ export default async function HistoryPage() {
               >
                 <span className="text-base shrink-0">{categoryEmoji(e.category)}</span>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm text-zinc-200 truncate">{e.title}</p>
+                  <p className="text-sm text-zinc-200 truncate flex items-center gap-1.5">
+                    {e.title}
+                    {e.kind === 'bonus' && <span className="text-[10px] text-violet-500/70 shrink-0">✦</span>}
+                  </p>
                   <p className="text-xs text-zinc-600 mt-0.5">{e.date}</p>
                 </div>
                 <span className={cn(
                   'text-sm font-semibold tabular-nums shrink-0',
-                  e.kind === 'habit' ? 'text-emerald-400' : 'text-rose-400',
+                  e.kind === 'reward' ? 'text-rose-400' : 'text-emerald-400',
                 )}>
-                  {e.kind === 'habit' ? '+' : '−'}{formatPoints(e.pts)}
+                  {e.kind === 'reward' ? '−' : '+'}{formatPoints(e.pts)}
                 </span>
               </div>
             ))}
