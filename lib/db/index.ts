@@ -11,10 +11,10 @@ function buildClient() {
   if (tursoUrl) {
     return createClient({ url: tursoUrl, authToken: tursoToken })
   }
-  // Local — import fs/path only when needed (not available on edge runtimes)
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  // Local development only — path/fs are Node.js built-ins, always available
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
   const path = require('path') as typeof import('path')
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
   const fs = require('fs') as typeof import('fs')
   const dataDir = path.join(process.cwd(), 'data')
   if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true })
@@ -98,7 +98,6 @@ export async function initDb() {
     try { await client.execute(stmt) } catch { /* column already exists */ }
   }
 
-  // Assign initial sort order from rowid for existing habits
   await client.execute(
     `UPDATE habits SET sort_order = rowid WHERE sort_order = 0 AND is_active = 1`
   )
