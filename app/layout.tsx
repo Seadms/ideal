@@ -1,7 +1,6 @@
 import type { Metadata, Viewport } from 'next'
 import './globals.css'
 import Link from 'next/link'
-import { Zap } from 'lucide-react'
 import { eq } from 'drizzle-orm'
 import { db } from '@/lib/db'
 import { userStats } from '@/lib/db/schema'
@@ -42,27 +41,22 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <body className="bg-zinc-950 text-zinc-100 min-h-screen">
         <ReminderChecker reminderTime={reminderTime} />
         <div className="mx-auto max-w-2xl px-4">
-          <nav className="flex items-center justify-between py-5">
-            <Link href="/" className="flex items-center gap-2 group">
-              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-amber-500/10 border border-amber-500/20">
-                <Zap size={14} className="text-amber-400" />
-              </div>
-              <span className="text-sm font-semibold text-zinc-100 tracking-tight">ideal</span>
-            </Link>
-            <div className="flex items-center gap-1">
-              <Link href="/" className="px-3 py-1.5 text-xs font-medium text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800/60 rounded-lg transition-colors">
-                Dashboard
+          <nav className="flex items-center gap-0.5 py-4 overflow-x-auto">
+            {[
+              { href: '/', label: 'Dashboard' },
+              { href: '/gym', label: 'Gym' },
+              { href: '/rewards', label: 'Rewards' },
+              { href: '/history', label: 'History' },
+              { href: '/settings', label: 'Settings' },
+            ].map(({ href, label }) => (
+              <Link
+                key={href}
+                href={href}
+                className="px-3 py-1.5 text-xs font-medium text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800/60 rounded-lg transition-colors whitespace-nowrap"
+              >
+                {label}
               </Link>
-              <Link href="/rewards" className="px-3 py-1.5 text-xs font-medium text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800/60 rounded-lg transition-colors">
-                Rewards
-              </Link>
-              <Link href="/history" className="px-3 py-1.5 text-xs font-medium text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800/60 rounded-lg transition-colors">
-                History
-              </Link>
-              <Link href="/settings" className="px-3 py-1.5 text-xs font-medium text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800/60 rounded-lg transition-colors">
-                Settings
-              </Link>
-            </div>
+            ))}
           </nav>
           <main className="pb-20">{children}</main>
         </div>

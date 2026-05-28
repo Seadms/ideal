@@ -127,6 +127,26 @@ export async function initDb() {
       points_earned INTEGER,
       created_at TEXT NOT NULL DEFAULT (datetime('now'))
     )`,
+    `CREATE TABLE IF NOT EXISTS workout_entries (
+      id TEXT PRIMARY KEY,
+      date TEXT NOT NULL,
+      exercise_name TEXT NOT NULL,
+      sets INTEGER NOT NULL DEFAULT 1,
+      reps INTEGER NOT NULL DEFAULT 1,
+      weight REAL NOT NULL DEFAULT 0,
+      unit TEXT NOT NULL DEFAULT 'lbs',
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    )`,
+    `CREATE TABLE IF NOT EXISTS nutrition_entries (
+      id TEXT PRIMARY KEY,
+      date TEXT NOT NULL,
+      meal_name TEXT NOT NULL,
+      calories INTEGER NOT NULL DEFAULT 0,
+      protein REAL NOT NULL DEFAULT 0,
+      carbs REAL NOT NULL DEFAULT 0,
+      fats REAL NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    )`,
   ], 'write')
 
   const migrations = [

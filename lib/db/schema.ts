@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm'
-import { integer, sqliteTable, text } from 'drizzle-orm/sqlite-core'
+import { integer, real, sqliteTable, text } from 'drizzle-orm/sqlite-core'
 
 export const habits = sqliteTable('habits', {
   id: text('id').primaryKey(),
@@ -114,6 +114,28 @@ export const bonusTaskSessions = sqliteTable('bonus_task_sessions', {
   createdAt: text('created_at').notNull().default(sql`(datetime('now'))`),
 })
 
+export const workoutEntries = sqliteTable('workout_entries', {
+  id: text('id').primaryKey(),
+  date: text('date').notNull(),
+  exerciseName: text('exercise_name').notNull(),
+  sets: integer('sets').notNull().default(1),
+  reps: integer('reps').notNull().default(1),
+  weight: real('weight').notNull().default(0),
+  unit: text('unit').notNull().default('lbs'),
+  createdAt: text('created_at').notNull().default(sql`(datetime('now'))`),
+})
+
+export const nutritionEntries = sqliteTable('nutrition_entries', {
+  id: text('id').primaryKey(),
+  date: text('date').notNull(),
+  mealName: text('meal_name').notNull(),
+  calories: integer('calories').notNull().default(0),
+  protein: real('protein').notNull().default(0),
+  carbs: real('carbs').notNull().default(0),
+  fats: real('fats').notNull().default(0),
+  createdAt: text('created_at').notNull().default(sql`(datetime('now'))`),
+})
+
 export type Habit = typeof habits.$inferSelect
 export type Task = typeof tasks.$inferSelect
 export type Reward = typeof rewards.$inferSelect
@@ -123,3 +145,5 @@ export type BonusTaskPoolItem = typeof bonusTaskPool.$inferSelect
 export type BonusTaskSession = typeof bonusTaskSessions.$inferSelect
 export type ScheduledTask = typeof scheduledTasks.$inferSelect
 export type ScheduledTaskCompletion = typeof scheduledTaskCompletions.$inferSelect
+export type WorkoutEntry = typeof workoutEntries.$inferSelect
+export type NutritionEntry = typeof nutritionEntries.$inferSelect
