@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { habits, tasks, rewards, rewardRedemptions, userStats, habitCompletions, bonusTaskSessions } from '@/lib/db/schema'
+import { habits, tasks, rewards, rewardRedemptions, userStats, habitCompletions, bonusTaskSessions, bonusTaskPool } from '@/lib/db/schema'
 
 export async function GET() {
   // Local mode: serve the raw SQLite file
@@ -27,7 +27,7 @@ export async function GET() {
   // Cloud mode (or local fallback): export all tables as JSON
   const [
     habitsData, tasksData, rewardsData,
-    redemptionsData, statsData, completionsData, bonusSessionsData,
+    redemptionsData, statsData, completionsData, bonusSessionsData, bonusPoolData,
   ] = await Promise.all([
     db.select().from(habits),
     db.select().from(tasks),
@@ -36,6 +36,7 @@ export async function GET() {
     db.select().from(userStats),
     db.select().from(habitCompletions),
     db.select().from(bonusTaskSessions),
+    db.select().from(bonusTaskPool),
   ])
 
   const backup = {
@@ -48,6 +49,7 @@ export async function GET() {
     userStats: statsData,
     habitCompletions: completionsData,
     bonusTaskSessions: bonusSessionsData,
+    bonusTaskPool: bonusPoolData,
   }
 
   const date = new Date().toISOString().split('T')[0]

@@ -1,7 +1,6 @@
-import { calculateLevel, formatPoints, dayLabel } from '@/lib/utils'
+import { calculateLevel, formatPoints, dayLabel, cn } from '@/lib/utils'
 import type { UserStats } from '@/lib/db/schema'
 import { Flame, Star, Zap } from 'lucide-react'
-import { cn } from '@/lib/utils'
 import { FreezeStreakButton } from './freeze-streak-button'
 
 interface StatsHeaderProps {

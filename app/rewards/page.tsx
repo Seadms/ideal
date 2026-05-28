@@ -1,5 +1,5 @@
 import { desc, eq } from 'drizzle-orm'
-import { db } from '@/lib/db'
+import { db, initDb } from '@/lib/db'
 import { rewards, rewardRedemptions, userStats } from '@/lib/db/schema'
 import { formatPoints } from '@/lib/utils'
 import { RewardCard } from '@/components/rewards/reward-card'
@@ -10,6 +10,7 @@ import { Zap } from 'lucide-react'
 export const dynamic = 'force-dynamic'
 
 export default async function RewardsPage() {
+  await initDb()
   const allRewards = await db.select().from(rewards)
   const statsRows = await db.select().from(userStats).where(eq(userStats.id, 1))
   const currentPoints = statsRows[0]?.currentPoints ?? 0

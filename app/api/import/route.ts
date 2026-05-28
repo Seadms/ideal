@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { habits, tasks, rewards, rewardRedemptions, userStats, habitCompletions, bonusTaskSessions } from '@/lib/db/schema'
+import { habits, tasks, rewards, rewardRedemptions, userStats, habitCompletions, bonusTaskSessions, bonusTaskPool } from '@/lib/db/schema'
 
 export async function POST(request: NextRequest) {
   try {
@@ -45,6 +45,7 @@ export async function POST(request: NextRequest) {
 
     // Wipe existing data in FK-safe order, then restore
     await db.delete(bonusTaskSessions)
+    await db.delete(bonusTaskPool)
     await db.delete(habitCompletions)
     await db.delete(rewardRedemptions)
     await db.delete(habits)
@@ -58,6 +59,7 @@ export async function POST(request: NextRequest) {
     if (backup.userStats?.length)          await db.insert(userStats).values(backup.userStats)
     if (backup.habitCompletions?.length)   await db.insert(habitCompletions).values(backup.habitCompletions)
     if (backup.rewardRedemptions?.length)  await db.insert(rewardRedemptions).values(backup.rewardRedemptions)
+    if (backup.bonusTaskPool?.length)      await db.insert(bonusTaskPool).values(backup.bonusTaskPool)
     if (backup.bonusTaskSessions?.length)  await db.insert(bonusTaskSessions).values(backup.bonusTaskSessions)
 
     return new NextResponse('OK', { status: 200 })

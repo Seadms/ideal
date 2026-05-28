@@ -8,7 +8,11 @@
       "Bash(echo \"PID: $!\")",
       "Bash(curl -sf http://localhost:3000)",
       "Bash(npx playwright *)",
-      "Bash(node /tmp/screenshot.mjs)"
+      "Bash(node /tmp/screenshot.mjs)",
+      "Bash(git push *)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(node *)"
     ]
   }
 }

@@ -15,30 +15,6 @@ const config: Config = {
         ],
         mono: ['"JetBrains Mono"', '"Fira Code"', 'Consolas', 'monospace'],
       },
-      colors: {
-        surface: {
-          DEFAULT: '#111113',
-          elevated: '#1a1a1e',
-          hover: '#222226',
-        },
-        border: {
-          DEFAULT: '#252529',
-          muted: '#1e1e22',
-        },
-        gold: {
-          DEFAULT: '#f59e0b',
-          muted: '#92400e',
-          dim: '#78350f',
-        },
-        violet: {
-          xp: '#8b5cf6',
-          'xp-muted': '#4c1d95',
-        },
-        streak: {
-          DEFAULT: '#10b981',
-          muted: '#064e3b',
-        },
-      },
       animation: {
         'pulse-soft': 'pulse 3s ease-in-out infinite',
         'fade-in': 'fadeIn 0.2s ease-out',
