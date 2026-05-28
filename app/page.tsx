@@ -1,7 +1,7 @@
 import { Suspense } from 'react'
 import { and, asc, eq, gte } from 'drizzle-orm'
 import { db } from '@/lib/db'
-import { habits, habitCompletions, tasks, userStats, bonusTaskSessions, bonusTaskPool } from '@/lib/db/schema'
+import { habits, habitCompletions, tasks, userStats, bonusTaskSessions, bonusTaskPool, scheduledTasks, scheduledTaskCompletions } from '@/lib/db/schema'
 import { seedDatabase } from '@/lib/db/seed'
 import { checkStreakOnLoad } from '@/lib/actions/habits'
 import {
@@ -17,6 +17,7 @@ import { DashboardActions } from '@/components/dashboard/dashboard-actions'
 import { ClearCompletedButton } from '@/components/dashboard/clear-completed-button'
 import { StreakAtRisk } from '@/components/dashboard/streak-at-risk'
 import { BonusTaskCard } from '@/components/dashboard/bonus-task-card'
+import { ScheduledTaskItem } from '@/components/dashboard/scheduled-task-item'
 
 export const dynamic = 'force-dynamic'
 
@@ -50,6 +51,26 @@ async function DashboardContent({ mvdMode }: { mvdMode: boolean }) {
       ? and(eq(tasks.isActive, true), eq(tasks.isCompleted, false))
       : eq(tasks.isActive, true),
     )
+
+  // Scheduled tasks
+  const todayDow = new Date().getDay() // 0=Sun … 6=Sat
+  const allScheduledTasks = await db.select().from(scheduledTasks)
+    .where(eq(scheduledTasks.isActive, true))
+  const todayScheduledCompletions = await db.select().from(scheduledTaskCompletions)
+    .where(eq(scheduledTaskCompletions.completedDate, today))
+  const completedScheduledIds = new Set(todayScheduledCompletions.map(c => c.taskId))
+
+  // Which scheduled tasks are visible today
+  const visibleScheduled = allScheduledTasks.filter(t => {
+    if (t.recurrenceType === 'once') {
+      return !!t.scheduledDate && t.scheduledDate <= today
+    }
+    // weekly: check if today's day-of-week is in the list
+    const days = (t.daysOfWeek ?? '').split(',').map(Number).filter(n => !isNaN(n))
+    return days.includes(todayDow)
+  })
+  const pendingScheduled = visibleScheduled.filter(t => !completedScheduledIds.has(t.id))
+  const completedScheduled = visibleScheduled.filter(t => completedScheduledIds.has(t.id))
 
   // Bonus task — find today's active (non-skipped) session
   const todayBonusSessions = await db.select().from(bonusTaskSessions)
@@ -94,7 +115,8 @@ async function DashboardContent({ mvdMode }: { mvdMode: boolean }) {
   const taskPtsToday = completedTasks
     .filter(t => t.completedAt?.startsWith(today))
     .reduce((s, t) => s + t.points, 0)
-  const pointsToday = habitPtsToday + taskPtsToday
+  const scheduledPtsToday = todayScheduledCompletions.reduce((s, c) => s + c.pointsEarned, 0)
+  const pointsToday = habitPtsToday + taskPtsToday + scheduledPtsToday
 
   // Whether today is already credited (freeze or full MVD complete)
   const todayAlreadyActive = stats.lastActiveDate === today
@@ -201,6 +223,24 @@ async function DashboardContent({ mvdMode }: { mvdMode: boolean }) {
           )}
         </div>
       </section>
+
+      {/* Scheduled tasks */}
+      {!mvdMode && visibleScheduled.length > 0 && (
+        <section>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Scheduled</h2>
+            <span className="text-xs text-zinc-600">{completedScheduled.length} / {visibleScheduled.length}</span>
+          </div>
+          <div className="space-y-2">
+            {pendingScheduled.map(t => (
+              <ScheduledTaskItem key={t.id} task={t} completedToday={false} />
+            ))}
+            {completedScheduled.map(t => (
+              <ScheduledTaskItem key={t.id} task={t} completedToday={true} />
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Tasks */}
       {!mvdMode && (

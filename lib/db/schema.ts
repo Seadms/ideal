@@ -67,6 +67,27 @@ export const userStats = sqliteTable('user_stats', {
   createdAt: text('created_at').notNull().default(sql`(datetime('now'))`),
 })
 
+export const scheduledTasks = sqliteTable('scheduled_tasks', {
+  id: text('id').primaryKey(),
+  title: text('title').notNull(),
+  description: text('description'),
+  points: integer('points').notNull().default(75),
+  category: text('category').notNull().default('general'),
+  recurrenceType: text('recurrence_type').notNull().default('once'), // 'once' | 'weekly'
+  scheduledDate: text('scheduled_date'),   // YYYY-MM-DD — for 'once' type
+  daysOfWeek: text('days_of_week'),        // '1,3,5' — for 'weekly' (0=Sun…6=Sat)
+  isActive: integer('is_active', { mode: 'boolean' }).notNull().default(true),
+  createdAt: text('created_at').notNull().default(sql`(datetime('now'))`),
+})
+
+export const scheduledTaskCompletions = sqliteTable('scheduled_task_completions', {
+  id: text('id').primaryKey(),
+  taskId: text('task_id').notNull(),
+  completedDate: text('completed_date').notNull(), // YYYY-MM-DD
+  pointsEarned: integer('points_earned').notNull(),
+  createdAt: text('created_at').notNull().default(sql`(datetime('now'))`),
+})
+
 export const bonusTaskPool = sqliteTable('bonus_task_pool', {
   id: text('id').primaryKey(),
   title: text('title').notNull(),
@@ -92,3 +113,5 @@ export type HabitCompletion = typeof habitCompletions.$inferSelect
 export type UserStats = typeof userStats.$inferSelect
 export type BonusTaskPoolItem = typeof bonusTaskPool.$inferSelect
 export type BonusTaskSession = typeof bonusTaskSessions.$inferSelect
+export type ScheduledTask = typeof scheduledTasks.$inferSelect
+export type ScheduledTaskCompletion = typeof scheduledTaskCompletions.$inferSelect
