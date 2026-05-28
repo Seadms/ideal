@@ -9,6 +9,14 @@ interface ReminderCheckerProps {
 export function ReminderChecker({ reminderTime }: ReminderCheckerProps) {
   const firedRef = useRef<string | null>(null)
 
+  // Register service worker globally so push works on all pages
+  useEffect(() => {
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').catch(() => {/* ignore registration errors */})
+    }
+  }, [])
+
+  // In-app fallback reminder (only fires when tab is open)
   useEffect(() => {
     if (!reminderTime || !('Notification' in window)) return
     if (Notification.permission !== 'granted') return

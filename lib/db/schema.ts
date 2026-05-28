@@ -67,6 +67,14 @@ export const userStats = sqliteTable('user_stats', {
   createdAt: text('created_at').notNull().default(sql`(datetime('now'))`),
 })
 
+export const pushSubscriptions = sqliteTable('push_subscriptions', {
+  id: text('id').primaryKey(),
+  endpoint: text('endpoint').notNull(),
+  p256dh: text('p256dh').notNull(),
+  auth: text('auth').notNull(),
+  createdAt: text('created_at').notNull().default(sql`(datetime('now'))`),
+})
+
 export const scheduledTasks = sqliteTable('scheduled_tasks', {
   id: text('id').primaryKey(),
   title: text('title').notNull(),

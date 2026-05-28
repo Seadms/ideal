@@ -27,6 +27,7 @@ export default async function SettingsPage() {
         reminderTime={stats?.reminderTime ?? null}
         streakFreezeCount={stats?.streakFreezeCount ?? 0}
         archivedHabits={archivedHabits}
+        vapidPublicKey={process.env.VAPID_PUBLIC_KEY ?? ''}
       />
     </div>
   )

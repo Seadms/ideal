@@ -1,11 +1,12 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useState, useTransition, useEffect } from 'react'
 import { setReminderTime } from '@/lib/actions/settings'
 import { updateHabit } from '@/lib/actions/habits'
+import { savePushSubscription, removePushSubscription } from '@/lib/actions/push'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Bell, Download, Upload, Archive, Shield } from 'lucide-react'
+import { Bell, Download, Upload, Archive, Shield, Smartphone } from 'lucide-react'
 import { categoryEmoji } from '@/lib/utils'
 
 interface ArchivedHabit {
@@ -18,6 +19,14 @@ interface SettingsClientProps {
   reminderTime: string | null
   streakFreezeCount: number
   archivedHabits: ArchivedHabit[]
+  vapidPublicKey: string
+}
+
+function urlBase64ToUint8Array(base64String: string) {
+  const padding = '='.repeat((4 - (base64String.length % 4)) % 4)
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/')
+  const rawData = atob(base64)
+  return Uint8Array.from([...rawData].map(c => c.charCodeAt(0)))
 }
 
 function ArchivedHabitRow({ habit }: { habit: ArchivedHabit }) {
@@ -41,14 +50,32 @@ function ArchivedHabitRow({ habit }: { habit: ArchivedHabit }) {
   )
 }
 
-export function SettingsClient({ reminderTime, streakFreezeCount, archivedHabits }: SettingsClientProps) {
+export function SettingsClient({ reminderTime, streakFreezeCount, archivedHabits, vapidPublicKey }: SettingsClientProps) {
   const [isPending, startTransition] = useTransition()
   const [time, setTime] = useState(reminderTime ?? '21:00')
   const [enabled, setEnabled] = useState(!!reminderTime)
   const [importing, setImporting] = useState(false)
-  const [permState, setPermState] = useState<NotificationPermission | 'unsupported'>(
-    typeof Notification !== 'undefined' ? Notification.permission : 'unsupported'
-  )
+  const [permState, setPermState] = useState<NotificationPermission | 'unsupported'>('unsupported')
+
+  // Push subscription state
+  const [pushSupported, setPushSupported] = useState(false)
+  const [pushSubscribed, setPushSubscribed] = useState(false)
+  const [pushPending, setPushPending] = useState(false)
+
+  useEffect(() => {
+    if (typeof Notification !== 'undefined') {
+      setPermState(Notification.permission)
+    }
+    if ('serviceWorker' in navigator && 'PushManager' in window) {
+      setPushSupported(true)
+      // Check if already subscribed
+      navigator.serviceWorker.ready.then(reg => {
+        reg.pushManager.getSubscription().then(sub => {
+          setPushSubscribed(!!sub)
+        })
+      })
+    }
+  }, [])
 
   const requestPermission = async () => {
     if (typeof Notification === 'undefined') return
@@ -68,6 +95,45 @@ export function SettingsClient({ reminderTime, streakFreezeCount, archivedHabits
     startTransition(async () => {
       await setReminderTime(enabled ? time : null)
     })
+  }
+
+  const subscribePush = async () => {
+    if (!vapidPublicKey) return
+    setPushPending(true)
+    try {
+      const reg = await navigator.serviceWorker.ready
+      // Request notification permission first
+      const permission = await Notification.requestPermission()
+      setPermState(permission)
+      if (permission !== 'granted') return
+
+      const sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(vapidPublicKey),
+      })
+      const json = sub.toJSON() as { endpoint: string; keys: { p256dh: string; auth: string } }
+      await savePushSubscription(json)
+      setPushSubscribed(true)
+    } catch (err) {
+      console.error('Push subscribe failed:', err)
+    } finally {
+      setPushPending(false)
+    }
+  }
+
+  const unsubscribePush = async () => {
+    setPushPending(true)
+    try {
+      const reg = await navigator.serviceWorker.ready
+      const sub = await reg.pushManager.getSubscription()
+      if (sub) {
+        await removePushSubscription(sub.endpoint)
+        await sub.unsubscribe()
+      }
+      setPushSubscribed(false)
+    } finally {
+      setPushPending(false)
+    }
   }
 
   const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -91,14 +157,65 @@ export function SettingsClient({ reminderTime, streakFreezeCount, archivedHabits
 
   return (
     <div className="space-y-8">
-      {/* Notifications */}
+
+      {/* Push Notifications */}
+      <section className="space-y-4">
+        <div className="flex items-center gap-2">
+          <Smartphone size={14} className="text-zinc-400" />
+          <h2 className="text-sm font-semibold text-zinc-200">Push Notifications</h2>
+        </div>
+        <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-5 space-y-4">
+          {!pushSupported ? (
+            <p className="text-xs text-zinc-500">
+              Push notifications require a modern browser. On iPhone, add this app to your Home Screen first, then reload.
+            </p>
+          ) : pushSubscribed ? (
+            <>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-emerald-400 font-medium">Push enabled ✓</p>
+                  <p className="text-xs text-zinc-500 mt-0.5">You'll get notified even when the app is closed.</p>
+                </div>
+                <Button variant="ghost" size="sm" onClick={unsubscribePush} disabled={pushPending}
+                  className="text-zinc-500 hover:text-rose-400">
+                  {pushPending ? '...' : 'Disable'}
+                </Button>
+              </div>
+              <p className="text-xs text-zinc-600">
+                Notification fires daily at 9 PM ET (configured in Vercel). Set your reminder time below to also enable in-app fallback.
+              </p>
+            </>
+          ) : (
+            <>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-zinc-300">Enable push notifications</p>
+                  <p className="text-xs text-zinc-500 mt-0.5">Works even when the app is closed.</p>
+                </div>
+                <Button variant="outline" size="sm" onClick={subscribePush} disabled={pushPending}>
+                  {pushPending ? 'Enabling…' : 'Enable'}
+                </Button>
+              </div>
+              {permState === 'denied' && (
+                <p className="text-xs text-zinc-500">
+                  Notifications are blocked. Enable them in your browser/phone settings then reload.
+                </p>
+              )}
+            </>
+          )}
+        </div>
+      </section>
+
+      {/* In-browser reminder (fallback) */}
       <section className="space-y-4">
         <div className="flex items-center gap-2">
           <Bell size={14} className="text-zinc-400" />
-          <h2 className="text-sm font-semibold text-zinc-200">Daily Reminder</h2>
+          <h2 className="text-sm font-semibold text-zinc-200">In-App Reminder</h2>
         </div>
 
         <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-5 space-y-4">
+          <p className="text-xs text-zinc-500">Fallback reminder that fires while this tab is open.</p>
+
           {permState === 'unsupported' && (
             <p className="text-xs text-zinc-500">Browser notifications not supported.</p>
           )}
@@ -106,15 +223,13 @@ export function SettingsClient({ reminderTime, streakFreezeCount, archivedHabits
           {permState === 'default' && (
             <div className="flex items-center justify-between">
               <p className="text-xs text-zinc-400">Allow notifications to enable reminders</p>
-              <Button variant="outline" size="sm" onClick={requestPermission}>
-                Allow
-              </Button>
+              <Button variant="outline" size="sm" onClick={requestPermission}>Allow</Button>
             </div>
           )}
 
           {permState === 'denied' && (
             <p className="text-xs text-zinc-500">
-              Notifications are blocked. Enable them in your browser's site settings then reload.
+              Notifications blocked. Enable in browser settings then reload.
             </p>
           )}
 
@@ -146,14 +261,8 @@ export function SettingsClient({ reminderTime, streakFreezeCount, archivedHabits
                 <Button variant="outline" size="sm" onClick={saveReminder} disabled={isPending}>
                   {isPending ? 'Saving...' : 'Save'}
                 </Button>
-                <Button variant="ghost" size="sm" onClick={testNotification}>
-                  Test
-                </Button>
+                <Button variant="ghost" size="sm" onClick={testNotification}>Test</Button>
               </div>
-
-              <p className="text-xs text-zinc-600">
-                Requires this tab to be open at reminder time.
-              </p>
             </>
           )}
         </div>
@@ -193,7 +302,6 @@ export function SettingsClient({ reminderTime, streakFreezeCount, archivedHabits
           <h2 className="text-sm font-semibold text-zinc-200">Data</h2>
         </div>
         <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-5 space-y-4">
-          {/* Export */}
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-zinc-300">Export backup</p>
@@ -207,7 +315,6 @@ export function SettingsClient({ reminderTime, streakFreezeCount, archivedHabits
           </div>
 
           <div className="border-t border-zinc-800 pt-4">
-            {/* Import */}
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-zinc-300">Import backup</p>
