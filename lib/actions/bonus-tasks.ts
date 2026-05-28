@@ -22,7 +22,7 @@ IDENTITY & CAREER:
 - Graduating with a Bachelor's this summer, then completing a Master's 3 semesters later
 - Works as a Sales Associate at Best Buy ($17/hr, earned "Hall of Fame" award)
 - Actively applying for tech internships and better jobs
-- Technical co-founder of a TCG card-scanning app called aio.tc
+- Technical co-founder of a TCG card-scanning app called aio.tcg
 - Also works on game development projects
 
 HOME LIFE:
@@ -43,7 +43,7 @@ SKILLS TO BUILD:
 - Meditation (just starting out, wants to build the habit)
 
 PROJECTS:
-- aio.tc: TCG scanning app he co-founded — always thinking about features
+- aio.tcg: TCG scanning app he co-founded — always thinking about features
 - Game development projects
 - Interview prep (coding challenges, CS fundamentals)
 
