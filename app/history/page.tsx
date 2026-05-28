@@ -1,8 +1,7 @@
-import { and, eq, gte } from 'drizzle-orm'
+import { and, eq, gte, sql } from 'drizzle-orm'
 import { db, initDb } from '@/lib/db'
 import { habits, habitCompletions, tasks, rewards, rewardRedemptions, bonusTaskSessions, bonusTaskPool } from '@/lib/db/schema'
-import { todayString, daysAgoString, formatPoints, categoryEmoji } from '@/lib/utils'
-import { cn } from '@/lib/utils'
+import { todayString, daysAgoString, formatPoints, categoryEmoji, cn } from '@/lib/utils'
 
 export const dynamic = 'force-dynamic'
 
@@ -27,7 +26,7 @@ export default async function HistoryPage() {
     db.select().from(habits),
     // All completed tasks (active or soft-deleted) completed in the last 60 days
     db.select().from(tasks).where(
-      and(eq(tasks.isCompleted, true), gte(tasks.completedAt ?? '', since60)),
+      and(eq(tasks.isCompleted, true), sql`${tasks.completedAt} >= ${since60}`),
     ),
     db.select().from(rewardRedemptions),
     db.select({ id: rewards.id, title: rewards.title, category: rewards.category }).from(rewards),
@@ -78,7 +77,7 @@ export default async function HistoryPage() {
       sortKey: c.completedDate,
     })),
     ...completedTasks
-      .filter(t => t.completedAt && t.completedAt.slice(0, 10) >= since60)
+      .filter(t => !!t.completedAt)
       .map(t => ({
         kind: 'task' as const,
         title: t.title,
@@ -122,11 +121,9 @@ export default async function HistoryPage() {
 
   // ── Totals ─────────────────────────────────────────────────────────────────
   const totalHabitCompletions = completions.length
-  const totalTaskCompletions = completedTasks.filter(t => t.completedAt && t.completedAt.slice(0, 10) >= since60).length
+  const totalTaskCompletions = completedTasks.length
   const habitPtsEarned = completions.reduce((s, c) => s + c.pointsEarned, 0)
-  const taskPtsEarned = completedTasks
-    .filter(t => t.completedAt && t.completedAt.slice(0, 10) >= since60)
-    .reduce((s, t) => s + t.points, 0)
+  const taskPtsEarned = completedTasks.reduce((s, t) => s + t.points, 0)
   const bonusPtsEarned = bonusSessions.reduce((s, b) => s + (b.pointsEarned ?? 0), 0)
   const totalPtsEarned = habitPtsEarned + taskPtsEarned + bonusPtsEarned
   const totalRedemptions = allRedemptions.length

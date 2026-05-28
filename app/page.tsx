@@ -116,7 +116,8 @@ async function DashboardContent({ mvdMode }: { mvdMode: boolean }) {
     .filter(t => t.completedAt?.startsWith(today))
     .reduce((s, t) => s + t.points, 0)
   const scheduledPtsToday = todayScheduledCompletions.reduce((s, c) => s + c.pointsEarned, 0)
-  const pointsToday = habitPtsToday + taskPtsToday + scheduledPtsToday
+  const bonusPtsToday = activeSession?.state === 'completed' ? (activeSession.pointsEarned ?? 0) : 0
+  const pointsToday = habitPtsToday + taskPtsToday + scheduledPtsToday + bonusPtsToday
 
   // Whether today is already credited (freeze or full MVD complete)
   const todayAlreadyActive = stats.lastActiveDate === today

@@ -19,7 +19,6 @@ export function AddTaskDialog({ open, onClose }: AddTaskDialogProps) {
     title: '',
     description: '',
     points: 100,
-    isMinimumViable: false,
     category: 'general',
     dueDate: '',
   })
@@ -28,8 +27,8 @@ export function AddTaskDialog({ open, onClose }: AddTaskDialogProps) {
     e.preventDefault()
     if (!form.title.trim()) return
     startTransition(async () => {
-      await createTask({ ...form, dueDate: form.dueDate || undefined })
-      setForm({ title: '', description: '', points: 100, isMinimumViable: false, category: 'general', dueDate: '' })
+      await createTask({ ...form, isMinimumViable: false, dueDate: form.dueDate || undefined })
+      setForm({ title: '', description: '', points: 100, category: 'general', dueDate: '' })
       onClose()
     })
   }

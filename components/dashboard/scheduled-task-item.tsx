@@ -61,7 +61,7 @@ export function ScheduledTaskItem({ task, completedToday }: ScheduledTaskItemPro
           disabled={isPending}
           aria-label={completedToday ? 'Mark incomplete' : 'Mark complete'}
           className={cn(
-            'flex h-5 w-5 shrink-0 items-center justify-center rounded border-2 transition-all duration-200',
+            'flex h-5 w-5 shrink-0 items-center justify-center border-2 transition-all duration-200',
             isWeekly ? 'rounded-full' : 'rounded',
             completedToday ? 'border-emerald-500 bg-emerald-500' : 'border-zinc-700 hover:border-zinc-400',
           )}
