@@ -1,6 +1,11 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { habits, tasks, rewards, rewardRedemptions, userStats, habitCompletions, bonusTaskSessions, bonusTaskPool } from '@/lib/db/schema'
+import {
+  habits, tasks, rewards, rewardRedemptions, userStats, habitCompletions,
+  bonusTaskSessions, bonusTaskPool, scheduledTasks, scheduledTaskCompletions,
+  splitDays, splitExercises, exerciseLogs, nutritionGoals,
+  dietGoals, dietMeals, dietRules, waterLogs,
+} from '@/lib/db/schema'
 
 export async function GET() {
   // Local mode: serve the raw SQLite file
@@ -28,6 +33,9 @@ export async function GET() {
   const [
     habitsData, tasksData, rewardsData,
     redemptionsData, statsData, completionsData, bonusSessionsData, bonusPoolData,
+    scheduledTasksData, scheduledCompletionsData,
+    splitDaysData, splitExercisesData, exerciseLogsData, nutritionGoalsData,
+    dietGoalsData, dietMealsData, dietRulesData, waterLogsData,
   ] = await Promise.all([
     db.select().from(habits),
     db.select().from(tasks),
@@ -37,11 +45,21 @@ export async function GET() {
     db.select().from(habitCompletions),
     db.select().from(bonusTaskSessions),
     db.select().from(bonusTaskPool),
+    db.select().from(scheduledTasks),
+    db.select().from(scheduledTaskCompletions),
+    db.select().from(splitDays),
+    db.select().from(splitExercises),
+    db.select().from(exerciseLogs),
+    db.select().from(nutritionGoals),
+    db.select().from(dietGoals),
+    db.select().from(dietMeals),
+    db.select().from(dietRules),
+    db.select().from(waterLogs),
   ])
 
   const backup = {
     exportedAt: new Date().toISOString(),
-    version: 1,
+    version: 2,
     habits: habitsData,
     tasks: tasksData,
     rewards: rewardsData,
@@ -50,6 +68,16 @@ export async function GET() {
     habitCompletions: completionsData,
     bonusTaskSessions: bonusSessionsData,
     bonusTaskPool: bonusPoolData,
+    scheduledTasks: scheduledTasksData,
+    scheduledTaskCompletions: scheduledCompletionsData,
+    splitDays: splitDaysData,
+    splitExercises: splitExercisesData,
+    exerciseLogs: exerciseLogsData,
+    nutritionGoals: nutritionGoalsData,
+    dietGoals: dietGoalsData,
+    dietMeals: dietMealsData,
+    dietRules: dietRulesData,
+    waterLogs: waterLogsData,
   }
 
   const date = new Date().toISOString().split('T')[0]

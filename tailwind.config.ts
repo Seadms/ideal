@@ -13,7 +13,6 @@ const config: Config = {
           '-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'Roboto',
           '"Helvetica Neue"', 'Arial', 'sans-serif',
         ],
-        mono: ['"JetBrains Mono"', '"Fira Code"', 'Consolas', 'monospace'],
       },
       animation: {
         'pulse-soft': 'pulse 3s ease-in-out infinite',

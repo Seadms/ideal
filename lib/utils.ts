@@ -155,6 +155,7 @@ export function categoryEmoji(category: string): string {
     hobby: '🧱',
     luxury: '💍',
     chore: '🧹',
+    home: '🏠',
     social: '💬',
     creative: '🎨',
     general: '⚡',
