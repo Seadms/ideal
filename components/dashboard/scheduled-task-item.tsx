@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useTransition } from 'react'
+import { useLevelUp } from './use-level-up'
 import { completeScheduledTask, uncompleteScheduledTask } from '@/lib/actions/scheduled-tasks'
 import type { ScheduledTask } from '@/lib/db/schema'
 import { categoryEmoji, cn } from '@/lib/utils'
@@ -28,7 +29,7 @@ interface ScheduledTaskItemProps {
 export function ScheduledTaskItem({ task, completedToday }: ScheduledTaskItemProps) {
   const [isPending, startTransition] = useTransition()
   const [editOpen, setEditOpen] = useState(false)
-  const [levelUpLevel, setLevelUpLevel] = useState<number | null>(null)
+  const { levelUpLevel, triggerLevelUp } = useLevelUp()
 
   const toggle = () => {
     startTransition(async () => {
@@ -36,10 +37,7 @@ export function ScheduledTaskItem({ task, completedToday }: ScheduledTaskItemPro
         await uncompleteScheduledTask(task.id)
       } else {
         const result = await completeScheduledTask(task.id)
-        if (result.leveledUp) {
-          setLevelUpLevel(result.newLevel)
-          setTimeout(() => setLevelUpLevel(null), 3500)
-        }
+        if (result.leveledUp) triggerLevelUp(result.newLevel)
       }
     })
   }

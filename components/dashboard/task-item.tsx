@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useTransition } from 'react'
+import { useLevelUp } from './use-level-up'
 import { completeTask, uncompleteTask } from '@/lib/actions/tasks'
 import type { Task } from '@/lib/db/schema'
 import { categoryEmoji, cn, todayString } from '@/lib/utils'
@@ -15,7 +16,7 @@ interface TaskItemProps {
 export function TaskItem({ task }: TaskItemProps) {
   const [isPending, startTransition] = useTransition()
   const [editOpen, setEditOpen] = useState(false)
-  const [levelUpLevel, setLevelUpLevel] = useState<number | null>(null)
+  const { levelUpLevel, triggerLevelUp } = useLevelUp()
 
   const today = todayString()
   const isOverdue = !!task.dueDate && !task.isCompleted && task.dueDate < today
@@ -27,10 +28,7 @@ export function TaskItem({ task }: TaskItemProps) {
         await uncompleteTask(task.id)
       } else {
         const result = await completeTask(task.id)
-        if (result.leveledUp) {
-          setLevelUpLevel(result.newLevel)
-          setTimeout(() => setLevelUpLevel(null), 3500)
-        }
+        if (result.leveledUp) triggerLevelUp(result.newLevel)
       }
     })
   }

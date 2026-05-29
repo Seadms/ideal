@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useTransition } from 'react'
+import { useLevelUp } from './use-level-up'
 import { completeHabit, uncompleteHabit, moveHabit } from '@/lib/actions/habits'
 import type { Habit } from '@/lib/db/schema'
 import { categoryEmoji, cn } from '@/lib/utils'
@@ -21,7 +22,7 @@ export function HabitItem({ habit, completedToday, streakDays, weeklyCount, isFi
   const [isPending, startTransition] = useTransition()
   const [isMoving, startMoveTransition] = useTransition()
   const [editOpen, setEditOpen] = useState(false)
-  const [levelUpLevel, setLevelUpLevel] = useState<number | null>(null)
+  const { levelUpLevel, triggerLevelUp } = useLevelUp()
 
   const isWeekly = habit.frequencyPerWeek < 7
   const weeklyQuotaMet = weeklyCount >= habit.frequencyPerWeek
@@ -32,10 +33,7 @@ export function HabitItem({ habit, completedToday, streakDays, weeklyCount, isFi
         await uncompleteHabit(habit.id)
       } else {
         const result = await completeHabit(habit.id)
-        if (result.leveledUp) {
-          setLevelUpLevel(result.newLevel)
-          setTimeout(() => setLevelUpLevel(null), 3500)
-        }
+        if (result.leveledUp) triggerLevelUp(result.newLevel)
       }
     })
   }

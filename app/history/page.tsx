@@ -221,9 +221,9 @@ export default async function HistoryPage() {
           <p className="text-sm text-zinc-600 py-6 text-center">No activity yet.</p>
         ) : (
           <div className="space-y-1.5">
-            {entries.map((e, i) => (
+            {entries.map((e) => (
               <div
-                key={i}
+                key={`${e.kind}-${e.sortKey}-${e.title}`}
                 className="flex items-center gap-3 rounded-xl border border-zinc-800 bg-zinc-900/40 px-4 py-3"
               >
                 <span className="text-base shrink-0">{categoryEmoji(e.category)}</span>
