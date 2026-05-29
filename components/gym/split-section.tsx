@@ -10,7 +10,7 @@ import { Dumbbell, Settings2, Minus, Plus, Check } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 type DayWithExercises = SplitDay & { exercises: SplitExercise[] }
-type ExValues = { sets: number; reps: number; weight: number; unit: string }
+type ExValues = { sets: number | string; reps: number | string; weight: number | string; unit: string }
 
 interface Props {
   days: DayWithExercises[]
@@ -43,7 +43,7 @@ export function SplitSection({ days, prevLogs }: Props) {
     setExerciseValues(v => ({ ...v, [exId]: { ...getVals({ id: exId } as SplitExercise), ...v[exId], ...patch } }))
 
   const adjustWeight = (ex: SplitExercise, delta: number) => {
-    const w = getVals(ex).weight
+    const w = Number(getVals(ex).weight) || 0
     setExerciseValues(v => ({ ...v, [ex.id]: { ...getVals(ex), ...v[ex.id], weight: Math.max(0, Math.round((w + delta) * 10) / 10) } }))
   }
 
@@ -65,11 +65,16 @@ export function SplitSection({ days, prevLogs }: Props) {
 
   const handleLogSession = () => {
     if (!activeDay || activeDay.exercises.length === 0) return
-    const entries = activeDay.exercises.map(ex => ({
-      exerciseId: ex.id,
-      ...getVals(ex),
-      ...exerciseValues[ex.id],
-    }))
+    const entries = activeDay.exercises.map(ex => {
+      const v = { ...getVals(ex), ...exerciseValues[ex.id] }
+      return {
+        exerciseId: ex.id,
+        sets: Number(v.sets) || 1,
+        reps: Number(v.reps) || 1,
+        weight: Number(v.weight) || 0,
+        unit: v.unit,
+      }
+    })
     startTransition(async () => {
       await logWorkoutSession(entries)
       setLogged(true)
@@ -156,7 +161,7 @@ export function SplitSection({ days, prevLogs }: Props) {
                                   <Input
                                     type="number" min={1} max={20}
                                     value={vals.sets}
-                                    onChange={e => setVal(ex.id, { sets: Number(e.target.value) })}
+                                    onChange={e => setVal(ex.id, { sets: e.target.value })}
                                     className="w-12 h-7 text-xs text-center py-0 px-1"
                                   />
                                 </div>
@@ -167,7 +172,7 @@ export function SplitSection({ days, prevLogs }: Props) {
                                   <Input
                                     type="number" min={1} max={100}
                                     value={vals.reps}
-                                    onChange={e => setVal(ex.id, { reps: Number(e.target.value) })}
+                                    onChange={e => setVal(ex.id, { reps: e.target.value })}
                                     className="w-12 h-7 text-xs text-center py-0 px-1"
                                   />
                                 </div>
@@ -185,7 +190,7 @@ export function SplitSection({ days, prevLogs }: Props) {
                                     <Input
                                       type="number" min={0} step={2.5}
                                       value={vals.weight}
-                                      onChange={e => setVal(ex.id, { weight: Number(e.target.value) })}
+                                      onChange={e => setVal(ex.id, { weight: e.target.value })}
                                       className="w-16 h-7 text-xs text-center py-0 px-1"
                                     />
                                     <button

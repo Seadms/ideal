@@ -28,7 +28,7 @@ export function EditScheduledTaskDialog({ task, open, onClose }: { task: Schedul
   const [form, setForm] = useState({
     title: task.title,
     description: task.description ?? '',
-    points: task.points,
+    points: String(task.points),
     category: task.category,
     scheduledDate: task.scheduledDate ?? '',
   })
@@ -42,6 +42,7 @@ export function EditScheduledTaskDialog({ task, open, onClose }: { task: Schedul
     startTransition(async () => {
       await updateScheduledTask(task.id, {
         ...form,
+        points: Number(form.points) || 1,
         recurrenceType,
         scheduledDate: recurrenceType === 'once' ? form.scheduledDate : undefined,
         daysOfWeek: recurrenceType === 'weekly' ? selectedDays.join(',') : undefined,
@@ -84,7 +85,7 @@ export function EditScheduledTaskDialog({ task, open, onClose }: { task: Schedul
             <Input
               type="number" min={1} max={2000}
               value={form.points}
-              onChange={e => setForm(f => ({ ...f, points: Number(e.target.value) }))}
+              onChange={e => setForm(f => ({ ...f, points: e.target.value }))}
             />
           </div>
           <div>

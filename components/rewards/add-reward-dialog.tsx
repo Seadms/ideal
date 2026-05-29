@@ -15,14 +15,14 @@ const CATEGORIES = ['general', 'food', 'rest', 'hobby', 'luxury', 'experience', 
 
 export function AddRewardDialog({ open, onClose }: AddRewardDialogProps) {
   const [isPending, startTransition] = useTransition()
-  const [form, setForm] = useState({ title: '', description: '', cost: 200, category: 'general' })
+  const [form, setForm] = useState({ title: '', description: '', cost: '200', category: 'general' })
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (!form.title.trim()) return
     startTransition(async () => {
-      await createReward(form)
-      setForm({ title: '', description: '', cost: 200, category: 'general' })
+      await createReward({ ...form, cost: Number(form.cost) || 1 })
+      setForm({ title: '', description: '', cost: '200', category: 'general' })
       onClose()
     })
   }
@@ -55,7 +55,7 @@ export function AddRewardDialog({ open, onClose }: AddRewardDialogProps) {
               type="number"
               min={1}
               value={form.cost}
-              onChange={e => setForm(f => ({ ...f, cost: Number(e.target.value) }))}
+              onChange={e => setForm(f => ({ ...f, cost: e.target.value }))}
             />
           </div>
           <div>

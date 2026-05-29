@@ -15,21 +15,27 @@ interface NutritionLogProps {
 
 export function NutritionLog({ entries, goals }: NutritionLogProps) {
   const [isPending, startTransition] = useTransition()
-  const [form, setForm] = useState({ mealName: '', calories: 0, protein: 0, carbs: 0, fats: 0 })
+  const [form, setForm] = useState({ mealName: '', calories: '', protein: '', carbs: '', fats: '' })
   const [editGoals, setEditGoals] = useState(false)
   const [goalForm, setGoalForm] = useState({
-    caloriesGoal: goals.caloriesGoal,
-    proteinGoal: goals.proteinGoal,
-    carbsGoal: goals.carbsGoal,
-    fatsGoal: goals.fatsGoal,
+    caloriesGoal: String(goals.caloriesGoal),
+    proteinGoal: String(goals.proteinGoal),
+    carbsGoal: String(goals.carbsGoal),
+    fatsGoal: String(goals.fatsGoal),
   })
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (!form.mealName.trim()) return
     startTransition(async () => {
-      await logNutritionEntry(form)
-      setForm({ mealName: '', calories: 0, protein: 0, carbs: 0, fats: 0 })
+      await logNutritionEntry({
+        ...form,
+        calories: Number(form.calories) || 0,
+        protein: Number(form.protein) || 0,
+        carbs: Number(form.carbs) || 0,
+        fats: Number(form.fats) || 0,
+      })
+      setForm({ mealName: '', calories: '', protein: '', carbs: '', fats: '' })
     })
   }
 
@@ -39,7 +45,12 @@ export function NutritionLog({ entries, goals }: NutritionLogProps) {
 
   const handleSaveGoals = () => {
     startTransition(async () => {
-      await updateNutritionGoals(goalForm)
+      await updateNutritionGoals({
+        caloriesGoal: Number(goalForm.caloriesGoal) || 0,
+        proteinGoal: Number(goalForm.proteinGoal) || 0,
+        carbsGoal: Number(goalForm.carbsGoal) || 0,
+        fatsGoal: Number(goalForm.fatsGoal) || 0,
+      })
       setEditGoals(false)
     })
   }
@@ -113,7 +124,7 @@ export function NutritionLog({ entries, goals }: NutritionLogProps) {
                     <Input
                       type="number" min={0}
                       value={goalForm[f.key]}
-                      onChange={e => setGoalForm(g => ({ ...g, [f.key]: Number(e.target.value) }))}
+                      onChange={e => setGoalForm(g => ({ ...g, [f.key]: e.target.value }))}
                       className="h-7 text-xs py-0"
                     />
                   </div>
@@ -145,7 +156,7 @@ export function NutritionLog({ entries, goals }: NutritionLogProps) {
                 <Input
                   type="number" min={0}
                   value={form.calories}
-                  onChange={e => setForm(f => ({ ...f, calories: Number(e.target.value) }))}
+                  onChange={e => setForm(f => ({ ...f, calories: e.target.value }))}
                 />
               </div>
               <div>
@@ -153,7 +164,7 @@ export function NutritionLog({ entries, goals }: NutritionLogProps) {
                 <Input
                   type="number" min={0} step={0.1}
                   value={form.protein}
-                  onChange={e => setForm(f => ({ ...f, protein: Number(e.target.value) }))}
+                  onChange={e => setForm(f => ({ ...f, protein: e.target.value }))}
                   className="border-emerald-800/40 focus:border-emerald-600/60"
                 />
               </div>
@@ -162,7 +173,7 @@ export function NutritionLog({ entries, goals }: NutritionLogProps) {
                 <Input
                   type="number" min={0} step={0.1}
                   value={form.carbs}
-                  onChange={e => setForm(f => ({ ...f, carbs: Number(e.target.value) }))}
+                  onChange={e => setForm(f => ({ ...f, carbs: e.target.value }))}
                 />
               </div>
               <div>
@@ -170,7 +181,7 @@ export function NutritionLog({ entries, goals }: NutritionLogProps) {
                 <Input
                   type="number" min={0} step={0.1}
                   value={form.fats}
-                  onChange={e => setForm(f => ({ ...f, fats: Number(e.target.value) }))}
+                  onChange={e => setForm(f => ({ ...f, fats: e.target.value }))}
                 />
               </div>
             </div>

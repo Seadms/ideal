@@ -23,14 +23,14 @@ export function AddScheduledTaskDialog({ open, onClose }: { open: boolean; onClo
   const [recurrenceType, setRecurrenceType] = useState<'once' | 'weekly'>('once')
   const [selectedDays, setSelectedDays] = useState<number[]>([])
   const [form, setForm] = useState({
-    title: '', description: '', points: 75, category: 'general', scheduledDate: '',
+    title: '', description: '', points: '75', category: 'general', scheduledDate: '',
   })
 
   const toggleDay = (d: number) =>
     setSelectedDays(prev => prev.includes(d) ? prev.filter(x => x !== d) : [...prev, d].sort((a, b) => a - b))
 
   const reset = () => {
-    setForm({ title: '', description: '', points: 75, category: 'general', scheduledDate: '' })
+    setForm({ title: '', description: '', points: '75', category: 'general', scheduledDate: '' })
     setRecurrenceType('once')
     setSelectedDays([])
   }
@@ -44,6 +44,7 @@ export function AddScheduledTaskDialog({ open, onClose }: { open: boolean; onClo
     startTransition(async () => {
       await createScheduledTask({
         ...form,
+        points: Number(form.points) || 1,
         recurrenceType,
         scheduledDate: recurrenceType === 'once' ? form.scheduledDate : undefined,
         daysOfWeek: recurrenceType === 'weekly' ? selectedDays.join(',') : undefined,
@@ -82,7 +83,7 @@ export function AddScheduledTaskDialog({ open, onClose }: { open: boolean; onClo
             <Input
               type="number" min={1} max={2000}
               value={form.points}
-              onChange={e => setForm(f => ({ ...f, points: Number(e.target.value) }))}
+              onChange={e => setForm(f => ({ ...f, points: e.target.value }))}
             />
           </div>
           <div>

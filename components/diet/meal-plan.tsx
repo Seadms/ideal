@@ -15,8 +15,11 @@ const ACCENT = ['text-amber-400', 'text-lime-400', 'text-orange-400', 'text-cyan
 
 export function MealPlan({ meals }: Props) {
   const [isPending, startTransition] = useTransition()
+  type EditForm = Omit<DietMeal, 'calories' | 'protein' | 'carbs' | 'fat'> & {
+    calories: number | string; protein: number | string; carbs: number | string; fat: number | string
+  }
   const [editingId, setEditingId] = useState<string | null>(null)
-  const [form, setForm] = useState<DietMeal | null>(null)
+  const [form, setForm] = useState<EditForm | null>(null)
 
   const startEdit = (meal: DietMeal) => { setEditingId(meal.id); setForm({ ...meal }) }
   const cancelEdit = () => { setEditingId(null); setForm(null) }
@@ -27,10 +30,10 @@ export function MealPlan({ meals }: Props) {
       await updateDietMeal(editingId, {
         name: form.name,
         timeWindow: form.timeWindow,
-        calories: form.calories,
-        protein: form.protein,
-        carbs: form.carbs,
-        fat: form.fat,
+        calories: Number(form.calories) || 0,
+        protein: Number(form.protein) || 0,
+        carbs: Number(form.carbs) || 0,
+        fat: Number(form.fat) || 0,
         notes: form.notes,
       })
       cancelEdit()
@@ -64,19 +67,19 @@ export function MealPlan({ meals }: Props) {
                     </div>
                     <div>
                       <p className="text-[9px] text-zinc-600 mb-1">Calories</p>
-                      <Input type="number" min={0} value={form.calories} onChange={e => setForm(f => f && ({ ...f, calories: Number(e.target.value) }))} className="h-7 text-xs py-0" />
+                      <Input type="number" min={0} value={form.calories} onChange={e => setForm(f => f && ({ ...f, calories: e.target.value }))} className="h-7 text-xs py-0" />
                     </div>
                     <div>
                       <p className="text-[9px] text-emerald-700 mb-1">Protein (g)</p>
-                      <Input type="number" min={0} value={form.protein} onChange={e => setForm(f => f && ({ ...f, protein: Number(e.target.value) }))} className="h-7 text-xs py-0" />
+                      <Input type="number" min={0} value={form.protein} onChange={e => setForm(f => f && ({ ...f, protein: e.target.value }))} className="h-7 text-xs py-0" />
                     </div>
                     <div>
                       <p className="text-[9px] text-zinc-600 mb-1">Carbs (g)</p>
-                      <Input type="number" min={0} value={form.carbs} onChange={e => setForm(f => f && ({ ...f, carbs: Number(e.target.value) }))} className="h-7 text-xs py-0" />
+                      <Input type="number" min={0} value={form.carbs} onChange={e => setForm(f => f && ({ ...f, carbs: e.target.value }))} className="h-7 text-xs py-0" />
                     </div>
                     <div>
                       <p className="text-[9px] text-zinc-600 mb-1">Fat (g)</p>
-                      <Input type="number" min={0} value={form.fat} onChange={e => setForm(f => f && ({ ...f, fat: Number(e.target.value) }))} className="h-7 text-xs py-0" />
+                      <Input type="number" min={0} value={form.fat} onChange={e => setForm(f => f && ({ ...f, fat: e.target.value }))} className="h-7 text-xs py-0" />
                     </div>
                     <div className="col-span-2">
                       <p className="text-[9px] text-zinc-600 mb-1">Foods</p>

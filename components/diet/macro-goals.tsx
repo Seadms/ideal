@@ -17,7 +17,8 @@ export function MacroGoals({ goals }: Props) {
   const [isPending, startTransition] = useTransition()
   const [dayType, setDayType] = useState<DayType>('training')
   const [editing, setEditing] = useState(false)
-  const [form, setForm] = useState({ ...goals })
+  type GoalForm = { [K in keyof typeof goals]: string | number }
+  const [form, setForm] = useState<GoalForm>({ ...goals })
 
   const active = dayType === 'training'
     ? { cal: goals.trainingCalories, p: goals.trainingProtein, c: goals.trainingCarbs, f: goals.trainingFat }
@@ -25,7 +26,18 @@ export function MacroGoals({ goals }: Props) {
 
   const handleSave = () => {
     startTransition(async () => {
-      await upsertDietGoals(form)
+      await upsertDietGoals({
+        ...goals,
+        trainingCalories: Number(form.trainingCalories) || 0,
+        trainingProtein: Number(form.trainingProtein) || 0,
+        trainingCarbs: Number(form.trainingCarbs) || 0,
+        trainingFat: Number(form.trainingFat) || 0,
+        restCalories: Number(form.restCalories) || 0,
+        restProtein: Number(form.restProtein) || 0,
+        restCarbs: Number(form.restCarbs) || 0,
+        restFat: Number(form.restFat) || 0,
+        waterGoalMl: Number(form.waterGoalMl) || 0,
+      })
       setEditing(false)
     })
   }
@@ -115,7 +127,7 @@ export function MacroGoals({ goals }: Props) {
                       <Input
                         type="number" min={0}
                         value={form[f.key]}
-                        onChange={e => setForm(g => ({ ...g, [f.key]: Number(e.target.value) }))}
+                        onChange={e => setForm(g => ({ ...g, [f.key]: e.target.value }))}
                         className="h-7 text-xs py-0"
                       />
                     </div>
@@ -131,11 +143,11 @@ export function MacroGoals({ goals }: Props) {
                   <Input
                     type="number" min={0} step={250}
                     value={form.waterGoalMl}
-                    onChange={e => setForm(g => ({ ...g, waterGoalMl: Number(e.target.value) }))}
+                    onChange={e => setForm(g => ({ ...g, waterGoalMl: e.target.value }))}
                     className="h-7 text-xs py-0"
                   />
                 </div>
-                <p className="text-xs text-zinc-600 mt-4">{(form.waterGoalMl / 1000).toFixed(2)}L</p>
+                <p className="text-xs text-zinc-600 mt-4">{(Number(form.waterGoalMl) / 1000).toFixed(2)}L</p>
               </div>
             </div>
             <button

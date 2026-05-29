@@ -20,7 +20,7 @@ export function EditRewardDialog({ reward, open, onClose }: EditRewardDialogProp
   const [form, setForm] = useState({
     title: reward.title,
     description: reward.description ?? '',
-    cost: reward.cost,
+    cost: String(reward.cost),
     category: reward.category,
   })
 
@@ -28,7 +28,7 @@ export function EditRewardDialog({ reward, open, onClose }: EditRewardDialogProp
     e.preventDefault()
     if (!form.title.trim()) return
     startTransition(async () => {
-      await updateReward(reward.id, form)
+      await updateReward(reward.id, { ...form, cost: Number(form.cost) || 1 })
       onClose()
     })
   }
@@ -61,7 +61,7 @@ export function EditRewardDialog({ reward, open, onClose }: EditRewardDialogProp
               type="number"
               min={1}
               value={form.cost}
-              onChange={e => setForm(f => ({ ...f, cost: Number(e.target.value) }))}
+              onChange={e => setForm(f => ({ ...f, cost: e.target.value }))}
             />
           </div>
           <div>

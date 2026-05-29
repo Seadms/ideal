@@ -18,7 +18,7 @@ export function AddHabitDialog({ open, onClose }: AddHabitDialogProps) {
   const [form, setForm] = useState({
     title: '',
     description: '',
-    points: 50,
+    points: '50',
     isMinimumViable: false,
     category: 'general',
     frequencyPerWeek: 7,
@@ -28,8 +28,8 @@ export function AddHabitDialog({ open, onClose }: AddHabitDialogProps) {
     e.preventDefault()
     if (!form.title.trim()) return
     startTransition(async () => {
-      await createHabit(form)
-      setForm({ title: '', description: '', points: 50, isMinimumViable: false, category: 'general', frequencyPerWeek: 7 })
+      await createHabit({ ...form, points: Number(form.points) || 1 })
+      setForm({ title: '', description: '', points: '50', isMinimumViable: false, category: 'general', frequencyPerWeek: 7 })
       onClose()
     })
   }
@@ -63,7 +63,7 @@ export function AddHabitDialog({ open, onClose }: AddHabitDialogProps) {
               min={1}
               max={1000}
               value={form.points}
-              onChange={e => setForm(f => ({ ...f, points: Number(e.target.value) }))}
+              onChange={e => setForm(f => ({ ...f, points: e.target.value }))}
             />
           </div>
           <div>

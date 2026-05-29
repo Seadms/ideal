@@ -18,7 +18,7 @@ export function AddTaskDialog({ open, onClose }: AddTaskDialogProps) {
   const [form, setForm] = useState({
     title: '',
     description: '',
-    points: 100,
+    points: '100',
     category: 'general',
     dueDate: '',
   })
@@ -27,8 +27,8 @@ export function AddTaskDialog({ open, onClose }: AddTaskDialogProps) {
     e.preventDefault()
     if (!form.title.trim()) return
     startTransition(async () => {
-      await createTask({ ...form, isMinimumViable: false, dueDate: form.dueDate || undefined })
-      setForm({ title: '', description: '', points: 100, category: 'general', dueDate: '' })
+      await createTask({ ...form, points: Number(form.points) || 1, isMinimumViable: false, dueDate: form.dueDate || undefined })
+      setForm({ title: '', description: '', points: '100', category: 'general', dueDate: '' })
       onClose()
     })
   }
@@ -62,7 +62,7 @@ export function AddTaskDialog({ open, onClose }: AddTaskDialogProps) {
               min={1}
               max={2000}
               value={form.points}
-              onChange={e => setForm(f => ({ ...f, points: Number(e.target.value) }))}
+              onChange={e => setForm(f => ({ ...f, points: e.target.value }))}
             />
           </div>
           <div>

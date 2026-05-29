@@ -20,7 +20,7 @@ interface Props {
   days: DayWithExercises[]
 }
 
-const DEFAULT_EXERCISE_FORM = { name: '', sets: 3, reps: 8, weight: 0, unit: 'lbs' }
+const DEFAULT_EXERCISE_FORM = { name: '', sets: '3', reps: '8', weight: '0', unit: 'lbs' }
 
 export function SplitManagerDialog({ open, onClose, days }: Props) {
   const [isPending, startTransition] = useTransition()
@@ -63,9 +63,9 @@ export function SplitManagerDialog({ open, onClose, days }: Props) {
       await addSplitExercise({
         splitDayId: dayId,
         name: form.name,
-        defaultSets: form.sets,
-        defaultReps: form.reps,
-        defaultWeight: form.weight,
+        defaultSets: Number(form.sets) || 1,
+        defaultReps: Number(form.reps) || 1,
+        defaultWeight: Number(form.weight) || 0,
         defaultUnit: form.unit,
       })
       setAddExForm(f => ({ ...f, [dayId]: DEFAULT_EXERCISE_FORM }))
@@ -214,7 +214,7 @@ export function SplitManagerDialog({ open, onClose, days }: Props) {
                           max={'max' in field ? field.max : undefined}
                           step={'step' in field ? field.step : undefined}
                           value={getExForm(day.id)[field.key]}
-                          onChange={e => setExForm(day.id, { [field.key]: Number(e.target.value) })}
+                          onChange={e => setExForm(day.id, { [field.key]: e.target.value })}
                           className="h-7 text-xs py-0"
                         />
                       </div>
