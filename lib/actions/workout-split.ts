@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { randomUUID } from 'crypto'
-import { and, eq, max } from 'drizzle-orm'
+import { and, eq, inArray, max } from 'drizzle-orm'
 import { db } from '@/lib/db'
 import { splitDays, splitExercises, exerciseLogs } from '@/lib/db/schema'
 import { todayString } from '@/lib/utils'
@@ -26,8 +26,8 @@ export async function updateSplitDay(id: string, name: string) {
 export async function deleteSplitDay(id: string) {
   const exercises = await db.select({ id: splitExercises.id }).from(splitExercises)
     .where(eq(splitExercises.splitDayId, id))
-  for (const ex of exercises) {
-    await db.delete(exerciseLogs).where(eq(exerciseLogs.exerciseId, ex.id))
+  if (exercises.length > 0) {
+    await db.delete(exerciseLogs).where(inArray(exerciseLogs.exerciseId, exercises.map(e => e.id)))
   }
   await db.delete(splitExercises).where(eq(splitExercises.splitDayId, id))
   await db.delete(splitDays).where(eq(splitDays.id, id))
@@ -78,15 +78,24 @@ export async function logWorkoutSession(entries: {
   weight: number
   unit: string
 }[]) {
+  if (entries.length === 0) return
   const today = todayString()
+
+  // Single query to find which exercises already have a log today
+  const existingLogs = await db.select({ id: exerciseLogs.id, exerciseId: exerciseLogs.exerciseId })
+    .from(exerciseLogs)
+    .where(and(
+      inArray(exerciseLogs.exerciseId, entries.map(e => e.exerciseId)),
+      eq(exerciseLogs.date, today),
+    ))
+  const existingMap = new Map(existingLogs.map(l => [l.exerciseId, l.id]))
+
   for (const entry of entries) {
-    // Upsert today's log
-    const existing = await db.select().from(exerciseLogs)
-      .where(and(eq(exerciseLogs.exerciseId, entry.exerciseId), eq(exerciseLogs.date, today)))
-    if (existing.length > 0) {
+    const existingId = existingMap.get(entry.exerciseId)
+    if (existingId) {
       await db.update(exerciseLogs)
         .set({ sets: entry.sets, reps: entry.reps, weight: entry.weight, unit: entry.unit })
-        .where(eq(exerciseLogs.id, existing[0].id))
+        .where(eq(exerciseLogs.id, existingId))
     } else {
       await db.insert(exerciseLogs).values({ id: randomUUID(), date: today, ...entry })
     }

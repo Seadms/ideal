@@ -152,17 +152,6 @@ export const nutritionGoals = sqliteTable('nutrition_goals', {
   fatsGoal: integer('fats_goal').notNull().default(70),
 })
 
-export const workoutEntries = sqliteTable('workout_entries', {
-  id: text('id').primaryKey(),
-  date: text('date').notNull(),
-  exerciseName: text('exercise_name').notNull(),
-  sets: integer('sets').notNull().default(1),
-  reps: integer('reps').notNull().default(1),
-  weight: real('weight').notNull().default(0),
-  unit: text('unit').notNull().default('lbs'),
-  createdAt: text('created_at').notNull().default(sql`(datetime('now'))`),
-})
-
 export const nutritionEntries = sqliteTable('nutrition_entries', {
   id: text('id').primaryKey(),
   date: text('date').notNull(),
@@ -222,7 +211,6 @@ export type BonusTaskPoolItem = typeof bonusTaskPool.$inferSelect
 export type BonusTaskSession = typeof bonusTaskSessions.$inferSelect
 export type ScheduledTask = typeof scheduledTasks.$inferSelect
 export type ScheduledTaskCompletion = typeof scheduledTaskCompletions.$inferSelect
-export type WorkoutEntry = typeof workoutEntries.$inferSelect
 export type NutritionEntry = typeof nutritionEntries.$inferSelect
 export type SplitDay = typeof splitDays.$inferSelect
 export type SplitExercise = typeof splitExercises.$inferSelect

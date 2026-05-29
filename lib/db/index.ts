@@ -159,16 +159,6 @@ export async function initDb() {
       carbs_goal INTEGER NOT NULL DEFAULT 280,
       fats_goal INTEGER NOT NULL DEFAULT 70
     )`,
-    `CREATE TABLE IF NOT EXISTS workout_entries (
-      id TEXT PRIMARY KEY,
-      date TEXT NOT NULL,
-      exercise_name TEXT NOT NULL,
-      sets INTEGER NOT NULL DEFAULT 1,
-      reps INTEGER NOT NULL DEFAULT 1,
-      weight REAL NOT NULL DEFAULT 0,
-      unit TEXT NOT NULL DEFAULT 'lbs',
-      created_at TEXT NOT NULL DEFAULT (datetime('now'))
-    )`,
     `CREATE TABLE IF NOT EXISTS nutrition_entries (
       id TEXT PRIMARY KEY,
       date TEXT NOT NULL,
