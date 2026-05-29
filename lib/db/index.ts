@@ -1,9 +1,8 @@
 import { createClient } from '@libsql/client'
 import { drizzle } from 'drizzle-orm/libsql'
+import { randomUUID } from 'crypto'
 import * as schema from './schema'
 
-// Production: set TURSO_DATABASE_URL + TURSO_AUTH_TOKEN → remote Turso DB
-// Development: falls back to local SQLite file at data/life.db
 const tursoUrl = process.env.TURSO_DATABASE_URL
 const tursoToken = process.env.TURSO_AUTH_TOKEN
 
@@ -11,7 +10,6 @@ function buildClient() {
   if (tursoUrl) {
     return createClient({ url: tursoUrl, authToken: tursoToken })
   }
-  // Local development only — path/fs are Node.js built-ins, always available
   // eslint-disable-next-line @typescript-eslint/no-var-requires
   const path = require('path') as typeof import('path')
   // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -181,6 +179,41 @@ export async function initDb() {
       fats REAL NOT NULL DEFAULT 0,
       created_at TEXT NOT NULL DEFAULT (datetime('now'))
     )`,
+    `CREATE TABLE IF NOT EXISTS diet_goals (
+      id INTEGER PRIMARY KEY DEFAULT 1,
+      training_calories INTEGER NOT NULL DEFAULT 2000,
+      training_protein INTEGER NOT NULL DEFAULT 160,
+      training_carbs INTEGER NOT NULL DEFAULT 180,
+      training_fat INTEGER NOT NULL DEFAULT 55,
+      rest_calories INTEGER NOT NULL DEFAULT 1700,
+      rest_protein INTEGER NOT NULL DEFAULT 160,
+      rest_carbs INTEGER NOT NULL DEFAULT 100,
+      rest_fat INTEGER NOT NULL DEFAULT 55,
+      water_goal_ml INTEGER NOT NULL DEFAULT 2750
+    )`,
+    `CREATE TABLE IF NOT EXISTS diet_meals (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      time_window TEXT,
+      calories INTEGER NOT NULL DEFAULT 0,
+      protein INTEGER NOT NULL DEFAULT 0,
+      carbs INTEGER NOT NULL DEFAULT 0,
+      fat INTEGER NOT NULL DEFAULT 0,
+      notes TEXT,
+      meal_order INTEGER NOT NULL DEFAULT 0
+    )`,
+    `CREATE TABLE IF NOT EXISTS diet_rules (
+      id TEXT PRIMARY KEY,
+      category TEXT NOT NULL,
+      text TEXT NOT NULL,
+      rule_order INTEGER NOT NULL DEFAULT 0
+    )`,
+    `CREATE TABLE IF NOT EXISTS water_logs (
+      id TEXT PRIMARY KEY,
+      date TEXT NOT NULL,
+      amount_ml INTEGER NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    )`,
   ], 'write')
 
   const migrations = [
@@ -196,4 +229,172 @@ export async function initDb() {
   await client.execute(
     `UPDATE habits SET sort_order = rowid WHERE sort_order = 0 AND is_active = 1`
   )
+
+  await seedSplitIfEmpty()
+  await seedDietIfEmpty()
+}
+
+// ── Seed: Ethereal Split ──────────────────────────────────────────────────────
+
+async function seedSplitIfEmpty() {
+  const rows = await client.execute('SELECT id FROM split_days LIMIT 1')
+  if (rows.rows.length > 0) return
+
+  type Ex = { name: string; sets: number; reps: number; weight: number }
+  const days: { name: string; order: number; exercises: Ex[] }[] = [
+    {
+      name: 'Pull & Posture', order: 1,
+      exercises: [
+        { name: 'Barbell Rows',        sets: 3, reps: 7,  weight: 127 },
+        { name: 'Lat Pulldowns',        sets: 3, reps: 9,  weight: 120 },
+        { name: 'Single-Arm DB Rows',   sets: 3, reps: 10, weight: 125 },
+        { name: 'Face Pulls',           sets: 3, reps: 13, weight: 42  },
+        { name: 'Bicep Curls',          sets: 3, reps: 11, weight: 80  },
+        { name: 'Reverse Curls',        sets: 3, reps: 11, weight: 0   },
+        { name: 'Dead Hangs',           sets: 3, reps: 30, weight: 0   },
+        { name: 'Zone 2 Cardio (min)',  sets: 1, reps: 27, weight: 0   },
+      ],
+    },
+    {
+      name: 'Push & V-Taper', order: 2,
+      exercises: [
+        { name: 'Incline DB Press',               sets: 3, reps: 7,  weight: 0 },
+        { name: 'Seated Machine Shoulder Press',   sets: 3, reps: 9,  weight: 0 },
+        { name: 'Lateral Raises',                  sets: 4, reps: 13, weight: 0 },
+        { name: 'Reverse Pec Deck',                sets: 3, reps: 15, weight: 0 },
+        { name: 'Serratus Anterior Pulldowns',     sets: 3, reps: 12, weight: 0 },
+        { name: 'Triceps Pushdowns',               sets: 3, reps: 11, weight: 0 },
+        { name: 'Zone 2 Cardio (min)',             sets: 1, reps: 27, weight: 0 },
+      ],
+    },
+    {
+      name: 'Legs (Proportion & APT)', order: 3,
+      exercises: [
+        { name: 'APT Correction',       sets: 3, reps: 15, weight: 0 },
+        { name: 'Bulgarian Split Squats', sets: 3, reps: 9,  weight: 0 },
+        { name: 'Leg Extensions',        sets: 3, reps: 11, weight: 0 },
+        { name: 'Leg Curls',             sets: 3, reps: 11, weight: 0 },
+        { name: 'Calf Raises',           sets: 4, reps: 13, weight: 0 },
+      ],
+    },
+    {
+      name: 'Rest & Kinesthetic Reset', order: 4,
+      exercises: [],
+    },
+    {
+      name: 'Upper Body (Shelf & Width)', order: 5,
+      exercises: [
+        { name: 'Incline Cable Flyes',          sets: 3, reps: 11, weight: 0 },
+        { name: 'Chest-Supported T-Bar Rows',   sets: 3, reps: 9,  weight: 0 },
+        { name: 'Lateral Raises',               sets: 4, reps: 13, weight: 0 },
+        { name: 'Rear Delt Flyes',              sets: 3, reps: 15, weight: 0 },
+        { name: 'Hammer Curls',                 sets: 3, reps: 11, weight: 0 },
+        { name: 'Dead Hangs',                   sets: 3, reps: 30, weight: 0 },
+        { name: 'Zone 2 Cardio (min)',          sets: 1, reps: 27, weight: 0 },
+      ],
+    },
+    {
+      name: 'Lower Body (Posterior Chain)', order: 6,
+      exercises: [
+        { name: 'APT Correction',      sets: 3, reps: 15, weight: 0 },
+        { name: 'Romanian Deadlifts',  sets: 3, reps: 7,  weight: 0 },
+        { name: 'Leg Press',           sets: 3, reps: 9,  weight: 0 },
+        { name: 'Walking Lunges',      sets: 3, reps: 16, weight: 0 },
+        { name: 'Calf Raises',         sets: 4, reps: 13, weight: 0 },
+      ],
+    },
+    {
+      name: 'Rest', order: 7,
+      exercises: [],
+    },
+  ]
+
+  for (const day of days) {
+    const dayId = randomUUID()
+    await client.execute({
+      sql: 'INSERT INTO split_days (id, name, day_order) VALUES (?, ?, ?)',
+      args: [dayId, day.name, day.order],
+    })
+    for (let i = 0; i < day.exercises.length; i++) {
+      const ex = day.exercises[i]
+      await client.execute({
+        sql: `INSERT INTO split_exercises
+          (id, split_day_id, name, exercise_order, default_sets, default_reps, default_weight, default_unit)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        args: [randomUUID(), dayId, ex.name, i + 1, ex.sets, ex.reps, ex.weight, 'lbs'],
+      })
+    }
+  }
+}
+
+// ── Seed: Diet ────────────────────────────────────────────────────────────────
+
+async function seedDietIfEmpty() {
+  const goalRows = await client.execute('SELECT id FROM diet_goals LIMIT 1')
+  if (goalRows.rows.length === 0) {
+    await client.execute({
+      sql: `INSERT INTO diet_goals
+        (id, training_calories, training_protein, training_carbs, training_fat,
+         rest_calories, rest_protein, rest_carbs, rest_fat, water_goal_ml)
+        VALUES (1, 2000, 160, 180, 55, 1700, 160, 100, 55, 2750)`,
+      args: [],
+    })
+  }
+
+  const mealRows = await client.execute('SELECT id FROM diet_meals LIMIT 1')
+  if (mealRows.rows.length === 0) {
+    const meals = [
+      {
+        name: 'Morning Protein Anchor', timeWindow: '7–8 AM',
+        calories: 450, protein: 35, carbs: 32, fat: 14, order: 1,
+        notes: '5 egg whites + 2 whole eggs scrambled\n½ cup oats with cinnamon\nBlack coffee',
+      },
+      {
+        name: 'Lean Midday Refuel', timeWindow: '12 PM',
+        calories: 500, protein: 47, carbs: 40, fat: 12, order: 2,
+        notes: '150g grilled chicken breast (45g protein)\n¾ cup jasmine rice cooked (38g carbs)\nLarge salad with lemon + olive oil',
+      },
+      {
+        name: 'Performance Primer', timeWindow: '3–4 PM',
+        calories: 300, protein: 18, carbs: 38, fat: 8, order: 3,
+        notes: '1 cup non-fat Greek yogurt (17g protein)\n1 banana + handful blueberries (35g carbs)',
+      },
+      {
+        name: 'Recovery Window', timeWindow: '7–8 PM',
+        calories: 500, protein: 42, carbs: 28, fat: 16, order: 4,
+        notes: '150g salmon or lean ground beef (40g protein)\nMedium sweet potato (26g carbs)\nRoasted broccoli or asparagus',
+      },
+      {
+        name: 'Slow-Burn Night Protein', timeWindow: '9–10 PM',
+        calories: 250, protein: 26, carbs: 8, fat: 14, order: 5,
+        notes: '1 cup cottage cheese or casein shake (25g protein)\nHandful of almonds',
+      },
+    ]
+    for (const m of meals) {
+      await client.execute({
+        sql: `INSERT INTO diet_meals (id, name, time_window, calories, protein, carbs, fat, notes, meal_order)
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        args: [randomUUID(), m.name, m.timeWindow, m.calories, m.protein, m.carbs, m.fat, m.notes, m.order],
+      })
+    }
+
+    const rules = [
+      { cat: 'always',     text: '2.5–3L water daily',              ord: 1 },
+      { cat: 'always',     text: 'Protein within 45 min post-lift', ord: 2 },
+      { cat: 'always',     text: 'Sleep 7–9 hours',                 ord: 3 },
+      { cat: 'always',     text: 'Zone 2 every lifting day',        ord: 4 },
+      { cat: 'always',     text: 'Keep sodium under 1,500mg',       ord: 5 },
+      { cat: 'never',      text: 'Dirty bulk',                      ord: 1 },
+      { cat: 'never',      text: 'Alcohol',                         ord: 2 },
+      { cat: 'never',      text: 'Eat under 1,500 kcal',            ord: 3 },
+      { cat: 'never',      text: 'Skip sodium control',             ord: 4 },
+      { cat: 'supplement', text: '5g creatine monohydrate daily',   ord: 1 },
+    ]
+    for (const r of rules) {
+      await client.execute({
+        sql: 'INSERT INTO diet_rules (id, category, text, rule_order) VALUES (?, ?, ?, ?)',
+        args: [randomUUID(), r.cat, r.text, r.ord],
+      })
+    }
+  }
 }

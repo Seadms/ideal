@@ -174,6 +174,45 @@ export const nutritionEntries = sqliteTable('nutrition_entries', {
   createdAt: text('created_at').notNull().default(sql`(datetime('now'))`),
 })
 
+export const dietGoals = sqliteTable('diet_goals', {
+  id: integer('id').primaryKey().default(1),
+  trainingCalories: integer('training_calories').notNull().default(2000),
+  trainingProtein: integer('training_protein').notNull().default(160),
+  trainingCarbs: integer('training_carbs').notNull().default(180),
+  trainingFat: integer('training_fat').notNull().default(55),
+  restCalories: integer('rest_calories').notNull().default(1700),
+  restProtein: integer('rest_protein').notNull().default(160),
+  restCarbs: integer('rest_carbs').notNull().default(100),
+  restFat: integer('rest_fat').notNull().default(55),
+  waterGoalMl: integer('water_goal_ml').notNull().default(2750),
+})
+
+export const dietMeals = sqliteTable('diet_meals', {
+  id: text('id').primaryKey(),
+  name: text('name').notNull(),
+  timeWindow: text('time_window'),
+  calories: integer('calories').notNull().default(0),
+  protein: integer('protein').notNull().default(0),
+  carbs: integer('carbs').notNull().default(0),
+  fat: integer('fat').notNull().default(0),
+  notes: text('notes'),
+  mealOrder: integer('meal_order').notNull().default(0),
+})
+
+export const dietRules = sqliteTable('diet_rules', {
+  id: text('id').primaryKey(),
+  category: text('category').notNull(),
+  text: text('text').notNull(),
+  ruleOrder: integer('rule_order').notNull().default(0),
+})
+
+export const waterLogs = sqliteTable('water_logs', {
+  id: text('id').primaryKey(),
+  date: text('date').notNull(),
+  amountMl: integer('amount_ml').notNull(),
+  createdAt: text('created_at').notNull().default(sql`(datetime('now'))`),
+})
+
 export type Habit = typeof habits.$inferSelect
 export type Task = typeof tasks.$inferSelect
 export type Reward = typeof rewards.$inferSelect
@@ -189,3 +228,7 @@ export type SplitDay = typeof splitDays.$inferSelect
 export type SplitExercise = typeof splitExercises.$inferSelect
 export type ExerciseLog = typeof exerciseLogs.$inferSelect
 export type NutritionGoals = typeof nutritionGoals.$inferSelect
+export type DietGoals = typeof dietGoals.$inferSelect
+export type DietMeal = typeof dietMeals.$inferSelect
+export type DietRule = typeof dietRules.$inferSelect
+export type WaterLog = typeof waterLogs.$inferSelect
