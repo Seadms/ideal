@@ -221,6 +221,9 @@ export async function initDb() {
     `ALTER TABLE habits ADD COLUMN frequency_per_week INTEGER NOT NULL DEFAULT 7`,
     `ALTER TABLE user_stats ADD COLUMN reminder_time TEXT`,
     `ALTER TABLE user_stats ADD COLUMN streak_freeze_count INTEGER NOT NULL DEFAULT 0`,
+    // Sync nutrition_goals to match Ethereal Split diet plan targets
+    `INSERT OR IGNORE INTO nutrition_goals (id, calories_goal, protein_goal, carbs_goal, fats_goal) VALUES (1, 2000, 160, 180, 55)`,
+    `UPDATE nutrition_goals SET calories_goal = 2000, protein_goal = 160, carbs_goal = 180, fats_goal = 55 WHERE id = 1 AND calories_goal = 2500`,
   ]
   for (const stmt of migrations) {
     try { await client.execute(stmt) } catch { /* column already exists */ }
@@ -232,6 +235,7 @@ export async function initDb() {
 
   await seedSplitIfEmpty()
   await seedDietIfEmpty()
+  await seedHouseholdTasksIfNeeded()
 }
 
 // ── Seed: Ethereal Split ──────────────────────────────────────────────────────
@@ -396,5 +400,37 @@ async function seedDietIfEmpty() {
         args: [randomUUID(), r.cat, r.text, r.ord],
       })
     }
+  }
+}
+
+// ── Seed: Household Scheduled Tasks ──────────────────────────────────────────
+
+async function seedHouseholdTasksIfNeeded() {
+  const existing = await client.execute('SELECT title FROM scheduled_tasks')
+  const titles = new Set(existing.rows.map(r => r[0] as string))
+
+  const ALL_DAYS = '0,1,2,3,4,5,6'
+  const tasks = [
+    // Daily
+    { title: '5-minute bedroom reset',                   days: ALL_DAYS, points: 25 },
+    { title: 'Do dishes',                                days: ALL_DAYS, points: 25 },
+    { title: 'Scoop litter box & rinse/refill cat bowls', days: ALL_DAYS, points: 50 },
+    // Weekly
+    { title: 'Dust and vacuum master bedroom',           days: '1', points: 75 }, // Mon
+    { title: 'Vacuum cat area and wipe kitchen counters', days: '2', points: 75 }, // Tue
+    { title: 'Clothes laundry',                          days: '3', points: 75 }, // Wed
+    { title: 'Clean bathroom (sink, bathtub, etc.)',     days: '4', points: 75 }, // Thu
+    { title: 'Wash towels',                              days: '4', points: 50 }, // Thu
+    { title: 'Wash sheets and pillowcases',              days: '5', points: 75 }, // Fri
+    { title: 'Organize closet',                          days: '6', points: 75 }, // Sat
+  ]
+
+  for (const t of tasks) {
+    if (titles.has(t.title)) continue
+    await client.execute({
+      sql: `INSERT INTO scheduled_tasks (id, title, category, points, recurrence_type, days_of_week, is_active)
+            VALUES (?, ?, 'home', ?, 'weekly', ?, 1)`,
+      args: [randomUUID(), t.title, t.points, t.days],
+    })
   }
 }
