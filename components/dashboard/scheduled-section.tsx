@@ -1,11 +1,13 @@
 'use client'
 
 import { useState } from 'react'
+
 import type { ScheduledTask } from '@/lib/db/schema'
 import { ScheduledTaskItem } from './scheduled-task-item'
 import { Badge } from '@/components/ui/badge'
 import { categoryEmoji, cn } from '@/lib/utils'
-import { CalendarDays, Repeat2 } from 'lucide-react'
+import { CalendarDays, Pencil, Repeat2 } from 'lucide-react'
+import { EditScheduledTaskDialog } from './edit-scheduled-task-dialog'
 
 interface Props {
   allTasks: ScheduledTask[]
@@ -24,22 +26,34 @@ function scheduleLabel(task: ScheduledTask): string {
 }
 
 function ReadonlyRow({ task }: { task: ScheduledTask }) {
+  const [editOpen, setEditOpen] = useState(false)
   const isWeekly = task.recurrenceType === 'weekly'
   return (
-    <div className="flex items-center gap-4 rounded-xl border border-zinc-800/40 bg-zinc-900/20 px-4 py-3 opacity-40">
-      <div className={cn(
-        'flex h-5 w-5 shrink-0 items-center justify-center border-2 border-zinc-800',
-        isWeekly ? 'rounded-full' : 'rounded',
-      )} />
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-zinc-400 truncate">{categoryEmoji(task.category)} {task.title}</p>
-        <p className="text-xs text-zinc-600 mt-0.5 flex items-center gap-1">
-          {isWeekly ? <Repeat2 size={10} className="shrink-0" /> : <CalendarDays size={10} className="shrink-0" />}
-          {scheduleLabel(task)}
-        </p>
+    <>
+      <div className="group flex items-center gap-4 rounded-xl border border-zinc-800/40 bg-zinc-900/20 px-4 py-3 opacity-40 hover:opacity-70 transition-opacity">
+        <div className={cn(
+          'flex h-5 w-5 shrink-0 items-center justify-center border-2 border-zinc-800',
+          isWeekly ? 'rounded-full' : 'rounded',
+        )} />
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-medium text-zinc-400 truncate">{categoryEmoji(task.category)} {task.title}</p>
+          <p className="text-xs text-zinc-600 mt-0.5 flex items-center gap-1">
+            {isWeekly ? <Repeat2 size={10} className="shrink-0" /> : <CalendarDays size={10} className="shrink-0" />}
+            {scheduleLabel(task)}
+          </p>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          <Badge variant="muted">+{task.points}</Badge>
+          <button
+            onClick={() => setEditOpen(true)}
+            className="opacity-0 group-hover:opacity-100 p-1 rounded text-zinc-600 hover:text-zinc-300 transition-all"
+          >
+            <Pencil size={12} />
+          </button>
+        </div>
       </div>
-      <Badge variant="muted">+{task.points}</Badge>
-    </div>
+      <EditScheduledTaskDialog task={task} open={editOpen} onClose={() => setEditOpen(false)} />
+    </>
   )
 }
 
