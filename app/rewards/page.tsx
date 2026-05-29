@@ -16,6 +16,8 @@ export default async function RewardsPage() {
   const currentPoints = statsRows[0]?.currentPoints ?? 0
 
   const available = allRewards.filter(r => r.isAvailable).sort((a, b) => a.cost - b.cost)
+  const hidden = allRewards.filter(r => !r.isAvailable).sort((a, b) => a.cost - b.cost)
+  const allSorted = [...available, ...hidden]
   const affordable = available.filter(r => r.cost <= currentPoints)
 
   // Redemption history with reward title via join
@@ -63,14 +65,14 @@ export default async function RewardsPage() {
 
       <RewardsActions />
 
-      {available.length === 0 ? (
+      {allSorted.length === 0 ? (
         <div className="py-16 text-center">
           <p className="text-3xl mb-3">🎁</p>
           <p className="text-sm text-zinc-500">No rewards yet. Add something to work towards.</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {available.map(reward => (
+          {allSorted.map(reward => (
             <RewardCard key={reward.id} reward={reward} currentPoints={currentPoints} />
           ))}
         </div>

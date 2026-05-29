@@ -5,7 +5,8 @@ import { redeemReward, deleteReward, updateReward } from '@/lib/actions/rewards'
 import type { Reward } from '@/lib/db/schema'
 import { categoryEmoji, cn, formatPoints } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
-import { Eye, EyeOff, Trash2, Zap } from 'lucide-react'
+import { Eye, EyeOff, Pencil, Trash2, Zap } from 'lucide-react'
+import { EditRewardDialog } from './edit-reward-dialog'
 
 interface RewardCardProps {
   reward: Reward
@@ -16,6 +17,7 @@ export function RewardCard({ reward, currentPoints }: RewardCardProps) {
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
   const [showConfirm, setShowConfirm] = useState(false)
+  const [editOpen, setEditOpen] = useState(false)
   const canAfford = currentPoints >= reward.cost
   const available = reward.isAvailable
 
@@ -42,6 +44,8 @@ export function RewardCard({ reward, currentPoints }: RewardCardProps) {
   }
 
   return (
+    <>
+    <EditRewardDialog reward={reward} open={editOpen} onClose={() => setEditOpen(false)} />
     <div className={cn(
       'group relative flex flex-col rounded-2xl border p-5 transition-all duration-200',
       !available
@@ -50,8 +54,15 @@ export function RewardCard({ reward, currentPoints }: RewardCardProps) {
           ? 'border-zinc-800 bg-zinc-900/60 hover:border-zinc-700'
           : 'border-zinc-800/50 bg-zinc-900/30 opacity-60',
     )}>
-      {/* Actions (edit / delete / toggle) */}
+      {/* Actions (edit / toggle / delete) */}
       <div className="absolute top-3 right-3 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+        <button
+          onClick={() => setEditOpen(true)}
+          title="Edit reward"
+          className="h-7 w-7 flex items-center justify-center rounded hover:bg-zinc-800 transition-colors"
+        >
+          <Pencil size={13} className="text-zinc-500" />
+        </button>
         <button
           onClick={handleToggleAvailable}
           disabled={isPending}
@@ -128,5 +139,6 @@ export function RewardCard({ reward, currentPoints }: RewardCardProps) {
         )}
       </div>
     </div>
+    </>
   )
 }
