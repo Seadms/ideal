@@ -17,7 +17,7 @@ import { DashboardActions } from '@/components/dashboard/dashboard-actions'
 import { ClearCompletedButton } from '@/components/dashboard/clear-completed-button'
 import { StreakAtRisk } from '@/components/dashboard/streak-at-risk'
 import { BonusTaskCard } from '@/components/dashboard/bonus-task-card'
-import { ScheduledTaskItem } from '@/components/dashboard/scheduled-task-item'
+import { ScheduledSection } from '@/components/dashboard/scheduled-section'
 
 export const dynamic = 'force-dynamic'
 
@@ -226,21 +226,13 @@ async function DashboardContent({ mvdMode }: { mvdMode: boolean }) {
       </section>
 
       {/* Scheduled tasks */}
-      {!mvdMode && visibleScheduled.length > 0 && (
-        <section>
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Scheduled</h2>
-            <span className="text-xs text-zinc-600">{completedScheduled.length} / {visibleScheduled.length}</span>
-          </div>
-          <div className="space-y-2">
-            {pendingScheduled.map(t => (
-              <ScheduledTaskItem key={t.id} task={t} completedToday={false} />
-            ))}
-            {completedScheduled.map(t => (
-              <ScheduledTaskItem key={t.id} task={t} completedToday={true} />
-            ))}
-          </div>
-        </section>
+      {!mvdMode && (
+        <ScheduledSection
+          allTasks={allScheduledTasks}
+          pending={pendingScheduled}
+          completed={completedScheduled}
+          completedIds={[...completedScheduledIds]}
+        />
       )}
 
       {/* Tasks */}
