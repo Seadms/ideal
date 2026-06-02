@@ -13,18 +13,26 @@ function heatColor(pts: number): string {
   return 'bg-emerald-500'
 }
 
+const DOW_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+
+function friendlyDate(dateStr: string, today: string, yesterday: string): string {
+  if (dateStr === today) return 'Today'
+  if (dateStr === yesterday) return 'Yesterday'
+  const d = new Date(dateStr + 'T12:00:00')
+  return d.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })
+}
+
 export default async function HistoryPage() {
   await initDb()
 
   const today = todayString()
+  const yesterday = daysAgoString(1)
   const since60 = daysAgoString(60)
   const since34 = daysAgoString(34)
 
-  // Fetch all history data in parallel
   const [completions, allHabits, completedTasks, allRedemptions, allRewards, bonusSessions, bonusPool] = await Promise.all([
     db.select().from(habitCompletions).where(gte(habitCompletions.completedDate, since60)),
     db.select().from(habits),
-    // All completed tasks (active or soft-deleted) completed in the last 60 days
     db.select().from(tasks).where(
       and(eq(tasks.isCompleted, true), sql`${tasks.completedAt} >= ${since60}`),
     ),
@@ -37,7 +45,6 @@ export default async function HistoryPage() {
   ])
 
   const bonusPoolMap = new Map(bonusPool.map(t => [t.id, t]))
-
   const habitMap = new Map(allHabits.map(h => [h.id, h]))
   const rewardMap = new Map(allRewards.map(r => [r.id, r]))
 
@@ -57,7 +64,11 @@ export default async function HistoryPage() {
     .filter(s => s.date >= since34)
     .forEach(s => addPts(s.date, s.pointsEarned ?? 0))
 
-  // ── Activity list ──────────────────────────────────────────────────────────
+  // Day-of-week column labels aligned to the grid start day
+  const startDow = new Date(since34 + 'T12:00:00').getDay()
+  const colLabels = Array.from({ length: 7 }, (_, i) => DOW_SHORT[(startDow + i) % 7])
+
+  // ── Activity grouped by date ───────────────────────────────────────────────
   type Entry = {
     kind: 'habit' | 'task' | 'bonus' | 'reward'
     title: string
@@ -106,6 +117,14 @@ export default async function HistoryPage() {
       })),
   ].sort((a, b) => b.sortKey.localeCompare(a.sortKey))
 
+  // Group by date
+  const grouped = new Map<string, Entry[]>()
+  for (const e of entries) {
+    if (!grouped.has(e.date)) grouped.set(e.date, [])
+    grouped.get(e.date)!.push(e)
+  }
+  const groupedDates = [...grouped.keys()].sort((a, b) => b.localeCompare(a))
+
   // ── Per-habit performance ──────────────────────────────────────────────────
   const activeHabits = allHabits.filter(h => h.isActive)
   const habitPerf = activeHabits
@@ -126,7 +145,6 @@ export default async function HistoryPage() {
   const taskPtsEarned = completedTasks.reduce((s, t) => s + t.points, 0)
   const bonusPtsEarned = bonusSessions.reduce((s, b) => s + (b.pointsEarned ?? 0), 0)
   const totalPtsEarned = habitPtsEarned + taskPtsEarned + bonusPtsEarned
-  const totalRedemptions = allRedemptions.length
   const totalPtsSpent = allRedemptions.reduce((s, r) => s + r.pointsSpent, 0)
 
   return (
@@ -154,18 +172,26 @@ export default async function HistoryPage() {
       {/* Heatmap */}
       <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-4">
         <p className="text-xs text-zinc-500 uppercase tracking-wider mb-3">Last 35 days</p>
+        {/* Day-of-week column labels */}
+        <div className="grid grid-cols-7 gap-1.5 mb-1">
+          {colLabels.map((label, i) => (
+            <p key={i} className="text-[9px] text-zinc-600 text-center uppercase tracking-wide">{label.slice(0, 2)}</p>
+          ))}
+        </div>
         <div className="grid grid-cols-7 gap-1.5">
           {heatDays.map(date => {
             const pts = dailyPts.get(date) ?? 0
             const isToday = date === today
+            const d = new Date(date + 'T12:00:00')
+            const label = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
             return (
               <div
                 key={date}
-                title={`${date}${pts ? ` · ${pts} pts` : ''}`}
+                title={`${label}${pts ? ` · ${pts} pts` : ''}`}
                 className={cn(
                   'aspect-square rounded-sm transition-colors',
                   heatColor(pts),
-                  isToday && 'ring-1 ring-white/25',
+                  isToday && 'ring-1 ring-white/30',
                 )}
               />
             )
@@ -214,34 +240,55 @@ export default async function HistoryPage() {
         </section>
       )}
 
-      {/* Activity list */}
+      {/* Activity — grouped by date */}
       <section>
         <h2 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-3">Recent Activity</h2>
-        {entries.length === 0 ? (
+        {groupedDates.length === 0 ? (
           <p className="text-sm text-zinc-600 py-6 text-center">No activity yet.</p>
         ) : (
-          <div className="space-y-1.5">
-            {entries.map((e) => (
-              <div
-                key={`${e.kind}-${e.sortKey}-${e.title}`}
-                className="flex items-center gap-3 rounded-xl border border-zinc-800 bg-zinc-900/40 px-4 py-3"
-              >
-                <span className="text-base shrink-0">{categoryEmoji(e.category)}</span>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm text-zinc-200 truncate flex items-center gap-1.5">
-                    {e.title}
-                    {e.kind === 'bonus' && <span className="text-[10px] text-violet-500/70 shrink-0">✦</span>}
-                  </p>
-                  <p className="text-xs text-zinc-600 mt-0.5">{e.date}</p>
+          <div className="space-y-4">
+            {groupedDates.map(date => {
+              const dayEntries = grouped.get(date)!
+              const dayPts = dayEntries.reduce((s, e) => s + (e.kind === 'reward' ? -e.pts : e.pts), 0)
+              return (
+                <div key={date}>
+                  {/* Date header */}
+                  <div className="flex items-center justify-between mb-1.5">
+                    <p className="text-xs font-semibold text-zinc-400">
+                      {friendlyDate(date, today, yesterday)}
+                    </p>
+                    <p className={cn(
+                      'text-xs tabular-nums font-medium',
+                      dayPts >= 0 ? 'text-emerald-500/70' : 'text-rose-500/70',
+                    )}>
+                      {dayPts >= 0 ? '+' : ''}{formatPoints(dayPts)}
+                    </p>
+                  </div>
+                  {/* Entries for this day */}
+                  <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 divide-y divide-zinc-800/60 overflow-hidden">
+                    {dayEntries.map((e, i) => (
+                      <div
+                        key={`${e.kind}-${e.sortKey}-${i}`}
+                        className="flex items-center gap-3 px-4 py-2.5"
+                      >
+                        <span className="text-base shrink-0">{categoryEmoji(e.category)}</span>
+                        <p className="flex-1 min-w-0 text-sm text-zinc-300 truncate flex items-center gap-1.5">
+                          {e.title}
+                          {e.kind === 'bonus' && <span className="text-[10px] text-violet-500/70 shrink-0">✦ bonus</span>}
+                          {e.kind === 'reward' && <span className="text-[10px] text-rose-500/70 shrink-0">reward</span>}
+                        </p>
+                        <span className={cn(
+                          'text-sm font-semibold tabular-nums shrink-0',
+                          e.kind === 'reward' ? 'text-rose-400' : 'text-emerald-400',
+                        )}>
+                          {e.kind === 'reward' ? '−' : '+'}{formatPoints(e.pts)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-                <span className={cn(
-                  'text-sm font-semibold tabular-nums shrink-0',
-                  e.kind === 'reward' ? 'text-rose-400' : 'text-emerald-400',
-                )}>
-                  {e.kind === 'reward' ? '−' : '+'}{formatPoints(e.pts)}
-                </span>
-              </div>
-            ))}
+              )
+            })}
           </div>
         )}
       </section>
