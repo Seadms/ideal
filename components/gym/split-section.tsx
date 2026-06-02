@@ -67,6 +67,12 @@ export function SplitSection({ days, prevLogs }: Props) {
     if (!activeDay || activeDay.exercises.length === 0) return
     const entries = activeDay.exercises.map(ex => {
       const v = { ...getVals(ex), ...exerciseValues[ex.id] }
+      if (ex.exerciseType === 'cardio') {
+        return { exerciseId: ex.id, sets: 1, reps: Number(v.reps) || 0, weight: 0, unit: 'min' }
+      }
+      if (ex.exerciseType === 'facial') {
+        return { exerciseId: ex.id, sets: 1, reps: Number(v.reps) || 0, weight: 0, unit: 'reps' }
+      }
       return {
         exerciseId: ex.id,
         sets: Number(v.sets) || 1,
@@ -80,6 +86,12 @@ export function SplitSection({ days, prevLogs }: Props) {
       setLogged(true)
       setTimeout(() => setLogged(false), 3000)
     })
+  }
+
+  const prevLabel = (ex: SplitExercise, prev: ExerciseLog) => {
+    if (ex.exerciseType === 'cardio') return `prev: ${prev.reps} min`
+    if (ex.exerciseType === 'facial') return `prev: ${prev.reps} reps`
+    return `prev: ${prev.sets}×${prev.reps} @ ${prev.weight} ${prev.unit}`
   }
 
   return (
@@ -147,61 +159,86 @@ export function SplitSection({ days, prevLogs }: Props) {
                               <div>
                                 <p className="text-sm font-medium text-zinc-200">{ex.name}</p>
                                 {prev ? (
-                                  <p className="text-[10px] text-zinc-600 mt-0.5">
-                                    prev: {prev.sets}×{prev.reps} @ {prev.weight} {prev.unit}
-                                  </p>
+                                  <p className="text-[10px] text-zinc-600 mt-0.5">{prevLabel(ex, prev)}</p>
                                 ) : (
                                   <p className="text-[10px] text-zinc-700 mt-0.5">no previous session</p>
                                 )}
                               </div>
-                              <div className="flex items-end gap-2">
-                                {/* Sets */}
+
+                              {ex.exerciseType === 'strength' && (
+                                <div className="flex items-end gap-2">
+                                  {/* Sets */}
+                                  <div>
+                                    <p className="text-[9px] text-zinc-600 mb-1">Sets</p>
+                                    <Input
+                                      type="number" min={1} max={20}
+                                      value={vals.sets}
+                                      onChange={e => setVal(ex.id, { sets: e.target.value })}
+                                      className="w-12 h-7 text-xs text-center py-0 px-1"
+                                    />
+                                  </div>
+                                  <span className="text-zinc-700 pb-1.5">×</span>
+                                  {/* Reps */}
+                                  <div>
+                                    <p className="text-[9px] text-zinc-600 mb-1">Reps</p>
+                                    <Input
+                                      type="number" min={1} max={100}
+                                      value={vals.reps}
+                                      onChange={e => setVal(ex.id, { reps: e.target.value })}
+                                      className="w-12 h-7 text-xs text-center py-0 px-1"
+                                    />
+                                  </div>
+                                  <span className="text-zinc-700 pb-1.5">@</span>
+                                  {/* Weight with +/- */}
+                                  <div className="flex-1">
+                                    <p className="text-[9px] text-zinc-600 mb-1">Weight ({vals.unit})</p>
+                                    <div className="flex items-center gap-1">
+                                      <button
+                                        onClick={() => adjustWeight(ex, -2.5)}
+                                        className="w-7 h-7 flex items-center justify-center rounded-lg bg-zinc-800 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-700 transition-colors"
+                                      >
+                                        <Minus size={10} />
+                                      </button>
+                                      <Input
+                                        type="number" min={0} step={2.5}
+                                        value={vals.weight}
+                                        onChange={e => setVal(ex.id, { weight: e.target.value })}
+                                        className="w-16 h-7 text-xs text-center py-0 px-1"
+                                      />
+                                      <button
+                                        onClick={() => adjustWeight(ex, 2.5)}
+                                        className="w-7 h-7 flex items-center justify-center rounded-lg bg-zinc-800 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-700 transition-colors"
+                                      >
+                                        <Plus size={10} />
+                                      </button>
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+
+                              {ex.exerciseType === 'cardio' && (
                                 <div>
-                                  <p className="text-[9px] text-zinc-600 mb-1">Sets</p>
+                                  <p className="text-[9px] text-zinc-600 mb-1">Duration (min)</p>
                                   <Input
-                                    type="number" min={1} max={20}
-                                    value={vals.sets}
-                                    onChange={e => setVal(ex.id, { sets: e.target.value })}
-                                    className="w-12 h-7 text-xs text-center py-0 px-1"
+                                    type="number" min={1} max={300}
+                                    value={vals.reps}
+                                    onChange={e => setVal(ex.id, { reps: e.target.value })}
+                                    className="w-20 h-7 text-xs text-center py-0 px-1"
                                   />
                                 </div>
-                                <span className="text-zinc-700 pb-1.5">×</span>
-                                {/* Reps */}
+                              )}
+
+                              {ex.exerciseType === 'facial' && (
                                 <div>
                                   <p className="text-[9px] text-zinc-600 mb-1">Reps</p>
                                   <Input
-                                    type="number" min={1} max={100}
+                                    type="number" min={1} max={50}
                                     value={vals.reps}
                                     onChange={e => setVal(ex.id, { reps: e.target.value })}
-                                    className="w-12 h-7 text-xs text-center py-0 px-1"
+                                    className="w-16 h-7 text-xs text-center py-0 px-1"
                                   />
                                 </div>
-                                <span className="text-zinc-700 pb-1.5">@</span>
-                                {/* Weight with +/- */}
-                                <div className="flex-1">
-                                  <p className="text-[9px] text-zinc-600 mb-1">Weight ({vals.unit})</p>
-                                  <div className="flex items-center gap-1">
-                                    <button
-                                      onClick={() => adjustWeight(ex, -2.5)}
-                                      className="w-7 h-7 flex items-center justify-center rounded-lg bg-zinc-800 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-700 transition-colors"
-                                    >
-                                      <Minus size={10} />
-                                    </button>
-                                    <Input
-                                      type="number" min={0} step={2.5}
-                                      value={vals.weight}
-                                      onChange={e => setVal(ex.id, { weight: e.target.value })}
-                                      className="w-16 h-7 text-xs text-center py-0 px-1"
-                                    />
-                                    <button
-                                      onClick={() => adjustWeight(ex, 2.5)}
-                                      className="w-7 h-7 flex items-center justify-center rounded-lg bg-zinc-800 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-700 transition-colors"
-                                    >
-                                      <Plus size={10} />
-                                    </button>
-                                  </div>
-                                </div>
-                              </div>
+                              )}
                             </div>
                           )
                         })}

@@ -20,7 +20,9 @@ interface Props {
   days: DayWithExercises[]
 }
 
-const DEFAULT_EXERCISE_FORM = { name: '', sets: '3', reps: '8', weight: '0', unit: 'lbs' }
+const DEFAULT_EXERCISE_FORM = { name: '', exerciseType: 'strength', sets: '3', reps: '8', weight: '0', unit: 'lbs' }
+
+const TYPE_LABELS: Record<string, string> = { strength: 'Strength', cardio: 'Cardio', facial: 'Facial' }
 
 export function SplitManagerDialog({ open, onClose, days }: Props) {
   const [isPending, startTransition] = useTransition()
@@ -59,14 +61,17 @@ export function SplitManagerDialog({ open, onClose, days }: Props) {
   const handleAddExercise = (dayId: string) => {
     const form = getExForm(dayId)
     if (!form.name.trim()) return
+    const isCardio = form.exerciseType === 'cardio'
+    const isFacial = form.exerciseType === 'facial'
     startTransition(async () => {
       await addSplitExercise({
         splitDayId: dayId,
         name: form.name,
-        defaultSets: Number(form.sets) || 1,
+        exerciseType: form.exerciseType,
+        defaultSets: isCardio || isFacial ? 1 : Number(form.sets) || 1,
         defaultReps: Number(form.reps) || 1,
-        defaultWeight: Number(form.weight) || 0,
-        defaultUnit: form.unit,
+        defaultWeight: isCardio || isFacial ? 0 : Number(form.weight) || 0,
+        defaultUnit: isCardio ? 'min' : isFacial ? 'reps' : form.unit,
       })
       setAddExForm(f => ({ ...f, [dayId]: DEFAULT_EXERCISE_FORM }))
     })
@@ -82,6 +87,12 @@ export function SplitManagerDialog({ open, onClose, days }: Props) {
       await updateSplitExercise(id, { name: editingExName })
       setEditingExId(null)
     })
+  }
+
+  const exTypeLabel = (ex: SplitExercise) => {
+    if (ex.exerciseType === 'cardio') return `${ex.defaultReps} min`
+    if (ex.exerciseType === 'facial') return `${ex.defaultReps} reps`
+    return `${ex.defaultSets}×${ex.defaultReps} @ ${ex.defaultWeight} ${ex.defaultUnit}`
   }
 
   return (
@@ -159,7 +170,8 @@ export function SplitManagerDialog({ open, onClose, days }: Props) {
                       <div className="flex-1 min-w-0">
                         <p className="text-xs text-zinc-300">{ex.name}</p>
                         <p className="text-[10px] text-zinc-600">
-                          {ex.defaultSets}×{ex.defaultReps} @ {ex.defaultWeight} {ex.defaultUnit}
+                          <span className="text-zinc-700 mr-1">{TYPE_LABELS[ex.exerciseType] ?? ex.exerciseType}</span>
+                          {exTypeLabel(ex)}
                         </p>
                       </div>
                     )}
@@ -194,43 +206,82 @@ export function SplitManagerDialog({ open, onClose, days }: Props) {
 
                 {/* Add exercise form */}
                 <div className="px-3 py-2.5 space-y-2 bg-zinc-900/40">
-                  <Input
-                    placeholder="Exercise name..."
-                    value={getExForm(day.id).name}
-                    onChange={e => setExForm(day.id, { name: e.target.value })}
-                    className="h-7 text-xs py-0"
-                  />
-                  <div className="grid grid-cols-4 gap-1.5">
-                    {[
-                      { label: 'Sets', key: 'sets' as const, type: 'number', min: 1, max: 20 },
-                      { label: 'Reps', key: 'reps' as const, type: 'number', min: 1, max: 100 },
-                      { label: 'Wt', key: 'weight' as const, type: 'number', min: 0, step: 2.5 },
-                    ].map(field => (
-                      <div key={field.key}>
-                        <p className="text-[9px] text-zinc-600 mb-0.5">{field.label}</p>
-                        <Input
-                          type={field.type}
-                          min={field.min}
-                          max={'max' in field ? field.max : undefined}
-                          step={'step' in field ? field.step : undefined}
-                          value={getExForm(day.id)[field.key]}
-                          onChange={e => setExForm(day.id, { [field.key]: e.target.value })}
-                          className="h-7 text-xs py-0"
-                        />
-                      </div>
-                    ))}
-                    <div>
-                      <p className="text-[9px] text-zinc-600 mb-0.5">Unit</p>
-                      <Select
-                        value={getExForm(day.id).unit}
-                        onChange={e => setExForm(day.id, { unit: e.target.value })}
-                        className="h-7 text-xs py-0"
-                      >
-                        <option value="lbs">lbs</option>
-                        <option value="kg">kg</option>
-                      </Select>
-                    </div>
+                  <div className="flex gap-1.5">
+                    <Input
+                      placeholder="Exercise name..."
+                      value={getExForm(day.id).name}
+                      onChange={e => setExForm(day.id, { name: e.target.value })}
+                      className="h-7 text-xs py-0 flex-1"
+                    />
+                    <Select
+                      value={getExForm(day.id).exerciseType}
+                      onChange={e => setExForm(day.id, { exerciseType: e.target.value })}
+                      className="h-7 text-xs py-0 w-24"
+                    >
+                      <option value="strength">Strength</option>
+                      <option value="cardio">Cardio</option>
+                      <option value="facial">Facial</option>
+                    </Select>
                   </div>
+
+                  {getExForm(day.id).exerciseType === 'strength' && (
+                    <div className="grid grid-cols-4 gap-1.5">
+                      {[
+                        { label: 'Sets', key: 'sets' as const, type: 'number', min: 1, max: 20 },
+                        { label: 'Reps', key: 'reps' as const, type: 'number', min: 1, max: 100 },
+                        { label: 'Wt', key: 'weight' as const, type: 'number', min: 0, step: 2.5 },
+                      ].map(field => (
+                        <div key={field.key}>
+                          <p className="text-[9px] text-zinc-600 mb-0.5">{field.label}</p>
+                          <Input
+                            type={field.type}
+                            min={field.min}
+                            max={'max' in field ? field.max : undefined}
+                            step={'step' in field ? field.step : undefined}
+                            value={getExForm(day.id)[field.key]}
+                            onChange={e => setExForm(day.id, { [field.key]: e.target.value })}
+                            className="h-7 text-xs py-0"
+                          />
+                        </div>
+                      ))}
+                      <div>
+                        <p className="text-[9px] text-zinc-600 mb-0.5">Unit</p>
+                        <Select
+                          value={getExForm(day.id).unit}
+                          onChange={e => setExForm(day.id, { unit: e.target.value })}
+                          className="h-7 text-xs py-0"
+                        >
+                          <option value="lbs">lbs</option>
+                          <option value="kg">kg</option>
+                        </Select>
+                      </div>
+                    </div>
+                  )}
+
+                  {getExForm(day.id).exerciseType === 'cardio' && (
+                    <div className="w-24">
+                      <p className="text-[9px] text-zinc-600 mb-0.5">Duration (min)</p>
+                      <Input
+                        type="number" min={1} max={300}
+                        value={getExForm(day.id).reps}
+                        onChange={e => setExForm(day.id, { reps: e.target.value })}
+                        className="h-7 text-xs py-0"
+                      />
+                    </div>
+                  )}
+
+                  {getExForm(day.id).exerciseType === 'facial' && (
+                    <div className="w-24">
+                      <p className="text-[9px] text-zinc-600 mb-0.5">Reps</p>
+                      <Input
+                        type="number" min={1} max={50}
+                        value={getExForm(day.id).reps}
+                        onChange={e => setExForm(day.id, { reps: e.target.value })}
+                        className="h-7 text-xs py-0"
+                      />
+                    </div>
+                  )}
+
                   <button
                     onClick={() => handleAddExercise(day.id)}
                     disabled={isPending || !getExForm(day.id).name.trim()}

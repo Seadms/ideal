@@ -39,6 +39,7 @@ export async function deleteSplitDay(id: string) {
 export async function addSplitExercise(data: {
   splitDayId: string
   name: string
+  exerciseType: string
   defaultSets: number
   defaultReps: number
   defaultWeight: number
@@ -54,6 +55,7 @@ export async function addSplitExercise(data: {
 
 export async function updateSplitExercise(id: string, data: Partial<{
   name: string
+  exerciseType: string
   defaultSets: number
   defaultReps: number
   defaultWeight: number

@@ -126,6 +126,7 @@ export const splitExercises = sqliteTable('split_exercises', {
   splitDayId: text('split_day_id').notNull(),
   name: text('name').notNull(),
   exerciseOrder: integer('exercise_order').notNull().default(0),
+  exerciseType: text('exercise_type').notNull().default('strength'), // 'strength' | 'cardio' | 'facial'
   defaultSets: integer('default_sets').notNull().default(3),
   defaultReps: integer('default_reps').notNull().default(8),
   defaultWeight: real('default_weight').notNull().default(0),

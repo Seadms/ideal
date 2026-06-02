@@ -16,6 +16,7 @@ const QUICK = [250, 500, 750, 1000]
 export function WaterTracker({ logs, goalMl }: Props) {
   const [isPending, startTransition] = useTransition()
   const [custom, setCustom] = useState('')
+  const [customUnit, setCustomUnit] = useState<'L' | 'ml'>('L')
 
   const totalMl = logs.reduce((s, l) => s + l.amountMl, 0)
   const pct = Math.min(Math.round((totalMl / goalMl) * 100), 100)
@@ -25,8 +26,9 @@ export function WaterTracker({ logs, goalMl }: Props) {
   const add = (ml: number) => startTransition(async () => { await logWater(ml) })
 
   const handleCustom = () => {
-    const ml = Math.round(parseFloat(custom) * 1000)
-    if (!ml || ml <= 0) return
+    const val = parseFloat(custom)
+    if (!val || val <= 0) return
+    const ml = customUnit === 'L' ? Math.round(val * 1000) : Math.round(val)
     add(ml)
     setCustom('')
   }
@@ -67,12 +69,21 @@ export function WaterTracker({ logs, goalMl }: Props) {
           ))}
           <div className="flex items-center gap-1">
             <input
-              type="number" step={0.1} min={0.1} placeholder="L"
+              type="number"
+              step={customUnit === 'L' ? 0.1 : 50}
+              min={customUnit === 'L' ? 0.1 : 1}
+              placeholder={customUnit}
               value={custom}
               onChange={e => setCustom(e.target.value)}
               onKeyDown={e => { if (e.key === 'Enter') handleCustom() }}
-              className="w-14 h-7 px-2 text-xs rounded-lg bg-zinc-800 border border-zinc-700 text-zinc-300 placeholder-zinc-600 focus:outline-none focus:border-sky-700"
+              className="w-16 h-7 px-2 text-xs rounded-lg bg-zinc-800 border border-zinc-700 text-zinc-300 placeholder-zinc-600 focus:outline-none focus:border-sky-700"
             />
+            <button
+              onClick={() => { setCustomUnit(u => u === 'L' ? 'ml' : 'L'); setCustom('') }}
+              className="px-2 h-7 text-xs rounded-lg bg-zinc-800 text-zinc-500 hover:text-sky-300 transition-colors tabular-nums"
+            >
+              {customUnit}
+            </button>
             <button
               onClick={handleCustom}
               disabled={isPending || !custom}

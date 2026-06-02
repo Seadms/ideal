@@ -214,6 +214,8 @@ export async function initDb() {
     // Sync nutrition_goals to match Ethereal Split diet plan targets
     `INSERT OR IGNORE INTO nutrition_goals (id, calories_goal, protein_goal, carbs_goal, fats_goal) VALUES (1, 2000, 160, 180, 55)`,
     `UPDATE nutrition_goals SET calories_goal = 2000, protein_goal = 160, carbs_goal = 180, fats_goal = 55 WHERE id = 1 AND calories_goal = 2500`,
+    `ALTER TABLE split_exercises ADD COLUMN exercise_type TEXT NOT NULL DEFAULT 'strength'`,
+    `UPDATE split_exercises SET exercise_type = 'cardio' WHERE name LIKE '%Cardio%'`,
   ]
   for (const stmt of migrations) {
     try { await client.execute(stmt) } catch { /* column already exists */ }
@@ -234,7 +236,7 @@ async function seedSplitIfEmpty() {
   const rows = await client.execute('SELECT id FROM split_days LIMIT 1')
   if (rows.rows.length > 0) return
 
-  type Ex = { name: string; sets: number; reps: number; weight: number }
+  type Ex = { name: string; sets: number; reps: number; weight: number; type?: string }
   const days: { name: string; order: number; exercises: Ex[] }[] = [
     {
       name: 'Pull & Posture', order: 1,
@@ -246,7 +248,7 @@ async function seedSplitIfEmpty() {
         { name: 'Bicep Curls',          sets: 3, reps: 11, weight: 80  },
         { name: 'Reverse Curls',        sets: 3, reps: 11, weight: 0   },
         { name: 'Dead Hangs',           sets: 3, reps: 30, weight: 0   },
-        { name: 'Zone 2 Cardio (min)',  sets: 1, reps: 27, weight: 0   },
+        { name: 'Zone 2 Cardio (min)',  sets: 1, reps: 27, weight: 0, type: 'cardio' },
       ],
     },
     {
@@ -258,7 +260,7 @@ async function seedSplitIfEmpty() {
         { name: 'Reverse Pec Deck',                sets: 3, reps: 15, weight: 0 },
         { name: 'Serratus Anterior Pulldowns',     sets: 3, reps: 12, weight: 0 },
         { name: 'Triceps Pushdowns',               sets: 3, reps: 11, weight: 0 },
-        { name: 'Zone 2 Cardio (min)',             sets: 1, reps: 27, weight: 0 },
+        { name: 'Zone 2 Cardio (min)',             sets: 1, reps: 27, weight: 0, type: 'cardio' },
       ],
     },
     {
@@ -284,7 +286,7 @@ async function seedSplitIfEmpty() {
         { name: 'Rear Delt Flyes',              sets: 3, reps: 15, weight: 0 },
         { name: 'Hammer Curls',                 sets: 3, reps: 11, weight: 0 },
         { name: 'Dead Hangs',                   sets: 3, reps: 30, weight: 0 },
-        { name: 'Zone 2 Cardio (min)',          sets: 1, reps: 27, weight: 0 },
+        { name: 'Zone 2 Cardio (min)',          sets: 1, reps: 27, weight: 0, type: 'cardio' },
       ],
     },
     {
@@ -313,9 +315,9 @@ async function seedSplitIfEmpty() {
       const ex = day.exercises[i]
       await client.execute({
         sql: `INSERT INTO split_exercises
-          (id, split_day_id, name, exercise_order, default_sets, default_reps, default_weight, default_unit)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-        args: [randomUUID(), dayId, ex.name, i + 1, ex.sets, ex.reps, ex.weight, 'lbs'],
+          (id, split_day_id, name, exercise_order, exercise_type, default_sets, default_reps, default_weight, default_unit)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        args: [randomUUID(), dayId, ex.name, i + 1, ex.type ?? 'strength', ex.sets, ex.reps, ex.weight, ex.type === 'cardio' ? 'min' : 'lbs'],
       })
     }
   }
