@@ -5,6 +5,7 @@ import type { ExerciseLog } from '@/lib/db/schema'
 import { todayString } from '@/lib/utils'
 import { SplitSection } from '@/components/gym/split-section'
 import { NutritionLog } from '@/components/gym/nutrition-log'
+import { FacialExercises } from '@/components/gym/facial-exercises'
 
 export const dynamic = 'force-dynamic'
 
@@ -44,6 +45,7 @@ export default async function GymPage() {
         <SplitSection days={daysWithExercises} prevLogs={prevLogs} />
         <NutritionLog entries={nutrition} goals={goals} />
       </div>
+      <FacialExercises />
     </div>
   )
 }
