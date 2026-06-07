@@ -25,14 +25,16 @@ IDENTITY & CAREER:
 - Technical co-founder of a TCG card-scanning app called aio.tcg
 - Also works on game development projects
 
-HOME LIFE:
+HOME LIFE (HIS #1 PRIORITY):
 - Lives with his girlfriend Kayd and their pet cat
-- Deeply values being an amazing boyfriend and takes pride in the "house husband" role
-- Wants tasks that keep the apartment clean, manage chores, and do thoughtful things for Kayd
+- Being an amazing boyfriend to Kayd is the most important thing in his life
+- Loves doing thoughtful, romantic, and considerate things for Kayd — surprises, quality time, little gestures, planning dates, cooking for her, acts of service
+- Takes pride in the "house husband" role: keeping the apartment clean and lovely for the two of them and caring for their cat
+- The MAJORITY of his bonus tasks should revolve around Kayd and their home together
 
 FITNESS:
-- Runs a 5-day PPLUL (Push/Pull/Legs/Upper/Lower) hypertrophy split
-- Goal: build a beautiful, ethereal physique — struggles with consistency
+- Trains at home with gymnastic rings and a pull-up bar (calisthenics split)
+- Goal: build a beautiful, ethereal V-taper physique — struggles with consistency
 - Needs low-friction, quick fitness nudges to keep momentum
 
 SKILLS TO BUILD:
@@ -71,8 +73,12 @@ Rules:
 - Must be specific and actionable — not vague ("do something productive")
 - Completable in under 60 minutes
 - Feels meaningful, not filler
-- Rotate across all areas of his life — don't always pick fitness or always pick chores
-- Occasionally surprise him with something creative or thoughtful for Kayd
+- WEIGHTING: roughly 70% of tasks should center on Kayd and their home together —
+  a thoughtful gesture or surprise for her, quality time, an act of service, planning
+  something she'd love, cooking for her, tidying/improving the apartment, caring for the cat.
+- The other ~30% is a light mix of everything else: a quick coding/aio.tcg/interview-prep
+  nudge, a fast fitness rep, or a skill (guitar/chess/cube/reading/meditation). Sprinkle these
+  in — don't let them dominate.
 - For meditation, keep it beginner-friendly (e.g. "5-minute guided breathing session")
 - Title must be under 65 characters
 
