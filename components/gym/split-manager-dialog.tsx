@@ -22,7 +22,7 @@ interface Props {
 
 const DEFAULT_EXERCISE_FORM = { name: '', exerciseType: 'strength', sets: '3', reps: '8', weight: '0', unit: 'lbs' }
 
-const TYPE_LABELS: Record<string, string> = { strength: 'Strength', cardio: 'Cardio', facial: 'Facial' }
+const TYPE_LABELS: Record<string, string> = { strength: 'Strength', cardio: 'Cardio', facial: 'Facial', hold: 'Hold' }
 
 export function SplitManagerDialog({ open, onClose, days }: Props) {
   const [isPending, startTransition] = useTransition()
@@ -63,6 +63,7 @@ export function SplitManagerDialog({ open, onClose, days }: Props) {
     if (!form.name.trim()) return
     const isCardio = form.exerciseType === 'cardio'
     const isFacial = form.exerciseType === 'facial'
+    const isHold = form.exerciseType === 'hold'
     startTransition(async () => {
       await addSplitExercise({
         splitDayId: dayId,
@@ -70,8 +71,8 @@ export function SplitManagerDialog({ open, onClose, days }: Props) {
         exerciseType: form.exerciseType,
         defaultSets: isCardio || isFacial ? 1 : Number(form.sets) || 1,
         defaultReps: Number(form.reps) || 1,
-        defaultWeight: isCardio || isFacial ? 0 : Number(form.weight) || 0,
-        defaultUnit: isCardio ? 'min' : isFacial ? 'reps' : form.unit,
+        defaultWeight: isCardio || isFacial || isHold ? 0 : Number(form.weight) || 0,
+        defaultUnit: isCardio ? 'min' : isFacial ? 'reps' : isHold ? 'sec' : form.unit,
       })
       setAddExForm(f => ({ ...f, [dayId]: DEFAULT_EXERCISE_FORM }))
     })
@@ -92,6 +93,7 @@ export function SplitManagerDialog({ open, onClose, days }: Props) {
   const exTypeLabel = (ex: SplitExercise) => {
     if (ex.exerciseType === 'cardio') return `${ex.defaultReps} min`
     if (ex.exerciseType === 'facial') return `${ex.defaultReps} reps`
+    if (ex.exerciseType === 'hold') return `${ex.defaultSets}×${ex.defaultReps} sec`
     return `${ex.defaultSets}×${ex.defaultReps} @ ${ex.defaultWeight} ${ex.defaultUnit}`
   }
 
@@ -221,6 +223,7 @@ export function SplitManagerDialog({ open, onClose, days }: Props) {
                       <option value="strength">Strength</option>
                       <option value="cardio">Cardio</option>
                       <option value="facial">Facial</option>
+                      <option value="hold">Hold</option>
                     </Select>
                   </div>
 
@@ -279,6 +282,29 @@ export function SplitManagerDialog({ open, onClose, days }: Props) {
                         onChange={e => setExForm(day.id, { reps: e.target.value })}
                         className="h-7 text-xs py-0"
                       />
+                    </div>
+                  )}
+
+                  {getExForm(day.id).exerciseType === 'hold' && (
+                    <div className="grid grid-cols-2 gap-1.5 w-48">
+                      <div>
+                        <p className="text-[9px] text-zinc-600 mb-0.5">Sets</p>
+                        <Input
+                          type="number" min={1} max={20}
+                          value={getExForm(day.id).sets}
+                          onChange={e => setExForm(day.id, { sets: e.target.value })}
+                          className="h-7 text-xs py-0"
+                        />
+                      </div>
+                      <div>
+                        <p className="text-[9px] text-zinc-600 mb-0.5">Duration (sec)</p>
+                        <Input
+                          type="number" min={1} max={600}
+                          value={getExForm(day.id).reps}
+                          onChange={e => setExForm(day.id, { reps: e.target.value })}
+                          className="h-7 text-xs py-0"
+                        />
+                      </div>
                     </div>
                   )}
 

@@ -13,7 +13,17 @@
       "Bash(git add *)",
       "Bash(git commit -m ' *)",
       "Bash(node *)",
-      "Bash(git commit *)"
+      "Bash(git commit *)",
+      "Bash(npx next *)",
+      "Bash(git rm *)",
+      "Bash(lsof -i :3000 -sTCP:LISTEN)",
+      "Bash(git -C /Users/kayd/IdeaProjects/life remote -v)",
+      "Bash(git -C /Users/kayd/IdeaProjects/life status --short)",
+      "Bash(git -C /Users/kayd/IdeaProjects/life log --oneline -3)",
+      "Bash(git *)",
+      "Bash(sips *)",
+      "Bash(convert --version)",
+      "Bash(grep -E \"\\\\.\\(png|jpg|jpeg|tmp|bak\\)$\")"
     ]
   }
 }

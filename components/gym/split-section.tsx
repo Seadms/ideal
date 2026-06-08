@@ -73,6 +73,9 @@ export function SplitSection({ days, prevLogs }: Props) {
       if (ex.exerciseType === 'facial') {
         return { exerciseId: ex.id, sets: 1, reps: Number(v.reps) || 0, weight: 0, unit: 'reps' }
       }
+      if (ex.exerciseType === 'hold') {
+        return { exerciseId: ex.id, sets: Number(v.sets) || 1, reps: Number(v.reps) || 0, weight: 0, unit: 'sec' }
+      }
       return {
         exerciseId: ex.id,
         sets: Number(v.sets) || 1,
@@ -91,6 +94,7 @@ export function SplitSection({ days, prevLogs }: Props) {
   const prevLabel = (ex: SplitExercise, prev: ExerciseLog) => {
     if (ex.exerciseType === 'cardio') return `prev: ${prev.reps} min`
     if (ex.exerciseType === 'facial') return `prev: ${prev.reps} reps`
+    if (ex.exerciseType === 'hold') return `prev: ${prev.sets}×${prev.reps} sec`
     return `prev: ${prev.sets}×${prev.reps} @ ${prev.weight} ${prev.unit}`
   }
 
@@ -237,6 +241,30 @@ export function SplitSection({ days, prevLogs }: Props) {
                                     onChange={e => setVal(ex.id, { reps: e.target.value })}
                                     className="w-16 h-7 text-xs text-center py-0 px-1"
                                   />
+                                </div>
+                              )}
+
+                              {ex.exerciseType === 'hold' && (
+                                <div className="flex items-end gap-2">
+                                  <div>
+                                    <p className="text-[9px] text-zinc-600 mb-1">Sets</p>
+                                    <Input
+                                      type="number" min={1} max={20}
+                                      value={vals.sets}
+                                      onChange={e => setVal(ex.id, { sets: e.target.value })}
+                                      className="w-12 h-7 text-xs text-center py-0 px-1"
+                                    />
+                                  </div>
+                                  <span className="text-zinc-700 pb-1.5">×</span>
+                                  <div>
+                                    <p className="text-[9px] text-zinc-600 mb-1">Duration (sec)</p>
+                                    <Input
+                                      type="number" min={1} max={600}
+                                      value={vals.reps}
+                                      onChange={e => setVal(ex.id, { reps: e.target.value })}
+                                      className="w-20 h-7 text-xs text-center py-0 px-1"
+                                    />
+                                  </div>
                                 </div>
                               )}
                             </div>

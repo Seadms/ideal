@@ -234,7 +234,7 @@ export async function initDb() {
 // One-time replacement: if the old gym split is present, swap it for the home
 // calisthenics split. Existing exercise_logs (workout history) are preserved.
 
-const HOME_SPLIT_MARKER = 'Width & Biceps (Vertical Pull)'
+const HOME_SPLIT_MARKER = 'Lat Width & Biceps (Vertical Pull)'
 
 async function seedSplitIfNeeded() {
   const rows = await client.execute('SELECT id, name FROM split_days')
@@ -253,7 +253,7 @@ async function seedSplitIfNeeded() {
       // Vertical pull = lat width (the V-taper). Only the last set of each
       // pull-up goes to true failure; chin-ups trimmed to 3 sets to protect
       // grip/elbows for the rest of the day.
-      name: 'Width & Biceps (Vertical Pull)', order: 1,
+      name: 'Lat Width & Biceps (Vertical Pull)', order: 1,
       exercises: [
         { name: 'Wide-Grip Pull-ups (last set to failure)', sets: 4, reps: 6,  weight: 0 },
         { name: 'Neutral-Grip Ring Pull-ups',               sets: 4, reps: 8,  weight: 0 },
@@ -280,7 +280,7 @@ async function seedSplitIfNeeded() {
         { name: 'Inverted Ring Rows',          sets: 4, reps: 12, weight: 0 },
         { name: 'One-Arm Ring Rows (per arm)', sets: 4, reps: 10, weight: 0 },
         { name: 'Towel Pull-ups',              sets: 4, reps: 6,  weight: 0 },
-        { name: 'Towel Hangs (sec)',           sets: 3, reps: 30, weight: 0 },
+        { name: 'Towel Hangs',                 sets: 3, reps: 30, weight: 0, type: 'hold' },
       ],
     },
     {
@@ -289,7 +289,7 @@ async function seedSplitIfNeeded() {
         { name: 'Pistol Squats (per leg)',          sets: 4, reps: 6,  weight: 0 },
         { name: 'Bulgarian Split Squats (per leg)', sets: 4, reps: 12, weight: 0 },
         { name: 'Explosive Switching Lunges',       sets: 4, reps: 20, weight: 0 },
-        { name: 'Hollow Body Holds (sec)',          sets: 4, reps: 45, weight: 0 },
+        { name: 'Hollow Body Holds',                sets: 4, reps: 45, weight: 0, type: 'hold' },
       ],
     },
     {
@@ -297,7 +297,7 @@ async function seedSplitIfNeeded() {
       // the progressive-overload top end bodyweight reps eventually lose.
       name: 'Aesthetic Finish (V-Taper & Core)', order: 5,
       exercises: [
-        { name: 'Weighted Pull-ups (backpack)', sets: 4, reps: 6,  weight: 0 },
+        { name: 'Weighted Pull-ups (backpack)', sets: 4, reps: 6,  weight: 25 },
         { name: 'Ring Chest Flyes',             sets: 4, reps: 10, weight: 0 },
         { name: 'Ring Bicep Curls',             sets: 4, reps: 12, weight: 0 },
         { name: 'Dragon Flags',                 sets: 4, reps: 6,  weight: 0 },
@@ -317,7 +317,7 @@ async function seedSplitIfNeeded() {
         sql: `INSERT INTO split_exercises
           (id, split_day_id, name, exercise_order, exercise_type, default_sets, default_reps, default_weight, default_unit)
           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        args: [randomUUID(), dayId, ex.name, i + 1, ex.type ?? 'strength', ex.sets, ex.reps, ex.weight, ex.type === 'cardio' ? 'min' : 'lbs'],
+        args: [randomUUID(), dayId, ex.name, i + 1, ex.type ?? 'strength', ex.sets, ex.reps, ex.weight, ex.type === 'cardio' ? 'min' : ex.type === 'hold' ? 'sec' : 'lbs'],
       })
     }
   }
