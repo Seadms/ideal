@@ -234,7 +234,7 @@ export async function initDb() {
 // One-time replacement: if the old gym split is present, swap it for the home
 // calisthenics split. Existing exercise_logs (workout history) are preserved.
 
-const HOME_SPLIT_MARKER = 'Back & Biceps (Vertical Pull)'
+const HOME_SPLIT_MARKER = 'Width & Biceps (Vertical Pull)'
 
 async function seedSplitIfNeeded() {
   const rows = await client.execute('SELECT id, name FROM split_days')
@@ -250,48 +250,57 @@ async function seedSplitIfNeeded() {
   type Ex = { name: string; sets: number; reps: number; weight: number; type?: string }
   const days: { name: string; order: number; exercises: Ex[] }[] = [
     {
-      name: 'Back & Biceps (Vertical Pull)', order: 1,
+      // Vertical pull = lat width (the V-taper). Only the last set of each
+      // pull-up goes to true failure; chin-ups trimmed to 3 sets to protect
+      // grip/elbows for the rest of the day.
+      name: 'Width & Biceps (Vertical Pull)', order: 1,
       exercises: [
-        { name: 'Pull-up Negatives',                   sets: 4, reps: 6,  weight: 0 },
-        { name: 'Band-Assisted Neutral-Grip Pull-ups', sets: 4, reps: 8,  weight: 0 },
-        { name: 'Chin-up Negatives',                   sets: 4, reps: 6,  weight: 0 },
-        { name: 'Ring Bicep Curls',                    sets: 4, reps: 12, weight: 0 },
+        { name: 'Wide-Grip Pull-ups (last set to failure)', sets: 4, reps: 6,  weight: 0 },
+        { name: 'Neutral-Grip Ring Pull-ups',               sets: 4, reps: 8,  weight: 0 },
+        { name: 'Chin-ups',                                 sets: 3, reps: 8,  weight: 0 },
+        { name: 'Ring Bicep Curls',                         sets: 4, reps: 12, weight: 0 },
       ],
     },
     {
-      name: 'Full Push (Chest, Shoulders & Triceps)', order: 2,
+      // Chest restored (ring dips + flyes) and a direct lateral-delt movement
+      // added — side-delt width + a full chest are the front-on aesthetic.
+      name: 'Chest, Shoulders & Triceps (Push)', order: 2,
       exercises: [
-        { name: 'Ring Dips (or Foot-Assisted)', sets: 4, reps: 8,  weight: 0 },
-        { name: 'Ring Push-ups',                sets: 4, reps: 12, weight: 0 },
-        { name: 'Elevated Pike Push-ups',       sets: 4, reps: 10, weight: 0 },
-        { name: 'Ring Triceps Extensions',      sets: 4, reps: 12, weight: 0 },
+        { name: 'Ring Dips (chest lean)',          sets: 4, reps: 8,  weight: 0 },
+        { name: 'Ring Chest Flyes',                sets: 4, reps: 12, weight: 0 },
+        { name: 'Handstand / Pike Push-ups',       sets: 4, reps: 8,  weight: 0 },
+        { name: 'Banded Lateral Raises',           sets: 4, reps: 15, weight: 0 },
+        { name: 'Diamond Push-ups (to failure)',   sets: 4, reps: 12, weight: 0 },
       ],
     },
     {
-      name: 'Legs & Core', order: 3,
-      exercises: [
-        { name: 'Assisted Pistol Squats (per leg)', sets: 4, reps: 6,  weight: 0 },
-        { name: 'Bulgarian Split Squats (per leg)', sets: 4, reps: 12, weight: 0 },
-        { name: 'Ring Hamstring Curls',             sets: 4, reps: 12, weight: 0 },
-        { name: 'Hollow Body Holds (sec)',          sets: 4, reps: 45, weight: 0 },
-      ],
-    },
-    {
-      name: 'Back Thickness & Forearms (Horizontal Pull)', order: 4,
+      // Horizontal pull = back thickness; towel work builds forearms/grip.
+      name: 'Back Thickness & Forearms (Horizontal Pull)', order: 3,
       exercises: [
         { name: 'Inverted Ring Rows',          sets: 4, reps: 12, weight: 0 },
         { name: 'One-Arm Ring Rows (per arm)', sets: 4, reps: 10, weight: 0 },
-        { name: 'Scapular Pull-ups',           sets: 4, reps: 12, weight: 0 },
+        { name: 'Towel Pull-ups',              sets: 4, reps: 6,  weight: 0 },
         { name: 'Towel Hangs (sec)',           sets: 3, reps: 30, weight: 0 },
       ],
     },
     {
-      name: 'Aesthetic Finish & Core', order: 5,
+      name: 'Legs & Core', order: 4,
       exercises: [
-        { name: 'Isometric Pull-up Holds (sec)', sets: 4, reps: 20, weight: 0 },
-        { name: 'Ring Chest Flyes',              sets: 4, reps: 10, weight: 0 },
-        { name: 'Diamond Push-ups',              sets: 4, reps: 15, weight: 0 },
-        { name: 'L-Sit Progressions (sec)',      sets: 4, reps: 15, weight: 0 },
+        { name: 'Pistol Squats (per leg)',          sets: 4, reps: 6,  weight: 0 },
+        { name: 'Bulgarian Split Squats (per leg)', sets: 4, reps: 12, weight: 0 },
+        { name: 'Explosive Switching Lunges',       sets: 4, reps: 20, weight: 0 },
+        { name: 'Hollow Body Holds (sec)',          sets: 4, reps: 45, weight: 0 },
+      ],
+    },
+    {
+      // Second hit on the highest-visual-impact areas. Weighted pull-ups give
+      // the progressive-overload top end bodyweight reps eventually lose.
+      name: 'Aesthetic Finish (V-Taper & Core)', order: 5,
+      exercises: [
+        { name: 'Weighted Pull-ups (backpack)', sets: 4, reps: 6,  weight: 0 },
+        { name: 'Ring Chest Flyes',             sets: 4, reps: 10, weight: 0 },
+        { name: 'Ring Bicep Curls',             sets: 4, reps: 12, weight: 0 },
+        { name: 'Dragon Flags',                 sets: 4, reps: 6,  weight: 0 },
       ],
     },
   ]
