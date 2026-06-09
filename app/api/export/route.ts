@@ -11,9 +11,7 @@ export async function GET() {
   // Local mode: serve the raw SQLite file
   if (!process.env.TURSO_DATABASE_URL) {
     try {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
       const path = require('path') as typeof import('path')
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
       const fs = require('fs') as typeof import('fs')
       const dbPath = path.join(process.cwd(), 'data', 'life.db')
       if (fs.existsSync(dbPath)) {

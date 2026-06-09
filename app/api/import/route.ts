@@ -23,9 +23,7 @@ export async function POST(request: NextRequest) {
       if (magic !== 'SQLite format 3') {
         return new NextResponse('Not a valid SQLite database file', { status: 400 })
       }
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
       const path = require('path') as typeof import('path')
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
       const fs = require('fs') as typeof import('fs')
       const dataDir = path.join(process.cwd(), 'data')
       const dbPath = path.join(dataDir, 'life.db')

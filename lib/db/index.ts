@@ -10,9 +10,7 @@ function buildClient() {
   if (tursoUrl) {
     return createClient({ url: tursoUrl, authToken: tursoToken })
   }
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
   const path = require('path') as typeof import('path')
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
   const fs = require('fs') as typeof import('fs')
   const dataDir = path.join(process.cwd(), 'data')
   if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true })

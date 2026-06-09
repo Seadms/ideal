@@ -1,10 +1,10 @@
 import type { Metadata, Viewport } from 'next'
 import './globals.css'
-import Link from 'next/link'
 import { eq } from 'drizzle-orm'
 import { db } from '@/lib/db'
 import { userStats } from '@/lib/db/schema'
 import { ReminderChecker } from '@/components/settings/reminder-checker'
+import { NavBar } from '@/components/nav-bar'
 
 export const dynamic = 'force-dynamic'
 
@@ -41,24 +41,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <body className="bg-zinc-950 text-zinc-100 min-h-screen">
         <ReminderChecker reminderTime={reminderTime} />
         <div className="mx-auto max-w-2xl px-4">
-          <nav className="flex items-center gap-0.5 py-4 overflow-x-auto">
-            {[
-              { href: '/', label: 'Dashboard' },
-              { href: '/gym', label: 'Gym' },
-              { href: '/diet', label: 'Diet' },
-              { href: '/rewards', label: 'Rewards' },
-              { href: '/history', label: 'History' },
-              { href: '/settings', label: 'Settings' },
-            ].map(({ href, label }) => (
-              <Link
-                key={href}
-                href={href}
-                className="px-3 py-1.5 text-xs font-medium text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800/60 rounded-lg transition-colors whitespace-nowrap"
-              >
-                {label}
-              </Link>
-            ))}
-          </nav>
+          <NavBar />
           <main className="pb-20">{children}</main>
         </div>
       </body>
