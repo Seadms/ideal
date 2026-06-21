@@ -20,7 +20,7 @@ interface Props {
   days: DayWithExercises[]
 }
 
-const DEFAULT_EXERCISE_FORM = { name: '', exerciseType: 'strength', sets: '3', reps: '8', weight: '0', unit: 'lbs' }
+const DEFAULT_EXERCISE_FORM = { name: '', exerciseType: 'strength', target: '', sets: '3', reps: '8', weight: '0', unit: 'lbs' }
 
 const TYPE_LABELS: Record<string, string> = { strength: 'Strength', cardio: 'Cardio', facial: 'Facial', hold: 'Hold' }
 
@@ -69,6 +69,7 @@ export function SplitManagerDialog({ open, onClose, days }: Props) {
         splitDayId: dayId,
         name: form.name,
         exerciseType: form.exerciseType,
+        target: form.target.trim() || null,
         defaultSets: isCardio || isFacial ? 1 : Number(form.sets) || 1,
         defaultReps: Number(form.reps) || 1,
         defaultWeight: isCardio || isFacial || isHold ? 0 : Number(form.weight) || 0,
@@ -171,6 +172,7 @@ export function SplitManagerDialog({ open, onClose, days }: Props) {
                     ) : (
                       <div className="flex-1 min-w-0">
                         <p className="text-xs text-zinc-300">{ex.name}</p>
+                        {ex.target && <p className="text-[10px] text-indigo-400/70 truncate">{ex.target}</p>}
                         <p className="text-[10px] text-zinc-600">
                           <span className="text-zinc-700 mr-1">{TYPE_LABELS[ex.exerciseType] ?? ex.exerciseType}</span>
                           {exTypeLabel(ex)}
@@ -226,6 +228,13 @@ export function SplitManagerDialog({ open, onClose, days }: Props) {
                       <option value="hold">Hold</option>
                     </Select>
                   </div>
+
+                  <Input
+                    placeholder="Target / progression hint (optional, e.g. 3–4 × 6–12 · weighted)"
+                    value={getExForm(day.id).target}
+                    onChange={e => setExForm(day.id, { target: e.target.value })}
+                    className="h-7 text-xs py-0"
+                  />
 
                   {getExForm(day.id).exerciseType === 'strength' && (
                     <div className="grid grid-cols-4 gap-1.5">

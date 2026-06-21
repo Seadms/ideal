@@ -23,6 +23,11 @@ export async function deleteNutritionEntry(id: string) {
   revalidatePath('/gym')
 }
 
+/**
+ * @deprecated Daily macro targets now live in `diet_goals` as the single source
+ * of truth — use `updateDailyMacroTargets` in `lib/actions/diet.ts`. Kept only
+ * so the legacy `nutrition_goals` table stays writable for old backups.
+ */
 export async function updateNutritionGoals(data: {
   caloriesGoal: number
   proteinGoal: number

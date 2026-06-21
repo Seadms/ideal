@@ -21,6 +21,25 @@ export async function upsertDietGoals(data: {
   revalidatePath('/diet')
 }
 
+// Single source of truth for daily macro targets. Both the diet page and the
+// gym nutrition log call this; training/rest columns are kept equal (fixed cut).
+export async function updateDailyMacroTargets(data: {
+  calories: number; protein: number; carbs: number; fat: number
+}) {
+  const macros = {
+    trainingCalories: data.calories, trainingProtein: data.protein, trainingCarbs: data.carbs, trainingFat: data.fat,
+    restCalories: data.calories, restProtein: data.protein, restCarbs: data.carbs, restFat: data.fat,
+  }
+  const existing = await db.select({ id: dietGoals.id }).from(dietGoals).where(eq(dietGoals.id, 1))
+  if (existing.length > 0) {
+    await db.update(dietGoals).set(macros).where(eq(dietGoals.id, 1))
+  } else {
+    await db.insert(dietGoals).values({ id: 1, ...macros, waterGoalMl: 3500 })
+  }
+  revalidatePath('/diet')
+  revalidatePath('/gym')
+}
+
 export async function updateDietMeal(id: string, data: {
   name?: string
   timeWindow?: string | null

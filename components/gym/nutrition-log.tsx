@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import { logNutritionEntry, deleteNutritionEntry, updateNutritionGoals } from '@/lib/actions/fitness'
+import { logNutritionEntry, deleteNutritionEntry } from '@/lib/actions/fitness'
+import { updateDailyMacroTargets } from '@/lib/actions/diet'
 import type { NutritionEntry, NutritionGoals } from '@/lib/db/schema'
 import { Flame, Plus, Trash2, Pencil, Check, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -45,11 +46,11 @@ export function NutritionLog({ entries, goals }: NutritionLogProps) {
 
   const handleSaveGoals = () => {
     startTransition(async () => {
-      await updateNutritionGoals({
-        caloriesGoal: Number(goalForm.caloriesGoal) || 0,
-        proteinGoal: Number(goalForm.proteinGoal) || 0,
-        carbsGoal: Number(goalForm.carbsGoal) || 0,
-        fatsGoal: Number(goalForm.fatsGoal) || 0,
+      await updateDailyMacroTargets({
+        calories: Number(goalForm.caloriesGoal) || 0,
+        protein: Number(goalForm.proteinGoal) || 0,
+        carbs: Number(goalForm.carbsGoal) || 0,
+        fat: Number(goalForm.fatsGoal) || 0,
       })
       setEditGoals(false)
     })

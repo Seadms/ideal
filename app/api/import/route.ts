@@ -3,8 +3,9 @@ import { db } from '@/lib/db'
 import {
   habits, tasks, rewards, rewardRedemptions, userStats, habitCompletions,
   bonusTaskSessions, bonusTaskPool, scheduledTasks, scheduledTaskCompletions,
-  splitDays, splitExercises, exerciseLogs, nutritionGoals,
+  splitDays, splitExercises, exerciseLogs, exerciseSetLogs, nutritionGoals,
   dietGoals, dietMeals, dietRules, waterLogs,
+  bodyweightLogs, benchmarkLogs, progressPhotos,
 } from '@/lib/db/schema'
 
 export async function POST(request: NextRequest) {
@@ -46,44 +47,56 @@ export async function POST(request: NextRequest) {
       return new NextResponse('Invalid backup format — expected a .json exported from ideal', { status: 400 })
     }
 
-    // Wipe existing data in FK-safe order, then restore
-    await db.delete(bonusTaskSessions)
-    await db.delete(bonusTaskPool)
-    await db.delete(habitCompletions)
-    await db.delete(rewardRedemptions)
-    await db.delete(scheduledTaskCompletions)
-    await db.delete(scheduledTasks)
-    await db.delete(exerciseLogs)
-    await db.delete(splitExercises)
-    await db.delete(splitDays)
-    await db.delete(nutritionGoals)
-    await db.delete(waterLogs)
-    await db.delete(dietRules)
-    await db.delete(dietMeals)
-    await db.delete(dietGoals)
-    await db.delete(habits)
-    await db.delete(tasks)
-    await db.delete(rewards)
-    await db.delete(userStats)
+    // Wipe + restore atomically: a malformed row aborts the whole import and
+    // rolls back, so a bad backup can never leave the DB half-wiped.
+    await db.transaction(async (tx) => {
+      // Wipe existing data in FK-safe order
+      await tx.delete(bonusTaskSessions)
+      await tx.delete(bonusTaskPool)
+      await tx.delete(habitCompletions)
+      await tx.delete(rewardRedemptions)
+      await tx.delete(scheduledTaskCompletions)
+      await tx.delete(scheduledTasks)
+      await tx.delete(exerciseSetLogs)
+      await tx.delete(exerciseLogs)
+      await tx.delete(splitExercises)
+      await tx.delete(splitDays)
+      await tx.delete(nutritionGoals)
+      await tx.delete(waterLogs)
+      await tx.delete(dietRules)
+      await tx.delete(dietMeals)
+      await tx.delete(dietGoals)
+      await tx.delete(bodyweightLogs)
+      await tx.delete(benchmarkLogs)
+      await tx.delete(progressPhotos)
+      await tx.delete(habits)
+      await tx.delete(tasks)
+      await tx.delete(rewards)
+      await tx.delete(userStats)
 
-    if (backup.habits?.length)                      await db.insert(habits).values(backup.habits)
-    if (backup.tasks?.length)                       await db.insert(tasks).values(backup.tasks)
-    if (backup.rewards?.length)                     await db.insert(rewards).values(backup.rewards)
-    if (backup.userStats?.length)                   await db.insert(userStats).values(backup.userStats)
-    if (backup.habitCompletions?.length)            await db.insert(habitCompletions).values(backup.habitCompletions)
-    if (backup.rewardRedemptions?.length)           await db.insert(rewardRedemptions).values(backup.rewardRedemptions)
-    if (backup.bonusTaskPool?.length)               await db.insert(bonusTaskPool).values(backup.bonusTaskPool)
-    if (backup.bonusTaskSessions?.length)           await db.insert(bonusTaskSessions).values(backup.bonusTaskSessions)
-    if (backup.scheduledTasks?.length)              await db.insert(scheduledTasks).values(backup.scheduledTasks)
-    if (backup.scheduledTaskCompletions?.length)    await db.insert(scheduledTaskCompletions).values(backup.scheduledTaskCompletions)
-    if (backup.splitDays?.length)                   await db.insert(splitDays).values(backup.splitDays)
-    if (backup.splitExercises?.length)              await db.insert(splitExercises).values(backup.splitExercises)
-    if (backup.exerciseLogs?.length)                await db.insert(exerciseLogs).values(backup.exerciseLogs)
-    if (backup.nutritionGoals?.length)              await db.insert(nutritionGoals).values(backup.nutritionGoals)
-    if (backup.dietGoals?.length)                   await db.insert(dietGoals).values(backup.dietGoals)
-    if (backup.dietMeals?.length)                   await db.insert(dietMeals).values(backup.dietMeals)
-    if (backup.dietRules?.length)                   await db.insert(dietRules).values(backup.dietRules)
-    if (backup.waterLogs?.length)                   await db.insert(waterLogs).values(backup.waterLogs)
+      if (backup.habits?.length)                      await tx.insert(habits).values(backup.habits)
+      if (backup.tasks?.length)                       await tx.insert(tasks).values(backup.tasks)
+      if (backup.rewards?.length)                     await tx.insert(rewards).values(backup.rewards)
+      if (backup.userStats?.length)                   await tx.insert(userStats).values(backup.userStats)
+      if (backup.habitCompletions?.length)            await tx.insert(habitCompletions).values(backup.habitCompletions)
+      if (backup.rewardRedemptions?.length)           await tx.insert(rewardRedemptions).values(backup.rewardRedemptions)
+      if (backup.bonusTaskPool?.length)               await tx.insert(bonusTaskPool).values(backup.bonusTaskPool)
+      if (backup.bonusTaskSessions?.length)           await tx.insert(bonusTaskSessions).values(backup.bonusTaskSessions)
+      if (backup.scheduledTasks?.length)              await tx.insert(scheduledTasks).values(backup.scheduledTasks)
+      if (backup.scheduledTaskCompletions?.length)    await tx.insert(scheduledTaskCompletions).values(backup.scheduledTaskCompletions)
+      if (backup.splitDays?.length)                   await tx.insert(splitDays).values(backup.splitDays)
+      if (backup.splitExercises?.length)              await tx.insert(splitExercises).values(backup.splitExercises)
+      if (backup.exerciseLogs?.length)                await tx.insert(exerciseLogs).values(backup.exerciseLogs)
+      if (backup.exerciseSetLogs?.length)             await tx.insert(exerciseSetLogs).values(backup.exerciseSetLogs)
+      if (backup.nutritionGoals?.length)              await tx.insert(nutritionGoals).values(backup.nutritionGoals)
+      if (backup.dietGoals?.length)                   await tx.insert(dietGoals).values(backup.dietGoals)
+      if (backup.dietMeals?.length)                   await tx.insert(dietMeals).values(backup.dietMeals)
+      if (backup.dietRules?.length)                   await tx.insert(dietRules).values(backup.dietRules)
+      if (backup.waterLogs?.length)                   await tx.insert(waterLogs).values(backup.waterLogs)
+      if (backup.bodyweightLogs?.length)              await tx.insert(bodyweightLogs).values(backup.bodyweightLogs)
+      if (backup.benchmarkLogs?.length)               await tx.insert(benchmarkLogs).values(backup.benchmarkLogs)
+      if (backup.progressPhotos?.length)              await tx.insert(progressPhotos).values(backup.progressPhotos)
+    })
 
     return new NextResponse('OK', { status: 200 })
   } catch (err) {

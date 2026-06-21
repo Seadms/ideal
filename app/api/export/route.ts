@@ -3,8 +3,9 @@ import { db } from '@/lib/db'
 import {
   habits, tasks, rewards, rewardRedemptions, userStats, habitCompletions,
   bonusTaskSessions, bonusTaskPool, scheduledTasks, scheduledTaskCompletions,
-  splitDays, splitExercises, exerciseLogs, nutritionGoals,
+  splitDays, splitExercises, exerciseLogs, exerciseSetLogs, nutritionGoals,
   dietGoals, dietMeals, dietRules, waterLogs,
+  bodyweightLogs, benchmarkLogs, progressPhotos,
 } from '@/lib/db/schema'
 
 export async function GET() {
@@ -32,8 +33,9 @@ export async function GET() {
     habitsData, tasksData, rewardsData,
     redemptionsData, statsData, completionsData, bonusSessionsData, bonusPoolData,
     scheduledTasksData, scheduledCompletionsData,
-    splitDaysData, splitExercisesData, exerciseLogsData, nutritionGoalsData,
+    splitDaysData, splitExercisesData, exerciseLogsData, exerciseSetLogsData, nutritionGoalsData,
     dietGoalsData, dietMealsData, dietRulesData, waterLogsData,
+    bodyweightLogsData, benchmarkLogsData, progressPhotosData,
   ] = await Promise.all([
     db.select().from(habits),
     db.select().from(tasks),
@@ -48,16 +50,20 @@ export async function GET() {
     db.select().from(splitDays),
     db.select().from(splitExercises),
     db.select().from(exerciseLogs),
+    db.select().from(exerciseSetLogs),
     db.select().from(nutritionGoals),
     db.select().from(dietGoals),
     db.select().from(dietMeals),
     db.select().from(dietRules),
     db.select().from(waterLogs),
+    db.select().from(bodyweightLogs),
+    db.select().from(benchmarkLogs),
+    db.select().from(progressPhotos),
   ])
 
   const backup = {
     exportedAt: new Date().toISOString(),
-    version: 2,
+    version: 4,
     habits: habitsData,
     tasks: tasksData,
     rewards: rewardsData,
@@ -71,11 +77,15 @@ export async function GET() {
     splitDays: splitDaysData,
     splitExercises: splitExercisesData,
     exerciseLogs: exerciseLogsData,
+    exerciseSetLogs: exerciseSetLogsData,
     nutritionGoals: nutritionGoalsData,
     dietGoals: dietGoalsData,
     dietMeals: dietMealsData,
     dietRules: dietRulesData,
     waterLogs: waterLogsData,
+    bodyweightLogs: bodyweightLogsData,
+    benchmarkLogs: benchmarkLogsData,
+    progressPhotos: progressPhotosData,
   }
 
   const date = new Date().toISOString().split('T')[0]

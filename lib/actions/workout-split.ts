@@ -4,7 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { randomUUID } from 'crypto'
 import { and, eq, inArray, max } from 'drizzle-orm'
 import { db } from '@/lib/db'
-import { splitDays, splitExercises, exerciseLogs } from '@/lib/db/schema'
+import { splitDays, splitExercises, exerciseLogs, exerciseSetLogs } from '@/lib/db/schema'
 import { todayString } from '@/lib/utils'
 
 // ── Split Days ────────────────────────────────────────────────────────────────
@@ -40,6 +40,7 @@ export async function addSplitExercise(data: {
   splitDayId: string
   name: string
   exerciseType: string
+  target?: string | null
   defaultSets: number
   defaultReps: number
   defaultWeight: number
@@ -56,6 +57,7 @@ export async function addSplitExercise(data: {
 export async function updateSplitExercise(id: string, data: Partial<{
   name: string
   exerciseType: string
+  target: string | null
   defaultSets: number
   defaultReps: number
   defaultWeight: number
@@ -79,6 +81,9 @@ export async function logWorkoutSession(entries: {
   reps: number
   weight: number
   unit: string
+  // Optional per-set detail. When present, the summary fields above should be
+  // the derived top set (max reps / max weight) so prev-display + charts agree.
+  setDetails?: { reps: number; weight: number }[]
 }[]) {
   if (entries.length === 0) return
   const today = todayString()
@@ -93,17 +98,32 @@ export async function logWorkoutSession(entries: {
   const existingMap = new Map(existingLogs.map(l => [l.exerciseId, l.id]))
 
   for (const entry of entries) {
+    const { setDetails, ...summary } = entry
     const existingId = existingMap.get(entry.exerciseId)
     if (existingId) {
       await db.update(exerciseLogs)
-        .set({ sets: entry.sets, reps: entry.reps, weight: entry.weight, unit: entry.unit })
+        .set({ sets: summary.sets, reps: summary.reps, weight: summary.weight, unit: summary.unit })
         .where(eq(exerciseLogs.id, existingId))
     } else {
-      await db.insert(exerciseLogs).values({ id: randomUUID(), date: today, ...entry })
+      await db.insert(exerciseLogs).values({ id: randomUUID(), date: today, ...summary })
     }
+
+    // Replace any per-set detail for this exercise today (keeps summary + detail
+    // in sync — a quick-mode re-log clears stale per-set rows).
+    await db.delete(exerciseSetLogs)
+      .where(and(eq(exerciseSetLogs.exerciseId, entry.exerciseId), eq(exerciseSetLogs.date, today)))
+    if (setDetails && setDetails.length > 0) {
+      await db.insert(exerciseSetLogs).values(
+        setDetails.map((s, i) => ({
+          id: randomUUID(), exerciseId: entry.exerciseId, date: today,
+          setNumber: i + 1, reps: s.reps, weight: s.weight, unit: summary.unit,
+        })),
+      )
+    }
+
     // Update defaults so next session pre-fills with these values
     await db.update(splitExercises)
-      .set({ defaultSets: entry.sets, defaultReps: entry.reps, defaultWeight: entry.weight, defaultUnit: entry.unit })
+      .set({ defaultSets: summary.sets, defaultReps: summary.reps, defaultWeight: summary.weight, defaultUnit: summary.unit })
       .where(eq(splitExercises.id, entry.exerciseId))
   }
   revalidatePath('/gym')
