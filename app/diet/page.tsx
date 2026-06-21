@@ -12,9 +12,9 @@ export const dynamic = 'force-dynamic'
 
 const DEFAULTS: DietGoals = {
   id: 1,
-  trainingCalories: 2000, trainingProtein: 160, trainingCarbs: 180, trainingFat: 55,
-  restCalories: 1700, restProtein: 160, restCarbs: 100, restFat: 55,
-  waterGoalMl: 2750,
+  trainingCalories: 2300, trainingProtein: 180, trainingCarbs: 235, trainingFat: 70,
+  restCalories: 2300, restProtein: 180, restCarbs: 235, restFat: 70,
+  waterGoalMl: 3500,
 }
 
 export default async function DietPage() {
@@ -34,7 +34,7 @@ export default async function DietPage() {
     <div className="space-y-6 animate-fade-in">
       <div>
         <h1 className="text-lg font-semibold text-zinc-100">Diet</h1>
-        <p className="text-xs text-zinc-500 mt-0.5">Ethereal Split — 16–20 week recomp · target 10–13% body fat</p>
+        <p className="text-xs text-zinc-500 mt-0.5">Cut + calisthenics recomp · lean, V-taper aesthetic</p>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">

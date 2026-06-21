@@ -127,6 +127,7 @@ export const splitExercises = sqliteTable('split_exercises', {
   name: text('name').notNull(),
   exerciseOrder: integer('exercise_order').notNull().default(0),
   exerciseType: text('exercise_type').notNull().default('strength'), // 'strength' | 'cardio' | 'facial' | 'hold'
+  target: text('target'),            // prescription / progression hint, e.g. '3–4 × 6–12 · weighted'
   defaultSets: integer('default_sets').notNull().default(3),
   defaultReps: integer('default_reps').notNull().default(8),
   defaultWeight: real('default_weight').notNull().default(0),
@@ -145,11 +146,24 @@ export const exerciseLogs = sqliteTable('exercise_logs', {
   createdAt: text('created_at').notNull().default(sql`(datetime('now'))`),
 })
 
+// Optional per-set detail for a logged session. The summary row in
+// `exercise_logs` is still written for prev-display and progression charts.
+export const exerciseSetLogs = sqliteTable('exercise_set_logs', {
+  id: text('id').primaryKey(),
+  exerciseId: text('exercise_id').notNull(),
+  date: text('date').notNull(),
+  setNumber: integer('set_number').notNull(),
+  reps: integer('reps').notNull(),
+  weight: real('weight').notNull().default(0),
+  unit: text('unit').notNull().default('lbs'),
+  createdAt: text('created_at').notNull().default(sql`(datetime('now'))`),
+})
+
 export const nutritionGoals = sqliteTable('nutrition_goals', {
   id: integer('id').primaryKey().default(1),
-  caloriesGoal: integer('calories_goal').notNull().default(2500),
+  caloriesGoal: integer('calories_goal').notNull().default(2300),
   proteinGoal: integer('protein_goal').notNull().default(180),
-  carbsGoal: integer('carbs_goal').notNull().default(280),
+  carbsGoal: integer('carbs_goal').notNull().default(235),
   fatsGoal: integer('fats_goal').notNull().default(70),
 })
 
@@ -166,15 +180,16 @@ export const nutritionEntries = sqliteTable('nutrition_entries', {
 
 export const dietGoals = sqliteTable('diet_goals', {
   id: integer('id').primaryKey().default(1),
-  trainingCalories: integer('training_calories').notNull().default(2000),
-  trainingProtein: integer('training_protein').notNull().default(160),
-  trainingCarbs: integer('training_carbs').notNull().default(180),
-  trainingFat: integer('training_fat').notNull().default(55),
-  restCalories: integer('rest_calories').notNull().default(1700),
-  restProtein: integer('rest_protein').notNull().default(160),
-  restCarbs: integer('rest_carbs').notNull().default(100),
-  restFat: integer('rest_fat').notNull().default(55),
-  waterGoalMl: integer('water_goal_ml').notNull().default(2750),
+  // Cut plan uses fixed daily targets — training and rest columns are kept equal.
+  trainingCalories: integer('training_calories').notNull().default(2300),
+  trainingProtein: integer('training_protein').notNull().default(180),
+  trainingCarbs: integer('training_carbs').notNull().default(235),
+  trainingFat: integer('training_fat').notNull().default(70),
+  restCalories: integer('rest_calories').notNull().default(2300),
+  restProtein: integer('rest_protein').notNull().default(180),
+  restCarbs: integer('rest_carbs').notNull().default(235),
+  restFat: integer('rest_fat').notNull().default(70),
+  waterGoalMl: integer('water_goal_ml').notNull().default(3500),
 })
 
 export const dietMeals = sqliteTable('diet_meals', {
@@ -203,6 +218,37 @@ export const waterLogs = sqliteTable('water_logs', {
   createdAt: text('created_at').notNull().default(sql`(datetime('now'))`),
 })
 
+// ── Progress tracking ─────────────────────────────────────────────────────────
+
+// One entry per day (latest wins). 7-day rolling average is computed in the UI.
+export const bodyweightLogs = sqliteTable('bodyweight_logs', {
+  id: text('id').primaryKey(),
+  date: text('date').notNull(),       // YYYY-MM-DD
+  weight: real('weight').notNull(),
+  unit: text('unit').notNull().default('lbs'),
+  createdAt: text('created_at').notNull().default(sql`(datetime('now'))`),
+})
+
+// Strength/skill benchmarks. `value` is reps for numeric benchmarks or the
+// 0-based stage index for staged ones; `label` holds the human stage name.
+export const benchmarkLogs = sqliteTable('benchmark_logs', {
+  id: text('id').primaryKey(),
+  date: text('date').notNull(),       // YYYY-MM-DD
+  key: text('key').notNull(),         // 'pull_ups' | 'ring_dips' | 'pistol_squat' | 'push_up'
+  value: real('value').notNull(),
+  label: text('label'),
+  createdAt: text('created_at').notNull().default(sql`(datetime('now'))`),
+})
+
+// Weekly progress photos. Images are client-compressed JPEG data URLs.
+export const progressPhotos = sqliteTable('progress_photos', {
+  id: text('id').primaryKey(),
+  date: text('date').notNull(),       // YYYY-MM-DD
+  pose: text('pose').notNull(),       // 'front' | 'side' | 'back'
+  imageData: text('image_data').notNull(),
+  createdAt: text('created_at').notNull().default(sql`(datetime('now'))`),
+})
+
 export type Habit = typeof habits.$inferSelect
 export type Task = typeof tasks.$inferSelect
 export type Reward = typeof rewards.$inferSelect
@@ -216,8 +262,12 @@ export type NutritionEntry = typeof nutritionEntries.$inferSelect
 export type SplitDay = typeof splitDays.$inferSelect
 export type SplitExercise = typeof splitExercises.$inferSelect
 export type ExerciseLog = typeof exerciseLogs.$inferSelect
+export type ExerciseSetLog = typeof exerciseSetLogs.$inferSelect
 export type NutritionGoals = typeof nutritionGoals.$inferSelect
 export type DietGoals = typeof dietGoals.$inferSelect
 export type DietMeal = typeof dietMeals.$inferSelect
 export type DietRule = typeof dietRules.$inferSelect
 export type WaterLog = typeof waterLogs.$inferSelect
+export type BodyweightLog = typeof bodyweightLogs.$inferSelect
+export type BenchmarkLog = typeof benchmarkLogs.$inferSelect
+export type ProgressPhoto = typeof progressPhotos.$inferSelect

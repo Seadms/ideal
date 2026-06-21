@@ -20,7 +20,19 @@ function buildClient() {
 export const client = buildClient()
 export const db = drizzle(client, { schema })
 
-export async function initDb() {
+// Memoize so the (idempotent) schema setup + seeds run once per warm server
+// instance instead of on every force-dynamic request. A failed init clears the
+// cache so the next request can retry rather than being stuck on a rejection.
+let initPromise: Promise<void> | null = null
+
+export function initDb(): Promise<void> {
+  if (!initPromise) {
+    initPromise = doInitDb().catch(err => { initPromise = null; throw err })
+  }
+  return initPromise
+}
+
+async function doInitDb() {
   await client.batch([
     `CREATE TABLE IF NOT EXISTS habits (
       id TEXT PRIMARY KEY,
@@ -134,6 +146,8 @@ export async function initDb() {
       split_day_id TEXT NOT NULL,
       name TEXT NOT NULL,
       exercise_order INTEGER NOT NULL DEFAULT 0,
+      exercise_type TEXT NOT NULL DEFAULT 'strength',
+      target TEXT,
       default_sets INTEGER NOT NULL DEFAULT 3,
       default_reps INTEGER NOT NULL DEFAULT 8,
       default_weight REAL NOT NULL DEFAULT 0,
@@ -147,6 +161,16 @@ export async function initDb() {
       sets INTEGER NOT NULL,
       reps INTEGER NOT NULL,
       weight REAL NOT NULL,
+      unit TEXT NOT NULL DEFAULT 'lbs',
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    )`,
+    `CREATE TABLE IF NOT EXISTS exercise_set_logs (
+      id TEXT PRIMARY KEY,
+      exercise_id TEXT NOT NULL,
+      date TEXT NOT NULL,
+      set_number INTEGER NOT NULL,
+      reps INTEGER NOT NULL,
+      weight REAL NOT NULL DEFAULT 0,
       unit TEXT NOT NULL DEFAULT 'lbs',
       created_at TEXT NOT NULL DEFAULT (datetime('now'))
     )`,
@@ -202,6 +226,28 @@ export async function initDb() {
       amount_ml INTEGER NOT NULL,
       created_at TEXT NOT NULL DEFAULT (datetime('now'))
     )`,
+    `CREATE TABLE IF NOT EXISTS bodyweight_logs (
+      id TEXT PRIMARY KEY,
+      date TEXT NOT NULL,
+      weight REAL NOT NULL,
+      unit TEXT NOT NULL DEFAULT 'lbs',
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    )`,
+    `CREATE TABLE IF NOT EXISTS benchmark_logs (
+      id TEXT PRIMARY KEY,
+      date TEXT NOT NULL,
+      key TEXT NOT NULL,
+      value REAL NOT NULL,
+      label TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    )`,
+    `CREATE TABLE IF NOT EXISTS progress_photos (
+      id TEXT PRIMARY KEY,
+      date TEXT NOT NULL,
+      pose TEXT NOT NULL,
+      image_data TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    )`,
   ], 'write')
 
   const migrations = [
@@ -209,11 +255,17 @@ export async function initDb() {
     `ALTER TABLE habits ADD COLUMN frequency_per_week INTEGER NOT NULL DEFAULT 7`,
     `ALTER TABLE user_stats ADD COLUMN reminder_time TEXT`,
     `ALTER TABLE user_stats ADD COLUMN streak_freeze_count INTEGER NOT NULL DEFAULT 0`,
-    // Sync nutrition_goals to match Ethereal Split diet plan targets
-    `INSERT OR IGNORE INTO nutrition_goals (id, calories_goal, protein_goal, carbs_goal, fats_goal) VALUES (1, 2000, 160, 180, 55)`,
-    `UPDATE nutrition_goals SET calories_goal = 2000, protein_goal = 160, carbs_goal = 180, fats_goal = 55 WHERE id = 1 AND calories_goal = 2500`,
     `ALTER TABLE split_exercises ADD COLUMN exercise_type TEXT NOT NULL DEFAULT 'strength'`,
+    `ALTER TABLE split_exercises ADD COLUMN target TEXT`,
     `UPDATE split_exercises SET exercise_type = 'cardio' WHERE name LIKE '%Cardio%'`,
+    // Nutrition → fixed cut targets (2300 / 180P / 235C / 70F). Seed the row if
+    // missing and migrate the prior seeded defaults (2500 original, 2000 recomp)
+    // up to the new plan. User-customised values (any other number) are left alone.
+    `INSERT OR IGNORE INTO nutrition_goals (id, calories_goal, protein_goal, carbs_goal, fats_goal) VALUES (1, 2300, 180, 235, 70)`,
+    `UPDATE nutrition_goals SET calories_goal = 2300, protein_goal = 180, carbs_goal = 235, fats_goal = 70 WHERE id = 1 AND calories_goal IN (2000, 2500)`,
+    // Diet goals → same fixed targets for training & rest, water 3.5 L. Only
+    // migrate rows still holding the prior recomp defaults.
+    `UPDATE diet_goals SET training_calories = 2300, training_protein = 180, training_carbs = 235, training_fat = 70, rest_calories = 2300, rest_protein = 180, rest_carbs = 235, rest_fat = 70, water_goal_ml = 3500 WHERE id = 1 AND training_calories = 2000 AND rest_calories = 1700`,
   ]
   for (const stmt of migrations) {
     try { await client.execute(stmt) } catch { /* column already exists */ }
@@ -228,77 +280,67 @@ export async function initDb() {
   await seedHouseholdTasksIfNeeded()
 }
 
-// ── Seed: Home Calisthenics Split (Rings & Pull-up Bar) ───────────────────────
-// One-time replacement: if the old gym split is present, swap it for the home
-// calisthenics split. Existing exercise_logs (workout history) are preserved.
+// ── Seed: Recomp Cut Split — 4-Day Calisthenics (Rings, Bar & Bands) ──────────
+// One-time replacement: if a different split is present, swap it for the 4-day
+// recomp program. Existing exercise_logs (workout history) are preserved.
+// Progression rule for every lift: at the TOP of the rep range with clean form,
+// advance to a harder variation or add external load (vest / dip belt / backpack).
 
-const HOME_SPLIT_MARKER = 'Lat Width & Biceps (Vertical Pull)'
+const SPLIT_MARKER = 'Push / Shoulders'
 
 async function seedSplitIfNeeded() {
   const rows = await client.execute('SELECT id, name FROM split_days')
   const existing = rows.rows
-  // Already on the home split — nothing to do.
-  if (existing.some(r => r.name === HOME_SPLIT_MARKER)) return
+  // Already on the current split — nothing to do.
+  if (existing.some(r => r.name === SPLIT_MARKER)) return
   // An older split exists — clear its days/exercises (keep logged history).
   if (existing.length > 0) {
     await client.execute('DELETE FROM split_exercises')
     await client.execute('DELETE FROM split_days')
   }
 
-  type Ex = { name: string; sets: number; reps: number; weight: number; type?: string }
+  type Ex = { name: string; sets: number; reps: number; weight: number; type?: string; target?: string }
   const days: { name: string; order: number; exercises: Ex[] }[] = [
     {
-      // Vertical pull = lat width (the V-taper). Only the last set of each
-      // pull-up goes to true failure; chin-ups trimmed to 3 sets to protect
-      // grip/elbows for the rest of the day.
-      name: 'Lat Width & Biceps (Vertical Pull)', order: 1,
+      name: 'Push / Shoulders', order: 1,
       exercises: [
-        { name: 'Wide-Grip Pull-ups (last set to failure)', sets: 4, reps: 6,  weight: 0 },
-        { name: 'Neutral-Grip Ring Pull-ups',               sets: 4, reps: 8,  weight: 0 },
-        { name: 'Chin-ups',                                 sets: 3, reps: 8,  weight: 0 },
-        { name: 'Ring Bicep Curls',                         sets: 4, reps: 12, weight: 0 },
+        { name: 'Ring Dips',                              sets: 4, reps: 12, weight: 0, target: '3–4 × 6–12 · band-assist → BW → weighted' },
+        { name: 'Pike Push-ups / Band Overhead Press',    sets: 3, reps: 12, weight: 0, target: '3 × 8–12' },
+        { name: 'Ring / Pseudo-Planche Push-ups',         sets: 3, reps: 15, weight: 0, target: '3 × 8–15 · upper chest' },
+        { name: 'Band Lateral Raises',                    sets: 4, reps: 20, weight: 0, target: '4 × 12–20 · ⭐ shoulder width' },
+        { name: 'Triceps — Ring Extensions / Band Pushdowns', sets: 3, reps: 15, weight: 0, target: '2–3 × 10–15' },
       ],
     },
     {
-      // Chest restored (ring dips + flyes) and a direct lateral-delt movement
-      // added — side-delt width + a full chest are the front-on aesthetic.
-      name: 'Chest, Shoulders & Triceps (Push)', order: 2,
+      name: 'Lower / Power', order: 2,
       exercises: [
-        { name: 'Ring Dips (chest lean)',          sets: 4, reps: 8,  weight: 0 },
-        { name: 'Ring Chest Flyes',                sets: 4, reps: 12, weight: 0 },
-        { name: 'Handstand / Pike Push-ups',       sets: 4, reps: 8,  weight: 0 },
-        { name: 'Banded Lateral Raises',           sets: 4, reps: 15, weight: 0 },
-        { name: 'Diamond Push-ups (to failure)',   sets: 4, reps: 12, weight: 0 },
+        { name: 'Pistol Squat Progression / Band Squats', sets: 4, reps: 12, weight: 0, target: '3–4 × 6–12 per leg' },
+        { name: 'Nordic Curls / Band Hamstring Curls',    sets: 3, reps: 12, weight: 0, target: '3 × 6–12' },
+        { name: 'Explosive Jumps (box / broad / vertical)', sets: 4, reps: 5, weight: 0, target: '3–4 × 3–5 · max intent · add vest to progress' },
+        { name: 'Short Sprints (20–40m)',                 sets: 1, reps: 15, weight: 0, type: 'cardio', target: '4–6 sprints · full recovery' },
+        { name: 'Calf Raises',                            sets: 3, reps: 20, weight: 0, target: '3 × 12–20' },
       ],
     },
     {
-      // Horizontal pull = back thickness; towel work builds forearms/grip.
-      name: 'Back Thickness & Forearms (Horizontal Pull)', order: 3,
+      name: 'Pull / Back', order: 3,
       exercises: [
-        { name: 'Inverted Ring Rows',          sets: 4, reps: 12, weight: 0 },
-        { name: 'One-Arm Ring Rows (per arm)', sets: 4, reps: 10, weight: 0 },
-        { name: 'Towel Pull-ups',              sets: 4, reps: 6,  weight: 0 },
-        { name: 'Towel Hangs',                 sets: 3, reps: 30, weight: 0, type: 'hold' },
+        { name: 'Wide Pull-ups',                          sets: 4, reps: 8,  weight: 0, target: '4 × near-max · ⭐ back width' },
+        { name: 'Chin-ups / Archer Pull-up Progression',  sets: 3, reps: 8,  weight: 0, target: '3 sets' },
+        { name: 'Ring Rows',                              sets: 3, reps: 12, weight: 0, target: '3 × 8–12 · back thickness' },
+        { name: 'Band Face-Pulls',                        sets: 3, reps: 20, weight: 0, target: '3 × 15–20 · rear delts' },
+        { name: 'Band / Ring Biceps Curls',               sets: 3, reps: 15, weight: 0, target: '2–3 × 10–15' },
       ],
     },
     {
-      name: 'Legs & Core', order: 4,
+      name: 'Full-Body Athletic', order: 4,
       exercises: [
-        { name: 'Pistol Squats (per leg)',          sets: 4, reps: 6,  weight: 0 },
-        { name: 'Bulgarian Split Squats (per leg)', sets: 4, reps: 12, weight: 0 },
-        { name: 'Explosive Switching Lunges',       sets: 4, reps: 20, weight: 0 },
-        { name: 'Hollow Body Holds',                sets: 4, reps: 45, weight: 0, type: 'hold' },
-      ],
-    },
-    {
-      // Second hit on the highest-visual-impact areas. Weighted pull-ups give
-      // the progressive-overload top end bodyweight reps eventually lose.
-      name: 'Aesthetic Finish (V-Taper & Core)', order: 5,
-      exercises: [
-        { name: 'Weighted Pull-ups (backpack)', sets: 4, reps: 6,  weight: 25 },
-        { name: 'Ring Chest Flyes',             sets: 4, reps: 10, weight: 0 },
-        { name: 'Ring Bicep Curls',             sets: 4, reps: 12, weight: 0 },
-        { name: 'Dragon Flags',                 sets: 4, reps: 6,  weight: 0 },
+        { name: 'Sprints (short, explosive)',             sets: 1, reps: 18, weight: 0, type: 'cardio', target: '6–8 × short' },
+        { name: 'Explosive Throws / Band Power Work',      sets: 4, reps: 8,  weight: 0, target: '3–4 sets · max intent' },
+        { name: 'Band Lateral Raises',                    sets: 3, reps: 20, weight: 0, target: '3 × 12–20 · delt frequency' },
+        { name: 'Pull-ups (skill volume)',                sets: 2, reps: 8,  weight: 0, target: '2 sets · lighter' },
+        { name: 'Ring Dips (skill volume)',               sets: 2, reps: 8,  weight: 0, target: '2 sets · lighter' },
+        { name: 'Hanging Leg Raises',                     sets: 3, reps: 12, weight: 0, target: '3 × core' },
+        { name: 'Ring L-Sit Holds',                       sets: 3, reps: 20, weight: 0, type: 'hold', target: '3 × max hold' },
       ],
     },
   ]
@@ -313,9 +355,9 @@ async function seedSplitIfNeeded() {
       const ex = day.exercises[i]
       await client.execute({
         sql: `INSERT INTO split_exercises
-          (id, split_day_id, name, exercise_order, exercise_type, default_sets, default_reps, default_weight, default_unit)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        args: [randomUUID(), dayId, ex.name, i + 1, ex.type ?? 'strength', ex.sets, ex.reps, ex.weight, ex.type === 'cardio' ? 'min' : ex.type === 'hold' ? 'sec' : 'lbs'],
+          (id, split_day_id, name, exercise_order, exercise_type, target, default_sets, default_reps, default_weight, default_unit)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        args: [randomUUID(), dayId, ex.name, i + 1, ex.type ?? 'strength', ex.target ?? null, ex.sets, ex.reps, ex.weight, ex.type === 'cardio' ? 'min' : ex.type === 'hold' ? 'sec' : 'lbs'],
       })
     }
   }
@@ -330,7 +372,7 @@ async function seedDietIfEmpty() {
       sql: `INSERT INTO diet_goals
         (id, training_calories, training_protein, training_carbs, training_fat,
          rest_calories, rest_protein, rest_carbs, rest_fat, water_goal_ml)
-        VALUES (1, 2000, 160, 180, 55, 1700, 160, 100, 55, 2750)`,
+        VALUES (1, 2300, 180, 235, 70, 2300, 180, 235, 70, 3500)`,
       args: [],
     })
   }
@@ -373,7 +415,7 @@ async function seedDietIfEmpty() {
     }
 
     const rules = [
-      { cat: 'always',     text: '2.5–3L water daily',              ord: 1 },
+      { cat: 'always',     text: '3.5–4 L water daily (4 L on training days)', ord: 1 },
       { cat: 'always',     text: 'Protein within 45 min post-lift', ord: 2 },
       { cat: 'always',     text: 'Sleep 7–9 hours',                 ord: 3 },
       { cat: 'always',     text: 'Zone 2 every lifting day',        ord: 4 },

@@ -33,8 +33,9 @@ HOME LIFE (HIS #1 PRIORITY):
 - The MAJORITY of his bonus tasks should revolve around Kayd and their home together
 
 FITNESS:
-- Trains at home with gymnastic rings and a pull-up bar (calisthenics split)
-- Goal: build a beautiful, ethereal V-taper physique — struggles with consistency
+- Trains at home with gymnastic rings, a pull-up bar, and resistance bands (4-day calisthenics split)
+- Goal: a lean, attractive-athletic V-taper — wide shoulders and back, tight waist, low body fat. Currently CUTTING while running calisthenics (recomp); struggles with consistency
+- Good nudges: log bodyweight, take weekly progress photos, hit a step/zone-2 walk, 5 min mobility, prep a high-protein meal, beat a benchmark (pull-ups / ring dips)
 - Needs low-friction, quick fitness nudges to keep momentum
 
 SKILLS TO BUILD:
