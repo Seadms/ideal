@@ -12,23 +12,47 @@ function mmss(s: number): string {
   return `${m}:${String(sec).padStart(2, '0')}`
 }
 
+// Reuse one AudioContext: a fresh one created at fire-time can stay suspended
+// (autoplay policy) and play nothing. We unlock this on the start tap instead.
+let audioCtx: AudioContext | null = null
+
+function getCtx(): AudioContext | null {
+  if (typeof window === 'undefined') return null
+  const Ctx = window.AudioContext || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
+  if (!Ctx) return null
+  if (!audioCtx) audioCtx = new Ctx()
+  return audioCtx
+}
+
+// Prime the audio context inside a user gesture so the alarm can fire later.
+function unlockAudio() {
+  const ctx = getCtx()
+  if (ctx?.state === 'suspended') void ctx.resume()
+}
+
+function beep(ctx: AudioContext, at: number, freq: number, dur: number) {
+  const o = ctx.createOscillator()
+  const g = ctx.createGain()
+  o.connect(g); g.connect(ctx.destination)
+  o.type = 'sine'
+  o.frequency.value = freq
+  g.gain.setValueAtTime(0.0001, at)
+  g.gain.exponentialRampToValueAtTime(0.4, at + 0.01)
+  g.gain.exponentialRampToValueAtTime(0.0001, at + dur)
+  o.start(at)
+  o.stop(at + dur)
+}
+
 function alarm() {
   try {
-    if (typeof navigator !== 'undefined') navigator.vibrate?.([200, 100, 200])
-    const Ctx = window.AudioContext || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
-    if (!Ctx) return
-    const ctx = new Ctx()
-    const o = ctx.createOscillator()
-    const g = ctx.createGain()
-    o.connect(g); g.connect(ctx.destination)
-    o.type = 'sine'
-    o.frequency.value = 880
-    g.gain.setValueAtTime(0.0001, ctx.currentTime)
-    g.gain.exponentialRampToValueAtTime(0.3, ctx.currentTime + 0.01)
-    g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.5)
-    o.start()
-    o.stop(ctx.currentTime + 0.5)
-    o.onended = () => ctx.close()
+    if (typeof navigator !== 'undefined') navigator.vibrate?.([300, 150, 300, 150, 300])
+    const ctx = getCtx()
+    if (!ctx) return
+    void ctx.resume()
+    const t0 = ctx.currentTime
+    // A repeating triple-beep ring so the end of rest is hard to miss.
+    const pattern = [880, 880, 1175, 880, 880, 1175]
+    pattern.forEach((freq, i) => beep(ctx, t0 + i * 0.22, freq, 0.16))
   } catch { /* audio not available */ }
 }
 
@@ -55,13 +79,13 @@ export function RestTimer() {
     return () => clearTimeout(t)
   }, [running, remaining])
 
-  const start = (seconds: number) => { setTotal(seconds); setRemaining(seconds); setRunning(true) }
+  const start = (seconds: number) => { unlockAudio(); setTotal(seconds); setRemaining(seconds); setRunning(true) }
   const addTime = (seconds: number) => {
     setRemaining(r => Math.max(0, r + seconds))
     setTotal(t => Math.max(t, remaining + seconds))
   }
   const pause = () => setRunning(false)
-  const resume = () => { if (remaining > 0) setRunning(true) }
+  const resume = () => { if (remaining > 0) { unlockAudio(); setRunning(true) } }
   const reset = () => { setRunning(false); setRemaining(0) }
 
   const active = remaining > 0
