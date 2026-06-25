@@ -280,13 +280,19 @@ async function doInitDb() {
   await seedHouseholdTasksIfNeeded()
 }
 
-// ── Seed: Recomp Cut Split — 4-Day Calisthenics (Rings, Bar & Bands) ──────────
-// One-time replacement: if a different split is present, swap it for the 4-day
-// recomp program. Existing exercise_logs (workout history) are preserved.
+// ── Seed: Aesthetic Recomp Split — 4-Day Calisthenics (Rings, Bar & Bands) ────
+// Tuned for the "attraction" look: V-taper (broad side delts + wide lats), full
+// chest and arms, glutes, and a tight, lean midsection. Push / Pull / Legs plus a
+// delt–arm–core specialization day. Dedicated power/jump work is dropped in favour
+// of hypertrophy volume; conditioning is kept only as an optional finisher to stay
+// lean without taxing recovery.
+//
+// One-time replacement: bumping SPLIT_MARKER triggers a one-time swap of any older
+// split for this one. Existing exercise_logs (workout history) are preserved.
 // Progression rule for every lift: at the TOP of the rep range with clean form,
 // advance to a harder variation or add external load (vest / dip belt / backpack).
 
-const SPLIT_MARKER = 'Push / Shoulders'
+const SPLIT_MARKER = 'Push — Chest / Shoulders / Triceps'
 
 async function seedSplitIfNeeded() {
   const rows = await client.execute('SELECT id, name FROM split_days')
@@ -302,45 +308,47 @@ async function seedSplitIfNeeded() {
   type Ex = { name: string; sets: number; reps: number; weight: number; type?: string; target?: string }
   const days: { name: string; order: number; exercises: Ex[] }[] = [
     {
-      name: 'Push / Shoulders', order: 1,
+      name: 'Push — Chest / Shoulders / Triceps', order: 1,
       exercises: [
-        { name: 'Ring Dips',                              sets: 4, reps: 12, weight: 0, target: '3–4 × 6–12 · band-assist → BW → weighted' },
-        { name: 'Pike Push-ups / Band Overhead Press',    sets: 3, reps: 12, weight: 0, target: '3 × 8–12' },
-        { name: 'Ring / Pseudo-Planche Push-ups',         sets: 3, reps: 15, weight: 0, target: '3 × 8–15 · upper chest' },
-        { name: 'Band Lateral Raises',                    sets: 4, reps: 20, weight: 0, target: '4 × 12–20 · ⭐ shoulder width' },
-        { name: 'Triceps — Ring Extensions / Band Pushdowns', sets: 3, reps: 15, weight: 0, target: '2–3 × 10–15' },
+        { name: 'Weighted Ring Dips',                     sets: 4, reps: 10, weight: 0, target: '4 × 6–12 · ⭐ chest + triceps · add dip belt / vest at top' },
+        { name: 'Ring / Pseudo-Planche Push-ups',         sets: 3, reps: 12, weight: 0, target: '3 × 8–15 · upper chest' },
+        { name: 'Ring / Band Chest Flyes',                sets: 3, reps: 15, weight: 0, target: '3 × 12–20 · chest stretch + inner chest' },
+        { name: 'Pike Push-ups / Band Overhead Press',    sets: 3, reps: 12, weight: 0, target: '3 × 8–12 · front delts' },
+        { name: 'Band Lateral Raises',                    sets: 4, reps: 18, weight: 0, target: '4 × 12–20 · ⭐ shoulder width' },
+        { name: 'Triceps — Ring Extensions / Band Pushdowns', sets: 3, reps: 13, weight: 0, target: '3 × 10–15' },
       ],
     },
     {
-      name: 'Lower / Power', order: 2,
+      name: 'Pull — Back / Rear Delts / Biceps', order: 2,
       exercises: [
-        { name: 'Pistol Squat Progression / Band Squats', sets: 4, reps: 12, weight: 0, target: '3–4 × 6–12 per leg' },
-        { name: 'Nordic Curls / Band Hamstring Curls',    sets: 3, reps: 12, weight: 0, target: '3 × 6–12' },
-        { name: 'Explosive Jumps (box / broad / vertical)', sets: 4, reps: 5, weight: 0, target: '3–4 × 3–5 · max intent · add vest to progress' },
-        { name: 'Short Sprints (20–40m)',                 sets: 1, reps: 15, weight: 0, type: 'cardio', target: '4–6 sprints · full recovery' },
-        { name: 'Calf Raises',                            sets: 3, reps: 20, weight: 0, target: '3 × 12–20' },
+        { name: 'Wide Pull-ups',                          sets: 4, reps: 8,  weight: 0, target: '4 × 6–12 · ⭐ back width · add dip belt at top' },
+        { name: 'Chin-ups / Archer Pull-up Progression',  sets: 3, reps: 8,  weight: 0, target: '3 × 6–10' },
+        { name: 'Ring Rows',                              sets: 4, reps: 10, weight: 0, target: '4 × 8–12 · back thickness' },
+        { name: 'Band Face-Pulls',                        sets: 3, reps: 18, weight: 0, target: '3 × 15–20 · rear delts + posture' },
+        { name: 'Band / Ring Biceps Curls',               sets: 3, reps: 12, weight: 0, target: '3 × 10–15' },
+        { name: 'Ring / Band Hammer Curls',               sets: 3, reps: 12, weight: 0, target: '3 × 10–15 · arm thickness' },
       ],
     },
     {
-      name: 'Pull / Back', order: 3,
+      name: 'Legs — Quads / Glutes / Hamstrings', order: 3,
       exercises: [
-        { name: 'Wide Pull-ups',                          sets: 4, reps: 8,  weight: 0, target: '4 × near-max · ⭐ back width' },
-        { name: 'Chin-ups / Archer Pull-up Progression',  sets: 3, reps: 8,  weight: 0, target: '3 sets' },
-        { name: 'Ring Rows',                              sets: 3, reps: 12, weight: 0, target: '3 × 8–12 · back thickness' },
-        { name: 'Band Face-Pulls',                        sets: 3, reps: 20, weight: 0, target: '3 × 15–20 · rear delts' },
-        { name: 'Band / Ring Biceps Curls',               sets: 3, reps: 15, weight: 0, target: '2–3 × 10–15' },
+        { name: 'Pistol Squat Progression / Band Squats', sets: 4, reps: 10, weight: 0, target: '4 × 6–12 per leg · quads' },
+        { name: 'Band Hip Thrust / Glute Bridge',         sets: 3, reps: 15, weight: 0, target: '3 × 12–20 · ⭐ glutes' },
+        { name: 'Bulgarian Split Squat (band / vest)',    sets: 3, reps: 10, weight: 0, target: '3 × 8–12 per leg · glutes + quads' },
+        { name: 'Nordic Curls / Band Hamstring Curls',    sets: 3, reps: 10, weight: 0, target: '3 × 6–12 · hamstrings' },
+        { name: 'Calf Raises',                            sets: 4, reps: 18, weight: 0, target: '4 × 12–20' },
       ],
     },
     {
-      name: 'Full-Body Athletic', order: 4,
+      name: 'Delts / Arms / Core', order: 4,
       exercises: [
-        { name: 'Sprints (short, explosive)',             sets: 1, reps: 18, weight: 0, type: 'cardio', target: '6–8 × short' },
-        { name: 'Explosive Throws / Band Power Work',      sets: 4, reps: 8,  weight: 0, target: '3–4 sets · max intent' },
-        { name: 'Band Lateral Raises',                    sets: 3, reps: 20, weight: 0, target: '3 × 12–20 · delt frequency' },
-        { name: 'Pull-ups (skill volume)',                sets: 2, reps: 8,  weight: 0, target: '2 sets · lighter' },
-        { name: 'Ring Dips (skill volume)',               sets: 2, reps: 8,  weight: 0, target: '2 sets · lighter' },
-        { name: 'Hanging Leg Raises',                     sets: 3, reps: 12, weight: 0, target: '3 × core' },
-        { name: 'Ring L-Sit Holds',                       sets: 3, reps: 20, weight: 0, type: 'hold', target: '3 × max hold' },
+        { name: 'Band Lateral Raises',                    sets: 4, reps: 18, weight: 0, target: '4 × 12–20 · ⭐ shoulder width (3rd weekly hit)' },
+        { name: 'Band / Ring Biceps Curls',               sets: 3, reps: 12, weight: 0, target: '3 × 10–15' },
+        { name: 'Triceps — Ring Extensions / Band Pushdowns', sets: 3, reps: 13, weight: 0, target: '3 × 10–15' },
+        { name: 'Rear-Delt Band Flyes',                   sets: 3, reps: 18, weight: 0, target: '3 × 15–20 · 3D delts + posture' },
+        { name: 'Hanging Leg Raises',                     sets: 3, reps: 12, weight: 0, target: '3 × 10–15 · core' },
+        { name: 'Ring L-Sit Holds',                       sets: 3, reps: 20, weight: 0, type: 'hold', target: '3 × max hold · core' },
+        { name: 'Optional Conditioning — Sprints / Intervals', sets: 1, reps: 12, weight: 0, type: 'cardio', target: '10–15 min · stay lean · skip if recovery is low' },
       ],
     },
   ]
