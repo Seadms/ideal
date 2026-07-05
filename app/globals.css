@@ -60,6 +60,23 @@ body {
   }
 }
 
+/* Edit/reorder controls: always visible on touch devices (no hover there),
+   revealed on hover or keyboard focus on pointer devices. */
+.hover-reveal {
+  opacity: 0.55;
+  transition: opacity 150ms ease;
+}
+@media (hover: hover) {
+  .hover-reveal {
+    opacity: 0;
+  }
+  .group:hover .hover-reveal,
+  .hover-reveal:focus-visible,
+  .hover-reveal:focus-within {
+    opacity: 1;
+  }
+}
+
 /* Liquid-glass bottom nav */
 .glass-nav {
   background: rgba(24, 24, 27, 0.6);

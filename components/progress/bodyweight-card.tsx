@@ -131,7 +131,7 @@ export function BodyweightCard({ logs }: Props) {
                   <button
                     onClick={() => startTransition(async () => { await deleteBodyweightLog(l.id) })}
                     disabled={isPending}
-                    className="opacity-0 group-hover:opacity-100 p-0.5 rounded text-zinc-600 hover:text-rose-400 transition-all"
+                    className="hover-reveal p-0.5 rounded text-zinc-600 hover:text-rose-400 transition-all"
                   >
                     <Trash2 size={11} />
                   </button>

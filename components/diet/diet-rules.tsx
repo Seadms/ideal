@@ -86,7 +86,7 @@ export function DietRules({ rules }: Props) {
                     ) : (
                       <>
                         <p className="text-xs text-zinc-400 flex-1 leading-relaxed">{rule.text}</p>
-                        <div className="flex opacity-0 group-hover:opacity-100 transition-opacity shrink-0 mt-0.5">
+                        <div className="flex hover-reveal transition-opacity shrink-0 mt-0.5">
                           <button
                             onClick={() => { setEditingId(rule.id); setEditText(rule.text) }}
                             className="p-0.5 text-zinc-600 hover:text-zinc-300"

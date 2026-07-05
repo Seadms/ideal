@@ -16,7 +16,7 @@ const EXERCISES = [
   {
     name: 'Cheek Lifter',
     dose: '3 × 10s hold',
-    why: 'Builds midface fullness — higher, fuller cheeks. The only exercise here with real trial evidence.',
+    why: 'Builds midface fullness: higher, fuller cheeks. The only exercise here with real trial evidence.',
     steps: [
       'Open your mouth into an "O" and fold your lips over your teeth.',
       'Smile widely to lift the cheek muscles; rest fingers lightly on cheeks to feel the lift.',
@@ -26,9 +26,9 @@ const EXERCISES = [
   {
     name: 'Chin Tucks',
     dose: '10 × 3s hold',
-    why: 'Corrects forward-head posture — the biggest fixable factor in how sharp your jawline and neck look.',
+    why: 'Corrects forward-head posture, the biggest fixable factor in how sharp your jawline and neck look.',
     steps: [
-      "Sit or stand tall. Keep your eyes level — don't tilt up or down.",
+      "Sit or stand tall. Keep your eyes level, don't tilt up or down.",
       'Glide your head straight back (make a double chin) until you feel the back of the neck lengthen.',
       'Hold 3 seconds → release. Keep it gentle, no straining.',
     ],
@@ -50,7 +50,7 @@ const EXERCISES = [
     steps: [
       'Massage the masseters (the muscle bulge when you bite down) in slow circles for ~30 seconds.',
       'Then rest: lips closed, teeth slightly apart, whole tongue resting on the roof of the mouth.',
-      'Check in on this posture through the day — teeth should only touch when chewing.',
+      'Check in on this posture through the day. Teeth should only touch when chewing.',
     ],
   },
 ]

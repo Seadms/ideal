@@ -187,7 +187,7 @@ export function SettingsClient({ reminderTime, streakFreezeCount, archivedHabits
                 </Button>
               </div>
               <p className="text-xs text-zinc-600">
-                Notification fires daily at 9 PM ET (configured in Vercel). Set your reminder time below to also enable in-app fallback.
+                This device now receives the morning briefing, class and deadline alerts, and the nightly habit reminder.
               </p>
             </>
           ) : (
@@ -323,7 +323,7 @@ export function SettingsClient({ reminderTime, streakFreezeCount, archivedHabits
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-zinc-300">Import backup</p>
-                <p className="text-xs text-zinc-600 mt-0.5">Accepts .json (cloud) or .db (local) — replaces all data</p>
+                <p className="text-xs text-zinc-600 mt-0.5">Accepts .json (cloud) or .db (local). Replaces all data</p>
               </div>
               <label className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border border-zinc-700 rounded-lg cursor-pointer transition-colors ${importing ? 'opacity-50 cursor-not-allowed' : 'hover:bg-zinc-800 text-zinc-300'}`}>
                 <Upload size={13} />

@@ -27,7 +27,7 @@ export function FreezeStreakButton({ todayAlreadyActive }: FreezeStreakButtonPro
     <button
       onClick={handle}
       disabled={isPending}
-      title="Freeze streak — credits today without completing habits"
+      title="Freeze streak. Credits today without completing habits"
       className={cn(
         'flex items-center gap-1 text-[10px] font-medium rounded-full px-2 py-0.5 transition-all mt-1',
         confirm

@@ -26,7 +26,12 @@ const GAP = 4
 
 export function ActivityRings({ rings, size = 150 }: ActivityRingsProps) {
   const [mounted, setMounted] = useState(false)
-  useEffect(() => { setMounted(true) }, [])
+  useEffect(() => {
+    // Paint one frame at zero first so the dashoffset transition has a
+    // starting state to animate from.
+    const raf = requestAnimationFrame(() => setMounted(true))
+    return () => cancelAnimationFrame(raf)
+  }, [])
 
   const center = size / 2
 

@@ -22,7 +22,7 @@ export default async function ProgressPage() {
     <div className="space-y-6 animate-fade-in">
       <div>
         <h1 className="text-lg font-semibold text-zinc-100">Progress</h1>
-        <p className="text-xs text-zinc-500 mt-0.5">Fat down, strength up — track the recomp</p>
+        <p className="text-xs text-zinc-500 mt-0.5">Fat down, strength up. Track the recomp.</p>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">

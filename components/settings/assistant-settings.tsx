@@ -52,7 +52,7 @@ export function AssistantSettings({ briefingTime, eventLeadMinutes, assignmentAl
       const { sent, body } = await sendTestBriefing()
       setTestResult(sent > 0 ? `Sent to ${sent} device${sent > 1 ? 's' : ''}: "${body}"` : `No push sent (enable push above). Briefing: "${body}"`)
     } catch {
-      setTestResult('Briefing failed — check the server logs.')
+      setTestResult('Briefing failed. Check the server logs.')
     } finally {
       setTesting(false)
     }

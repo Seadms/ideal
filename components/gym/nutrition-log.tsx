@@ -209,7 +209,7 @@ export function NutritionLog({ entries, goals }: NutritionLogProps) {
                 <button
                   onClick={() => handleDelete(e.id)}
                   disabled={isPending}
-                  className="opacity-0 group-hover:opacity-100 p-1 rounded text-zinc-600 hover:text-rose-400 transition-all"
+                  className="hover-reveal p-1 rounded text-zinc-600 hover:text-rose-400 transition-all"
                 >
                   <Trash2 size={12} />
                 </button>

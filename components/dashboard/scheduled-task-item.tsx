@@ -100,7 +100,7 @@ export function ScheduledTaskItem({ task, completedToday }: ScheduledTaskItemPro
           <Badge variant={completedToday ? 'emerald' : 'gold'}>+{task.points}</Badge>
           <button
             onClick={() => setEditOpen(true)}
-            className="opacity-0 group-hover:opacity-100 p-1 rounded text-zinc-600 hover:text-zinc-300 transition-all"
+            className="hover-reveal p-2 -m-1 rounded text-zinc-600 hover:text-zinc-300 transition-all"
             aria-label="Edit scheduled task"
           >
             <Pencil size={12} />

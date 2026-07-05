@@ -17,12 +17,12 @@ export function WeekSummary({ habitsCompleted, ptsEarned, tasksCompleted }: Week
         <span className="text-zinc-300 font-medium">This week</span>
         {habitsCompleted > 0 && (
           <span className="ml-2">
-            <span className="text-zinc-200">{habitsCompleted}</span> habit checks
+            <span className="text-zinc-200">{habitsCompleted}</span> habit check{habitsCompleted !== 1 ? 's' : ''}
           </span>
         )}
         {ptsEarned > 0 && (
           <span className="ml-2">
-            · <span className="text-amber-400">+{formatPoints(ptsEarned)}</span> pts
+            · <span className="text-lime-300">+{formatPoints(ptsEarned)}</span> pts
           </span>
         )}
         {tasksCompleted > 0 && (

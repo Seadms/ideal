@@ -56,7 +56,7 @@ export function RewardCard({ reward, currentPoints }: RewardCardProps) {
           : 'border-zinc-800/50 bg-zinc-900/30 opacity-60',
     )}>
       {/* Actions (edit / toggle / delete) */}
-      <div className="absolute top-3 right-3 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+      <div className="absolute top-3 right-3 flex gap-1 hover-reveal transition-opacity">
         <button
           onClick={() => setEditOpen(true)}
           title="Edit reward"

@@ -50,7 +50,7 @@ function ReadonlyRow({ task }: { task: ScheduledTask }) {
           <Badge variant="muted">+{task.points}</Badge>
           <button
             onClick={() => setEditOpen(true)}
-            className="opacity-0 group-hover:opacity-100 p-1 rounded text-zinc-600 hover:text-zinc-300 transition-all"
+            className="hover-reveal p-2 -m-1 rounded text-zinc-600 hover:text-zinc-300 transition-all"
           >
             <Pencil size={12} />
           </button>
@@ -89,7 +89,7 @@ export function ScheduledSection({ allTasks, pending, completed, completedIds }:
 
       <div className="space-y-2">
         {todayCount === 0 && !showAll && (
-          <p className="text-sm text-zinc-600 py-4 text-center">Nothing scheduled for today — tap "all {allTasks.length}" to see your full schedule.</p>
+          <p className="text-sm text-zinc-600 py-4 text-center">Nothing scheduled for today. Tap "all {allTasks.length}" to see your full schedule.</p>
         )}
 
         {/* Today's tasks — fully interactive */}

@@ -40,7 +40,7 @@ export function NavBar() {
               aria-label={label}
               title={label}
               className={cn(
-                'flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-full transition-all duration-200',
+                'flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-full transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400',
                 active
                   ? 'bg-zinc-100 text-zinc-950 shadow-lg'
                   : 'text-zinc-400 hover:text-zinc-100 hover:bg-white/5',

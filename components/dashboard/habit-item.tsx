@@ -107,12 +107,12 @@ export function HabitItem({ habit, completedToday, streakDays, weeklyCount, isFi
             <Badge variant="muted" className="hidden sm:inline-flex">MVD</Badge>
           )}
           {/* Reorder chevrons */}
-          <div className="opacity-0 group-hover:opacity-100 flex flex-col transition-opacity">
+          <div className="hover-reveal flex flex-col transition-opacity">
             <button
               onClick={() => move('up')}
               disabled={isMoving || isFirst}
               aria-label="Move up"
-              className="p-0.5 text-zinc-600 hover:text-zinc-300 disabled:opacity-20 disabled:cursor-not-allowed transition-colors"
+              className="p-1 -m-0.5 text-zinc-600 hover:text-zinc-300 disabled:opacity-20 disabled:cursor-not-allowed transition-colors"
             >
               <ChevronUp size={12} />
             </button>
@@ -120,7 +120,7 @@ export function HabitItem({ habit, completedToday, streakDays, weeklyCount, isFi
               onClick={() => move('down')}
               disabled={isMoving || isLast}
               aria-label="Move down"
-              className="p-0.5 text-zinc-600 hover:text-zinc-300 disabled:opacity-20 disabled:cursor-not-allowed transition-colors"
+              className="p-1 -m-0.5 text-zinc-600 hover:text-zinc-300 disabled:opacity-20 disabled:cursor-not-allowed transition-colors"
             >
               <ChevronDown size={12} />
             </button>
@@ -128,7 +128,7 @@ export function HabitItem({ habit, completedToday, streakDays, weeklyCount, isFi
           {/* Edit */}
           <button
             onClick={() => setEditOpen(true)}
-            className="opacity-0 group-hover:opacity-100 p-1 rounded text-zinc-600 hover:text-zinc-300 transition-all"
+            className="hover-reveal p-2 -m-1 rounded text-zinc-600 hover:text-zinc-300 transition-all"
             aria-label="Edit habit"
           >
             <Pencil size={12} />
