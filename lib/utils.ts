@@ -6,21 +6,53 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 // ── Timezone-correct date helpers ─────────────────────────────────────────────
-// All dates use local midnight — no UTC shifts that would break streaks at night
+// The app's "day" is anchored to NEXT_PUBLIC_APP_TZ (an IANA zone like
+// America/New_York) when set, falling back to the runtime's local timezone.
+// Vercel servers run in UTC and reserve the TZ env var, so without this a
+// habit completed at 9 PM ET would be attributed to tomorrow.
 
-function localDateString(d: Date): string {
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+const APP_TZ = process.env.NEXT_PUBLIC_APP_TZ
+
+function ymd(y: number, m: number, d: number): string {
+  return `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`
 }
 
+function localDateString(d: Date): string {
+  if (APP_TZ) {
+    // en-CA formats as YYYY-MM-DD
+    return new Intl.DateTimeFormat('en-CA', {
+      timeZone: APP_TZ, year: 'numeric', month: '2-digit', day: '2-digit',
+    }).format(d)
+  }
+  return ymd(d.getFullYear(), d.getMonth() + 1, d.getDate())
+}
+
+// Pure calendar math on a date string — deliberately timezone-free. Noon
+// construction sidesteps DST transitions shifting the date.
 export function shiftDays(dateStr: string, n: number): string {
   const [y, m, d] = dateStr.split('-').map(Number)
-  const date = new Date(y, m - 1, d) // local midnight — avoids UTC shift
+  const date = new Date(y, m - 1, d, 12)
   date.setDate(date.getDate() + n)
-  return localDateString(date)
+  return ymd(date.getFullYear(), date.getMonth() + 1, date.getDate())
 }
 
 export function todayString(): string {
   return localDateString(new Date())
+}
+
+// App-timezone timestamp (`YYYY-MM-DDTHH:MM:SS`) — sortable, and its date part
+// matches todayString() so `startsWith(today)` comparisons stay correct.
+// (`new Date().toISOString()` is UTC, which mislabels evening completions.)
+export function nowString(): string {
+  const d = new Date()
+  if (APP_TZ) {
+    const time = new Intl.DateTimeFormat('en-GB', {
+      timeZone: APP_TZ, hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23',
+    }).format(d)
+    return `${localDateString(d)}T${time}`
+  }
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${localDateString(d)}T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
 }
 
 export function yesterdayString(): string {
@@ -40,11 +72,11 @@ export function getLast7Days(): string[] {
 export function getWeekStart(dateStr?: string): string {
   const base = dateStr ?? todayString()
   const [y, m, d] = base.split('-').map(Number)
-  const date = new Date(y, m - 1, d)
+  const date = new Date(y, m - 1, d, 12)
   const day = date.getDay() // 0=Sun, 1=Mon, …, 6=Sat
   const offset = day === 0 ? -6 : 1 - day // days back to Monday
   date.setDate(date.getDate() + offset)
-  return localDateString(date)
+  return ymd(date.getFullYear(), date.getMonth() + 1, date.getDate())
 }
 
 // ── Level formula ─────────────────────────────────────────────────────────────
@@ -138,8 +170,18 @@ export function formatPoints(pts: number): string {
   return pts.toLocaleString()
 }
 
-export function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+// SQLite `datetime('now')` column defaults are UTC "YYYY-MM-DD HH:MM:SS"
+// strings; parse them as UTC so they convert to the viewer's timezone instead
+// of being misread as local time.
+export function parseUtcDateTime(dt: string): Date {
+  return new Date(dt.includes('T') ? dt : dt.replace(' ', 'T') + 'Z')
+}
+
+export function formatDate(dateStr: string): string {
+  // Parse the date part as a local calendar date. `new Date('YYYY-MM-DD')`
+  // would parse as UTC midnight and render the previous day in the Americas.
+  const [y, m, d] = dateStr.slice(0, 10).split('-').map(Number)
+  return new Date(y, m - 1, d).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
 }
 
 export function categoryEmoji(category: string): string {

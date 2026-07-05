@@ -4,7 +4,7 @@ import {
   habits, tasks, rewards, rewardRedemptions, userStats, habitCompletions,
   bonusTaskSessions, bonusTaskPool, scheduledTasks, scheduledTaskCompletions,
   splitDays, splitExercises, exerciseLogs, exerciseSetLogs, nutritionGoals,
-  dietGoals, dietMeals, dietRules, waterLogs,
+  nutritionEntries, dietGoals, dietMeals, dietRules, waterLogs,
   bodyweightLogs, benchmarkLogs, progressPhotos,
 } from '@/lib/db/schema'
 
@@ -62,6 +62,7 @@ export async function POST(request: NextRequest) {
       await tx.delete(splitExercises)
       await tx.delete(splitDays)
       await tx.delete(nutritionGoals)
+      await tx.delete(nutritionEntries)
       await tx.delete(waterLogs)
       await tx.delete(dietRules)
       await tx.delete(dietMeals)
@@ -89,6 +90,7 @@ export async function POST(request: NextRequest) {
       if (backup.exerciseLogs?.length)                await tx.insert(exerciseLogs).values(backup.exerciseLogs)
       if (backup.exerciseSetLogs?.length)             await tx.insert(exerciseSetLogs).values(backup.exerciseSetLogs)
       if (backup.nutritionGoals?.length)              await tx.insert(nutritionGoals).values(backup.nutritionGoals)
+      if (backup.nutritionEntries?.length)            await tx.insert(nutritionEntries).values(backup.nutritionEntries)
       if (backup.dietGoals?.length)                   await tx.insert(dietGoals).values(backup.dietGoals)
       if (backup.dietMeals?.length)                   await tx.insert(dietMeals).values(backup.dietMeals)
       if (backup.dietRules?.length)                   await tx.insert(dietRules).values(backup.dietRules)

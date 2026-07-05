@@ -8,7 +8,8 @@ import { TrendChart } from './trend-chart'
 import { Scale, Check, Trash2, TrendingDown, TrendingUp, Minus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input, Select } from '@/components/ui/input'
-import { todayString, formatDate, cn } from '@/lib/utils'
+import { formatDate, cn } from '@/lib/utils'
+import { useToday } from '@/lib/use-today'
 
 interface Props {
   logs: BodyweightLog[]   // ascending by date
@@ -33,7 +34,10 @@ export function BodyweightCard({ logs }: Props) {
 
   const values = logs.map(l => l.weight)
   const avg = rolling7(values)
-  const loggedToday = latest?.date === todayString()
+  // null during SSR/hydration — the server's UTC day can disagree with the
+  // client's local day, which would mismatch the Log/Update label.
+  const today = useToday()
+  const loggedToday = !!today && latest?.date === today
 
   const currentAvg = avg.length ? avg[avg.length - 1] : null
   // Change in the smoothed line over the last week (7 entries).

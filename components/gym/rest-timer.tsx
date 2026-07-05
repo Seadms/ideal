@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Timer, Pause, Play, RotateCcw, Plus } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -28,6 +28,10 @@ function getCtx(): AudioContext | null {
 function unlockAudio() {
   const ctx = getCtx()
   if (ctx?.state === 'suspended') void ctx.resume()
+}
+
+function deadlineFrom(seconds: number): number {
+  return Date.now() + seconds * 1000
 }
 
 function beep(ctx: AudioContext, at: number, freq: number, dur: number) {
@@ -61,12 +65,18 @@ export function RestTimer() {
   const [remaining, setRemaining] = useState(0)
   const [running, setRunning] = useState(false)
   const [flash, setFlash] = useState(false)
+  const endAtRef = useRef(0)
 
-  // Tick down once per second while running.
+  // The countdown is derived from a wall-clock deadline, not accumulated ticks:
+  // backgrounded tabs and locked phones throttle/suspend JS timers, which would
+  // freeze a tick-based countdown exactly when a rest timer is actually used.
+  // visibilitychange re-syncs the display the moment the tab wakes.
   useEffect(() => {
     if (!running) return
-    const iv = setInterval(() => setRemaining(r => Math.max(0, r - 1)), 1000)
-    return () => clearInterval(iv)
+    const sync = () => setRemaining(Math.max(0, Math.round((endAtRef.current - Date.now()) / 1000)))
+    const iv = setInterval(sync, 500)
+    document.addEventListener('visibilitychange', sync)
+    return () => { clearInterval(iv); document.removeEventListener('visibilitychange', sync) }
   }, [running])
 
   // Fire the alarm exactly when a running countdown reaches zero.
@@ -79,13 +89,35 @@ export function RestTimer() {
     return () => clearTimeout(t)
   }, [running, remaining])
 
-  const start = (seconds: number) => { unlockAudio(); setTotal(seconds); setRemaining(seconds); setRunning(true) }
-  const addTime = (seconds: number) => {
-    setRemaining(r => Math.max(0, r + seconds))
-    setTotal(t => Math.max(t, remaining + seconds))
+  const start = (seconds: number) => {
+    unlockAudio()
+    endAtRef.current = deadlineFrom(seconds)
+    setTotal(seconds)
+    setRemaining(seconds)
+    setRunning(true)
   }
-  const pause = () => setRunning(false)
-  const resume = () => { if (remaining > 0) { unlockAudio(); setRunning(true) } }
+  const addTime = (seconds: number) => {
+    let next: number
+    if (running) {
+      endAtRef.current += seconds * 1000
+      next = Math.max(0, Math.round((endAtRef.current - Date.now()) / 1000))
+    } else {
+      next = Math.max(0, remaining + seconds)
+    }
+    setRemaining(next)
+    setTotal(t => Math.max(t, next))
+  }
+  const pause = () => {
+    setRemaining(Math.max(0, Math.round((endAtRef.current - Date.now()) / 1000)))
+    setRunning(false)
+  }
+  const resume = () => {
+    if (remaining > 0) {
+      unlockAudio()
+      endAtRef.current = Date.now() + remaining * 1000
+      setRunning(true)
+    }
+  }
   const reset = () => { setRunning(false); setRemaining(0) }
 
   const active = remaining > 0

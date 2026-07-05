@@ -17,9 +17,14 @@ export async function GET(request: Request) {
     process.env.VAPID_PRIVATE_KEY,
   )
 
-  // Verify this is a legitimate Vercel cron call or an authorized request
+  // Verify this is a legitimate Vercel cron call or an authorized request.
+  // In production the secret is required — without this, an unset CRON_SECRET
+  // would leave the endpoint publicly invocable instead of failing closed.
   const authHeader = request.headers.get('authorization')
   const cronSecret = process.env.CRON_SECRET
+  if (process.env.NODE_ENV === 'production' && !cronSecret) {
+    return new NextResponse('CRON_SECRET not configured', { status: 503 })
+  }
   if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
     return new NextResponse('Unauthorized', { status: 401 })
   }

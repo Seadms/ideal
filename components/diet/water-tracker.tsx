@@ -19,7 +19,7 @@ export function WaterTracker({ logs, goalMl }: Props) {
   const [customUnit, setCustomUnit] = useState<'L' | 'ml'>('L')
 
   const totalMl = logs.reduce((s, l) => s + l.amountMl, 0)
-  const pct = Math.min(Math.round((totalMl / goalMl) * 100), 100)
+  const pct = goalMl > 0 ? Math.min(Math.round((totalMl / goalMl) * 100), 100) : 0
 
   const fmt = (ml: number) => ml >= 1000 ? `${(ml / 1000).toFixed(1)}L` : `${ml}ml`
 
@@ -98,12 +98,17 @@ export function WaterTracker({ logs, goalMl }: Props) {
         {logs.length > 0 && (
           <div className="space-y-0.5 border-t border-zinc-800 pt-3">
             {logs.map(log => {
-              const time = log.createdAt.substring(11, 16)
+              // createdAt is SQLite datetime('now') — a UTC "YYYY-MM-DD HH:MM:SS"
+              // string; convert to local time instead of showing the raw UTC clock.
+              const parsed = new Date(log.createdAt.replace(' ', 'T') + 'Z')
+              const time = isNaN(parsed.getTime())
+                ? ''
+                : parsed.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
               return (
                 <div key={log.id} className="group flex items-center justify-between py-0.5">
                   <span className="text-xs text-zinc-500">
                     <span className="text-zinc-400 font-medium">{fmt(log.amountMl)}</span>
-                    {time && <span className="ml-1.5">{time}</span>}
+                    {time && <span className="ml-1.5" suppressHydrationWarning>{time}</span>}
                   </span>
                   <button
                     onClick={() => startTransition(async () => { await deleteWaterLog(log.id) })}

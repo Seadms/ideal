@@ -4,7 +4,8 @@ import { useState, useTransition } from 'react'
 import { useLevelUp } from './use-level-up'
 import { completeTask, uncompleteTask } from '@/lib/actions/tasks'
 import type { Task } from '@/lib/db/schema'
-import { categoryEmoji, cn, todayString } from '@/lib/utils'
+import { categoryEmoji, cn } from '@/lib/utils'
+import { useToday } from '@/lib/use-today'
 import { Badge } from '@/components/ui/badge'
 import { Pencil } from 'lucide-react'
 import { EditTaskDialog } from './edit-task-dialog'
@@ -18,9 +19,11 @@ export function TaskItem({ task }: TaskItemProps) {
   const [editOpen, setEditOpen] = useState(false)
   const { levelUpLevel, triggerLevelUp } = useLevelUp()
 
-  const today = todayString()
-  const isOverdue = !!task.dueDate && !task.isCompleted && task.dueDate < today
-  const isDueToday = !!task.dueDate && !task.isCompleted && task.dueDate === today
+  // null during SSR/hydration, so overdue/due-today styling only applies once
+  // the client's local day is known — the server's UTC day can differ.
+  const today = useToday()
+  const isOverdue = !!today && !!task.dueDate && !task.isCompleted && task.dueDate < today
+  const isDueToday = !!today && !!task.dueDate && !task.isCompleted && task.dueDate === today
 
   const toggle = () => {
     startTransition(async () => {

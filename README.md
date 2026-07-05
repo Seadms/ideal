@@ -47,6 +47,8 @@ and seeds itself on first load.
 See `.env.example`. All are optional for local development:
 
 - `TURSO_DATABASE_URL` / `TURSO_AUTH_TOKEN` — cloud database (unset = local file).
+- `NEXT_PUBLIC_APP_TZ` — IANA timezone anchoring the app's "today" (streaks,
+  habit days). Required on Vercel, whose servers run in UTC and reserve `TZ`.
 - `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` / `VAPID_SUBJECT` — web-push (generate
   with `npx web-push generate-vapid-keys`).
 - `CRON_SECRET` — shared secret the daily push cron (`/api/push-notify`, scheduled

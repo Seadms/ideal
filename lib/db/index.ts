@@ -262,6 +262,9 @@ async function doInitDb() {
     // missing and migrate the prior seeded defaults (2500 original, 2000 recomp)
     // up to the new plan. User-customised values (any other number) are left alone.
     `INSERT OR IGNORE INTO nutrition_goals (id, calories_goal, protein_goal, carbs_goal, fats_goal) VALUES (1, 2300, 180, 235, 70)`,
+    // Every point-award action no-ops silently without the singleton stats row,
+    // and a JSON import with an empty userStats array can leave it missing.
+    `INSERT OR IGNORE INTO user_stats (id) VALUES (1)`,
     `UPDATE nutrition_goals SET calories_goal = 2300, protein_goal = 180, carbs_goal = 235, fats_goal = 70 WHERE id = 1 AND calories_goal IN (2000, 2500)`,
     // Diet goals → same fixed targets for training & rest, water 3.5 L. Only
     // migrate rows still holding the prior recomp defaults.

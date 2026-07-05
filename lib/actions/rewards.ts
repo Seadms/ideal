@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { randomUUID } from 'crypto'
-import { eq } from 'drizzle-orm'
+import { eq, sql } from 'drizzle-orm'
 import { db } from '@/lib/db'
 import { rewardRedemptions, rewards, userStats } from '@/lib/db/schema'
 
@@ -26,12 +26,12 @@ export async function redeemReward(rewardId: string): Promise<{ success: boolean
   })
 
   await db.update(rewards)
-    .set({ timesRedeemed: reward.timesRedeemed + 1 })
+    .set({ timesRedeemed: sql`${rewards.timesRedeemed} + 1` })
     .where(eq(rewards.id, rewardId))
 
   await db.update(userStats).set({
-    totalPointsSpent: stats.totalPointsSpent + reward.cost,
-    currentPoints: stats.currentPoints - reward.cost,
+    totalPointsSpent: sql`${userStats.totalPointsSpent} + ${reward.cost}`,
+    currentPoints: sql`${userStats.currentPoints} - ${reward.cost}`,
   }).where(eq(userStats.id, 1))
 
   revalidatePath('/')

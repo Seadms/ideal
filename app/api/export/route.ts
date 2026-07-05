@@ -4,7 +4,7 @@ import {
   habits, tasks, rewards, rewardRedemptions, userStats, habitCompletions,
   bonusTaskSessions, bonusTaskPool, scheduledTasks, scheduledTaskCompletions,
   splitDays, splitExercises, exerciseLogs, exerciseSetLogs, nutritionGoals,
-  dietGoals, dietMeals, dietRules, waterLogs,
+  nutritionEntries, dietGoals, dietMeals, dietRules, waterLogs,
   bodyweightLogs, benchmarkLogs, progressPhotos,
 } from '@/lib/db/schema'
 
@@ -34,7 +34,7 @@ export async function GET() {
     redemptionsData, statsData, completionsData, bonusSessionsData, bonusPoolData,
     scheduledTasksData, scheduledCompletionsData,
     splitDaysData, splitExercisesData, exerciseLogsData, exerciseSetLogsData, nutritionGoalsData,
-    dietGoalsData, dietMealsData, dietRulesData, waterLogsData,
+    nutritionEntriesData, dietGoalsData, dietMealsData, dietRulesData, waterLogsData,
     bodyweightLogsData, benchmarkLogsData, progressPhotosData,
   ] = await Promise.all([
     db.select().from(habits),
@@ -52,6 +52,7 @@ export async function GET() {
     db.select().from(exerciseLogs),
     db.select().from(exerciseSetLogs),
     db.select().from(nutritionGoals),
+    db.select().from(nutritionEntries),
     db.select().from(dietGoals),
     db.select().from(dietMeals),
     db.select().from(dietRules),
@@ -63,7 +64,7 @@ export async function GET() {
 
   const backup = {
     exportedAt: new Date().toISOString(),
-    version: 4,
+    version: 5,
     habits: habitsData,
     tasks: tasksData,
     rewards: rewardsData,
@@ -79,6 +80,7 @@ export async function GET() {
     exerciseLogs: exerciseLogsData,
     exerciseSetLogs: exerciseSetLogsData,
     nutritionGoals: nutritionGoalsData,
+    nutritionEntries: nutritionEntriesData,
     dietGoals: dietGoalsData,
     dietMeals: dietMealsData,
     dietRules: dietRulesData,

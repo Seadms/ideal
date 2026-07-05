@@ -55,9 +55,9 @@ export function SettingsClient({ reminderTime, streakFreezeCount, archivedHabits
   const [time, setTime] = useState(reminderTime ?? '21:00')
   const [enabled, setEnabled] = useState(!!reminderTime)
   const [importing, setImporting] = useState(false)
-  const [permState, setPermState] = useState<NotificationPermission | 'unsupported'>(
-    () => typeof Notification !== 'undefined' ? Notification.permission : 'unsupported'
-  )
+  // Start from a stable value so the server render and first client render
+  // match; the effect below reads the real Notification.permission after mount.
+  const [permState, setPermState] = useState<NotificationPermission | 'unsupported'>('unsupported')
 
   // Push subscription state
   const [pushSupported, setPushSupported] = useState(false)

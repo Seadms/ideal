@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { randomUUID } from 'crypto'
-import { and, eq } from 'drizzle-orm'
+import { and, eq, sql } from 'drizzle-orm'
 import { db } from '@/lib/db'
 import { scheduledTasks, scheduledTaskCompletions, userStats } from '@/lib/db/schema'
 import { todayString, levelFromPoints } from '@/lib/utils'
@@ -45,7 +45,7 @@ export async function completeScheduledTask(taskId: string): Promise<CompletionR
 
   const taskRows = await db.select().from(scheduledTasks).where(eq(scheduledTasks.id, taskId))
   const task = taskRows[0]
-  if (!task) return { leveledUp: false, newLevel: 1, pointsEarned: 0 }
+  if (!task || !task.isActive) return { leveledUp: false, newLevel: 1, pointsEarned: 0 }
 
   // Prevent double-completion on the same day
   const existing = await db.select().from(scheduledTaskCompletions)
@@ -62,8 +62,8 @@ export async function completeScheduledTask(taskId: string): Promise<CompletionR
     id: randomUUID(), taskId, completedDate: today, pointsEarned: task.points,
   })
   await db.update(userStats).set({
-    totalPointsEarned: stats.totalPointsEarned + task.points,
-    currentPoints: stats.currentPoints + task.points,
+    totalPointsEarned: sql`${userStats.totalPointsEarned} + ${task.points}`,
+    currentPoints: sql`${userStats.currentPoints} + ${task.points}`,
   }).where(eq(userStats.id, 1))
 
   // One-time tasks disappear permanently after completion
@@ -86,13 +86,16 @@ export async function uncompleteScheduledTask(taskId: string) {
   await db.delete(scheduledTaskCompletions)
     .where(and(eq(scheduledTaskCompletions.taskId, taskId), eq(scheduledTaskCompletions.completedDate, today)))
 
-  const statsRows = await db.select().from(userStats).where(eq(userStats.id, 1))
-  const stats = statsRows[0]
-  if (stats) {
-    await db.update(userStats).set({
-      totalPointsEarned: Math.max(0, stats.totalPointsEarned - completion.pointsEarned),
-      currentPoints: Math.max(0, stats.currentPoints - completion.pointsEarned),
-    }).where(eq(userStats.id, 1))
+  await db.update(userStats).set({
+    totalPointsEarned: sql`${userStats.totalPointsEarned} - ${completion.pointsEarned}`,
+    currentPoints: sql`${userStats.currentPoints} - ${completion.pointsEarned}`,
+  }).where(eq(userStats.id, 1))
+
+  // Completing a one-time task deactivates it — undoing the completion has to
+  // bring it back, or the task disappears with no way to complete it again.
+  const taskRows = await db.select().from(scheduledTasks).where(eq(scheduledTasks.id, taskId))
+  if (taskRows[0]?.recurrenceType === 'once') {
+    await db.update(scheduledTasks).set({ isActive: true }).where(eq(scheduledTasks.id, taskId))
   }
   revalidatePath('/')
 }

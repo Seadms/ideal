@@ -61,7 +61,7 @@ export function NutritionLog({ entries, goals }: NutritionLogProps) {
     { calories: 0, protein: 0, carbs: 0, fats: 0 },
   )
 
-  const pct = (val: number, goal: number) => Math.min(Math.round((val / goal) * 100), 100)
+  const pct = (val: number, goal: number) => goal > 0 ? Math.min(Math.round((val / goal) * 100), 100) : 0
 
   const macros = [
     { key: 'protein' as const, label: 'Protein', value: totals.protein, goal: goals.proteinGoal, unit: 'g', color: 'bg-emerald-500', text: 'text-emerald-400', prominent: true },

@@ -2,16 +2,16 @@
 
 import { revalidatePath } from 'next/cache'
 import { randomUUID } from 'crypto'
-import { and, eq } from 'drizzle-orm'
+import { and, eq, sql } from 'drizzle-orm'
 import { db } from '@/lib/db'
 import { tasks, userStats } from '@/lib/db/schema'
-import { levelFromPoints, todayString } from '@/lib/utils'
+import { levelFromPoints, nowString, todayString } from '@/lib/utils'
 import type { CompletionResult } from './habits'
 
 export async function completeTask(taskId: string): Promise<CompletionResult> {
   const rows = await db.select().from(tasks).where(eq(tasks.id, taskId))
   const task = rows[0]
-  if (!task || task.isCompleted) return { leveledUp: false, newLevel: 1, pointsEarned: 0 }
+  if (!task || !task.isActive || task.isCompleted) return { leveledUp: false, newLevel: 1, pointsEarned: 0 }
 
   const statsRows = await db.select().from(userStats).where(eq(userStats.id, 1))
   const stats = statsRows[0]
@@ -20,11 +20,11 @@ export async function completeTask(taskId: string): Promise<CompletionResult> {
   const oldLevel = levelFromPoints(stats.totalPointsEarned)
 
   await db.update(tasks)
-    .set({ isCompleted: true, completedAt: new Date().toISOString() })
+    .set({ isCompleted: true, completedAt: nowString() })
     .where(eq(tasks.id, taskId))
   await db.update(userStats).set({
-    totalPointsEarned: stats.totalPointsEarned + task.points,
-    currentPoints: stats.currentPoints + task.points,
+    totalPointsEarned: sql`${userStats.totalPointsEarned} + ${task.points}`,
+    currentPoints: sql`${userStats.currentPoints} + ${task.points}`,
   }).where(eq(userStats.id, 1))
 
   const newLevel = levelFromPoints(stats.totalPointsEarned + task.points)
@@ -39,14 +39,12 @@ export async function uncompleteTask(taskId: string) {
 
   await db.update(tasks).set({ isCompleted: false, completedAt: null }).where(eq(tasks.id, taskId))
 
-  const statsRows = await db.select().from(userStats).where(eq(userStats.id, 1))
-  const stats = statsRows[0]
-  if (stats) {
-    await db.update(userStats).set({
-      totalPointsEarned: Math.max(0, stats.totalPointsEarned - task.points),
-      currentPoints: Math.max(0, stats.currentPoints - task.points),
-    }).where(eq(userStats.id, 1))
-  }
+  // Exact atomic reversal of the award — clamping to 0 here would let
+  // totalPointsEarned drift out of sync with totalPointsSpent and the level.
+  await db.update(userStats).set({
+    totalPointsEarned: sql`${userStats.totalPointsEarned} - ${task.points}`,
+    currentPoints: sql`${userStats.currentPoints} - ${task.points}`,
+  }).where(eq(userStats.id, 1))
   revalidatePath('/')
 }
 

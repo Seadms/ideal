@@ -6,6 +6,7 @@ import type { ProgressPhoto } from '@/lib/db/schema'
 import { Camera, Plus, Trash2, X, Loader2 } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { todayString, formatDate, cn } from '@/lib/utils'
+import { useToday } from '@/lib/use-today'
 
 const POSES = ['front', 'side', 'back'] as const
 type Pose = typeof POSES[number]
@@ -45,7 +46,11 @@ interface Props {
 
 export function PhotosCard({ photos }: Props) {
   const [isPending, startTransition] = useTransition()
-  const [date, setDate] = useState(todayString())
+  // Defaults to the client's local day once known (null during SSR/hydration,
+  // where the server's UTC day could differ and mismatch the input's value).
+  const today = useToday()
+  const [dateOverride, setDateOverride] = useState<string | null>(null)
+  const date = dateOverride ?? today ?? ''
   const [busy, setBusy] = useState<Pose | null>(null)
   const [viewing, setViewing] = useState<ProgressPhoto | null>(null)
 
@@ -54,7 +59,8 @@ export function PhotosCard({ photos }: Props) {
     setBusy(pose)
     try {
       const data = await compress(file)
-      await new Promise<void>(resolve => startTransition(async () => { await addProgressPhoto(pose, data, date); resolve() }))
+      const photoDate = date || todayString()
+      await new Promise<void>(resolve => startTransition(async () => { await addProgressPhoto(pose, data, photoDate); resolve() }))
     } catch {
       /* ignore — bad image */
     } finally {
@@ -86,7 +92,7 @@ export function PhotosCard({ photos }: Props) {
               type="date"
               value={date}
               max={todayString()}
-              onChange={e => setDate(e.target.value)}
+              onChange={e => setDateOverride(e.target.value)}
               className="h-7 text-xs w-36 py-0"
             />
           </div>

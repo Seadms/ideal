@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { randomUUID } from 'crypto'
-import { and, asc, eq, max } from 'drizzle-orm'
+import { and, asc, eq, max, sql } from 'drizzle-orm'
 import { db } from '@/lib/db'
 import { habitCompletions, habits, userStats } from '@/lib/db/schema'
 import { todayString, yesterdayString, levelFromPoints } from '@/lib/utils'
@@ -57,7 +57,7 @@ export async function completeHabit(habitId: string): Promise<CompletionResult> 
 
   const habitRows = await db.select().from(habits).where(eq(habits.id, habitId))
   const habit = habitRows[0]
-  if (!habit) return { leveledUp: false, newLevel: 1, pointsEarned: 0 }
+  if (!habit || !habit.isActive) return { leveledUp: false, newLevel: 1, pointsEarned: 0 }
 
   const statsRows = await db.select().from(userStats).where(eq(userStats.id, 1))
   const stats = statsRows[0]
@@ -69,8 +69,8 @@ export async function completeHabit(habitId: string): Promise<CompletionResult> 
     id: randomUUID(), habitId, completedDate: today, pointsEarned: habit.points,
   })
   await db.update(userStats).set({
-    totalPointsEarned: stats.totalPointsEarned + habit.points,
-    currentPoints: stats.currentPoints + habit.points,
+    totalPointsEarned: sql`${userStats.totalPointsEarned} + ${habit.points}`,
+    currentPoints: sql`${userStats.currentPoints} + ${habit.points}`,
   }).where(eq(userStats.id, 1))
 
   const newLevel = levelFromPoints(stats.totalPointsEarned + habit.points)
@@ -90,14 +90,10 @@ export async function uncompleteHabit(habitId: string) {
   await db.delete(habitCompletions)
     .where(and(eq(habitCompletions.habitId, habitId), eq(habitCompletions.completedDate, today)))
 
-  const statsRows = await db.select().from(userStats).where(eq(userStats.id, 1))
-  const stats = statsRows[0]
-  if (stats) {
-    await db.update(userStats).set({
-      totalPointsEarned: Math.max(0, stats.totalPointsEarned - completion.pointsEarned),
-      currentPoints: Math.max(0, stats.currentPoints - completion.pointsEarned),
-    }).where(eq(userStats.id, 1))
-  }
+  await db.update(userStats).set({
+    totalPointsEarned: sql`${userStats.totalPointsEarned} - ${completion.pointsEarned}`,
+    currentPoints: sql`${userStats.currentPoints} - ${completion.pointsEarned}`,
+  }).where(eq(userStats.id, 1))
   revalidatePath('/')
 }
 

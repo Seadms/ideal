@@ -1,4 +1,4 @@
-import { formatDate, formatPoints } from '@/lib/utils'
+import { formatPoints, parseUtcDateTime } from '@/lib/utils'
 import { Clock } from 'lucide-react'
 
 interface Redemption {
@@ -31,7 +31,9 @@ export function RedemptionHistory({ redemptions }: RedemptionHistoryProps) {
           >
             <div>
               <p className="text-sm text-zinc-200">{r.rewardTitle}</p>
-              <p className="text-xs text-zinc-600 mt-0.5">{formatDate(r.redeemedAt)}</p>
+              <p className="text-xs text-zinc-600 mt-0.5">
+                {parseUtcDateTime(r.redeemedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+              </p>
             </div>
             <span className="text-sm font-medium text-rose-400">−{formatPoints(r.pointsSpent)}</span>
           </div>
