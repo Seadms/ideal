@@ -4,9 +4,10 @@ import { useState, useTransition } from 'react'
 import { useLevelUp } from './use-level-up'
 import { completeHabit, uncompleteHabit, moveHabit } from '@/lib/actions/habits'
 import type { Habit } from '@/lib/db/schema'
-import { categoryEmoji, cn } from '@/lib/utils'
+import { cn } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
-import { ChevronUp, ChevronDown, Pencil } from 'lucide-react'
+import { CategoryIcon } from '@/components/ui/category-icon'
+import { ChevronUp, ChevronDown, Pencil, Flame, Star } from 'lucide-react'
 import { EditHabitDialog } from './edit-habit-dialog'
 
 interface HabitItemProps {
@@ -77,22 +78,24 @@ export function HabitItem({ habit, completedToday, streakDays, weeklyCount, isFi
         {/* Content */}
         <div className="flex-1 min-w-0 cursor-pointer" onClick={toggle}>
           <p className={cn(
-            'text-sm font-medium leading-snug truncate transition-colors',
-            completedToday ? 'text-zinc-500 line-through' : 'text-zinc-100',
+            'flex items-center gap-2 text-sm font-medium leading-snug transition-colors',
+            completedToday ? 'text-zinc-500' : 'text-zinc-100',
           )}>
-            {categoryEmoji(habit.category)} {habit.title}
+            <CategoryIcon category={habit.category} />
+            <span className={cn('truncate', completedToday && 'line-through')}>{habit.title}</span>
           </p>
           {habit.description && (
-            <p className="text-xs text-zinc-600 mt-0.5 truncate">{habit.description}</p>
+            <p className="text-xs text-zinc-600 mt-0.5 truncate pl-[21px]">{habit.description}</p>
           )}
           {isWeekly && (
-            <p className={cn('text-xs mt-0.5', weeklyQuotaMet ? 'text-emerald-500/70' : 'text-zinc-500')}>
+            <p className={cn('text-xs mt-0.5 pl-[21px]', weeklyQuotaMet ? 'text-emerald-500/70' : 'text-zinc-500')}>
               {weeklyCount}/{habit.frequencyPerWeek}× this week{weeklyQuotaMet ? ' ✓' : ''}
             </p>
           )}
           {streakDays >= 2 && (
-            <p className="text-xs text-amber-500/70 mt-0.5">
-              🔥 {streakDays}{isWeekly ? 'w' : 'd'} streak
+            <p className="flex items-center gap-1 text-xs text-amber-500/70 mt-0.5 pl-[21px]">
+              <Flame size={11} className="shrink-0" />
+              {streakDays}{isWeekly ? 'w' : 'd'} streak
             </p>
           )}
         </div>
@@ -135,8 +138,9 @@ export function HabitItem({ habit, completedToday, streakDays, weeklyCount, isFi
         {/* Level-up overlay */}
         {levelUpLevel && (
           <div className="absolute inset-0 flex items-center justify-center rounded-xl bg-violet-950/90 border border-violet-500/40 pointer-events-none animate-fade-in">
-            <p className="text-violet-200 font-semibold text-sm tracking-wide">
-              ⭐ Level {levelUpLevel} unlocked
+            <p className="flex items-center gap-1.5 text-violet-200 font-semibold text-sm tracking-wide">
+              <Star size={14} className="shrink-0 fill-current" />
+              Level {levelUpLevel} unlocked
             </p>
           </div>
         )}

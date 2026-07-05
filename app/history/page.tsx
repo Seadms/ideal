@@ -1,7 +1,8 @@
 import { and, eq, gte, sql } from 'drizzle-orm'
 import { db, initDb } from '@/lib/db'
 import { habits, habitCompletions, tasks, rewards, rewardRedemptions, bonusTaskSessions, bonusTaskPool } from '@/lib/db/schema'
-import { todayString, daysAgoString, formatPoints, categoryEmoji, cn } from '@/lib/utils'
+import { todayString, daysAgoString, formatPoints, cn } from '@/lib/utils'
+import { CategoryIcon } from '@/components/ui/category-icon'
 
 export const dynamic = 'force-dynamic'
 
@@ -217,7 +218,7 @@ export default async function HistoryPage() {
                 <div key={h.id} className="px-4 py-3">
                   <div className="flex items-center justify-between mb-1.5">
                     <p className="text-sm text-zinc-300 truncate flex items-center gap-1.5 min-w-0">
-                      <span className="shrink-0">{categoryEmoji(h.category)}</span>
+                      <CategoryIcon category={h.category} size={12} />
                       <span className="truncate">{h.title}</span>
                     </p>
                     <span className="text-xs text-zinc-500 shrink-0 ml-3">
@@ -271,7 +272,7 @@ export default async function HistoryPage() {
                         key={`${e.kind}-${e.sortKey}-${i}`}
                         className="flex items-center gap-3 px-4 py-2.5"
                       >
-                        <span className="text-base shrink-0">{categoryEmoji(e.category)}</span>
+                        <CategoryIcon category={e.category} size={14} className="text-zinc-600" />
                         <p className="flex-1 min-w-0 text-sm text-zinc-300 truncate flex items-center gap-1.5">
                           {e.title}
                           {e.kind === 'bonus' && <span className="text-[10px] text-violet-500/70 shrink-0">✦ bonus</span>}

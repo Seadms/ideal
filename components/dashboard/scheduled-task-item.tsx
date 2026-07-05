@@ -4,9 +4,10 @@ import { useState, useTransition } from 'react'
 import { useLevelUp } from './use-level-up'
 import { completeScheduledTask, uncompleteScheduledTask } from '@/lib/actions/scheduled-tasks'
 import type { ScheduledTask } from '@/lib/db/schema'
-import { categoryEmoji, cn } from '@/lib/utils'
+import { cn } from '@/lib/utils'
+import { CategoryIcon } from '@/components/ui/category-icon'
 import { Badge } from '@/components/ui/badge'
-import { Pencil, Repeat2, CalendarDays } from 'lucide-react'
+import { Pencil, Repeat2, CalendarDays, Star } from 'lucide-react'
 import { EditScheduledTaskDialog } from './edit-scheduled-task-dialog'
 
 const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
@@ -74,15 +75,16 @@ export function ScheduledTaskItem({ task, completedToday }: ScheduledTaskItemPro
         {/* Content */}
         <div className="flex-1 min-w-0 cursor-pointer" onClick={toggle}>
           <p className={cn(
-            'text-sm font-medium leading-snug truncate',
-            completedToday ? 'text-zinc-500 line-through' : 'text-zinc-100',
+            'flex items-center gap-2 text-sm font-medium leading-snug',
+            completedToday ? 'text-zinc-500' : 'text-zinc-100',
           )}>
-            {categoryEmoji(task.category)} {task.title}
+            <CategoryIcon category={task.category} />
+            <span className={cn('truncate', completedToday && 'line-through')}>{task.title}</span>
           </p>
           {task.description && (
-            <p className="text-xs text-zinc-600 mt-0.5 truncate">{task.description}</p>
+            <p className="text-xs text-zinc-600 mt-0.5 truncate pl-[21px]">{task.description}</p>
           )}
-          <p className={cn('text-xs mt-0.5 flex items-center gap-1',
+          <p className={cn('text-xs mt-0.5 flex items-center gap-1 pl-[21px]',
             completedToday ? 'text-zinc-600' : 'text-zinc-500',
           )}>
             {isWeekly
@@ -108,8 +110,9 @@ export function ScheduledTaskItem({ task, completedToday }: ScheduledTaskItemPro
         {/* Level-up overlay */}
         {levelUpLevel && (
           <div className="absolute inset-0 flex items-center justify-center rounded-xl bg-violet-950/90 border border-violet-500/40 pointer-events-none animate-fade-in">
-            <p className="text-violet-200 font-semibold text-sm tracking-wide">
-              ⭐ Level {levelUpLevel} unlocked
+            <p className="flex items-center gap-1.5 text-violet-200 font-semibold text-sm tracking-wide">
+              <Star size={14} className="shrink-0 fill-current" />
+              Level {levelUpLevel} unlocked
             </p>
           </div>
         )}

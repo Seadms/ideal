@@ -4,10 +4,11 @@ import { useState, useTransition } from 'react'
 import { useLevelUp } from './use-level-up'
 import { completeTask, uncompleteTask } from '@/lib/actions/tasks'
 import type { Task } from '@/lib/db/schema'
-import { categoryEmoji, cn } from '@/lib/utils'
+import { cn } from '@/lib/utils'
+import { CategoryIcon } from '@/components/ui/category-icon'
 import { useToday } from '@/lib/use-today'
 import { Badge } from '@/components/ui/badge'
-import { Pencil } from 'lucide-react'
+import { Pencil, Star } from 'lucide-react'
 import { EditTaskDialog } from './edit-task-dialog'
 
 interface TaskItemProps {
@@ -71,17 +72,18 @@ export function TaskItem({ task }: TaskItemProps) {
         {/* Content */}
         <div className="flex-1 min-w-0 cursor-pointer" onClick={toggle}>
           <p className={cn(
-            'text-sm font-medium leading-snug truncate',
-            task.isCompleted ? 'text-zinc-500 line-through' : 'text-zinc-100',
+            'flex items-center gap-2 text-sm font-medium leading-snug',
+            task.isCompleted ? 'text-zinc-500' : 'text-zinc-100',
           )}>
-            {categoryEmoji(task.category)} {task.title}
+            <CategoryIcon category={task.category} />
+            <span className={cn('truncate', task.isCompleted && 'line-through')}>{task.title}</span>
           </p>
           {task.description && (
-            <p className="text-xs text-zinc-600 mt-0.5 truncate">{task.description}</p>
+            <p className="text-xs text-zinc-600 mt-0.5 truncate pl-[21px]">{task.description}</p>
           )}
           {task.dueDate && !task.isCompleted && (
             <p className={cn(
-              'text-xs mt-0.5',
+              'text-xs mt-0.5 pl-[21px]',
               isOverdue ? 'text-rose-400' : isDueToday ? 'text-amber-400' : 'text-zinc-600',
             )}>
               {isOverdue ? 'Overdue · ' : isDueToday ? 'Due today · ' : 'Due '}
@@ -105,8 +107,9 @@ export function TaskItem({ task }: TaskItemProps) {
         {/* Level-up overlay */}
         {levelUpLevel && (
           <div className="absolute inset-0 flex items-center justify-center rounded-xl bg-violet-950/90 border border-violet-500/40 pointer-events-none animate-fade-in">
-            <p className="text-violet-200 font-semibold text-sm tracking-wide">
-              ⭐ Level {levelUpLevel} unlocked
+            <p className="flex items-center gap-1.5 text-violet-200 font-semibold text-sm tracking-wide">
+              <Star size={14} className="shrink-0 fill-current" />
+              Level {levelUpLevel} unlocked
             </p>
           </div>
         )}

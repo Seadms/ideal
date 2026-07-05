@@ -7,7 +7,7 @@ import { savePushSubscription, removePushSubscription } from '@/lib/actions/push
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Bell, Download, Upload, Archive, Shield, Smartphone } from 'lucide-react'
-import { categoryEmoji } from '@/lib/utils'
+import { CategoryIcon } from '@/components/ui/category-icon'
 
 interface ArchivedHabit {
   id: string
@@ -38,7 +38,10 @@ function ArchivedHabitRow({ habit }: { habit: ArchivedHabit }) {
   }
   return (
     <div className="flex items-center justify-between px-4 py-3">
-      <p className="text-sm text-zinc-400">{categoryEmoji(habit.category)} {habit.title}</p>
+      <p className="flex items-center gap-2 text-sm text-zinc-400">
+        <CategoryIcon category={habit.category} size={12} />
+        {habit.title}
+      </p>
       <button
         onClick={restore}
         disabled={isPending}

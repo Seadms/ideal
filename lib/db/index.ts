@@ -276,6 +276,10 @@ async function doInitDb() {
     // Diet goals → same fixed targets for training & rest, water 3.5 L. Only
     // migrate rows still holding the prior recomp defaults.
     `UPDATE diet_goals SET training_calories = 2300, training_protein = 180, training_carbs = 235, training_fat = 70, rest_calories = 2300, rest_protein = 180, rest_carbs = 235, rest_fat = 70, water_goal_ml = 3500 WHERE id = 1 AND training_calories = 2000 AND rest_calories = 1700`,
+    // Emoji purge: seeded exercise targets used the star emoji (U+2B50, via
+    // char(11088)) for priority lifts — swap for the monochrome ★ glyph in
+    // already-seeded rows.
+    `UPDATE split_exercises SET target = REPLACE(target, char(11088), '★') WHERE target LIKE '%' || char(11088) || '%'`,
   ]
   for (const stmt of migrations) {
     try { await client.execute(stmt) } catch { /* column already exists */ }
@@ -320,18 +324,18 @@ async function seedSplitIfNeeded() {
     {
       name: 'Push — Chest / Shoulders / Triceps', order: 1,
       exercises: [
-        { name: 'Weighted Ring Dips',                     sets: 4, reps: 10, weight: 0, target: '4 × 6–12 · ⭐ chest + triceps · add dip belt / vest at top' },
+        { name: 'Weighted Ring Dips',                     sets: 4, reps: 10, weight: 0, target: '4 × 6–12 · ★ chest + triceps · add dip belt / vest at top' },
         { name: 'Ring / Pseudo-Planche Push-ups',         sets: 3, reps: 12, weight: 0, target: '3 × 8–15 · upper chest' },
         { name: 'Ring / Band Chest Flyes',                sets: 3, reps: 15, weight: 0, target: '3 × 12–20 · chest stretch + inner chest' },
         { name: 'Pike Push-ups / Band Overhead Press',    sets: 3, reps: 12, weight: 0, target: '3 × 8–12 · front delts' },
-        { name: 'Band Lateral Raises',                    sets: 4, reps: 18, weight: 0, target: '4 × 12–20 · ⭐ shoulder width' },
+        { name: 'Band Lateral Raises',                    sets: 4, reps: 18, weight: 0, target: '4 × 12–20 · ★ shoulder width' },
         { name: 'Triceps — Ring Extensions / Band Pushdowns', sets: 3, reps: 13, weight: 0, target: '3 × 10–15' },
       ],
     },
     {
       name: 'Pull — Back / Rear Delts / Biceps', order: 2,
       exercises: [
-        { name: 'Wide Pull-ups',                          sets: 4, reps: 8,  weight: 0, target: '4 × 6–12 · ⭐ back width · add dip belt at top' },
+        { name: 'Wide Pull-ups',                          sets: 4, reps: 8,  weight: 0, target: '4 × 6–12 · ★ back width · add dip belt at top' },
         { name: 'Chin-ups / Archer Pull-up Progression',  sets: 3, reps: 8,  weight: 0, target: '3 × 6–10' },
         { name: 'Ring Rows',                              sets: 4, reps: 10, weight: 0, target: '4 × 8–12 · back thickness' },
         { name: 'Band Face-Pulls',                        sets: 3, reps: 18, weight: 0, target: '3 × 15–20 · rear delts + posture' },
@@ -343,7 +347,7 @@ async function seedSplitIfNeeded() {
       name: 'Legs — Quads / Glutes / Hamstrings', order: 3,
       exercises: [
         { name: 'Pistol Squat Progression / Band Squats', sets: 4, reps: 10, weight: 0, target: '4 × 6–12 per leg · quads' },
-        { name: 'Band Hip Thrust / Glute Bridge',         sets: 3, reps: 15, weight: 0, target: '3 × 12–20 · ⭐ glutes' },
+        { name: 'Band Hip Thrust / Glute Bridge',         sets: 3, reps: 15, weight: 0, target: '3 × 12–20 · ★ glutes' },
         { name: 'Bulgarian Split Squat (band / vest)',    sets: 3, reps: 10, weight: 0, target: '3 × 8–12 per leg · glutes + quads' },
         { name: 'Nordic Curls / Band Hamstring Curls',    sets: 3, reps: 10, weight: 0, target: '3 × 6–12 · hamstrings' },
         { name: 'Calf Raises',                            sets: 4, reps: 18, weight: 0, target: '4 × 12–20' },
@@ -352,7 +356,7 @@ async function seedSplitIfNeeded() {
     {
       name: 'Delts / Arms / Core', order: 4,
       exercises: [
-        { name: 'Band Lateral Raises',                    sets: 4, reps: 18, weight: 0, target: '4 × 12–20 · ⭐ shoulder width (3rd weekly hit)' },
+        { name: 'Band Lateral Raises',                    sets: 4, reps: 18, weight: 0, target: '4 × 12–20 · ★ shoulder width (3rd weekly hit)' },
         { name: 'Band / Ring Biceps Curls',               sets: 3, reps: 12, weight: 0, target: '3 × 10–15' },
         { name: 'Triceps — Ring Extensions / Band Pushdowns', sets: 3, reps: 13, weight: 0, target: '3 × 10–15' },
         { name: 'Rear-Delt Band Flyes',                   sets: 3, reps: 18, weight: 0, target: '3 × 15–20 · 3D delts + posture' },

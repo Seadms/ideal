@@ -1,4 +1,5 @@
 import { Suspense } from 'react'
+import { Zap } from 'lucide-react'
 import { and, asc, eq, gte } from 'drizzle-orm'
 import { db } from '@/lib/db'
 import { habits, habitCompletions, tasks, userStats, bonusTaskSessions, bonusTaskPool, scheduledTasks, scheduledTaskCompletions } from '@/lib/db/schema'
@@ -172,7 +173,7 @@ async function DashboardContent({ mvdMode }: { mvdMode: boolean }) {
 
       {pointsToday > 0 && (
         <div className="flex items-center gap-3 rounded-xl border border-amber-500/15 bg-amber-500/5 px-4 py-3">
-          <span className="text-base">⚡</span>
+          <Zap size={15} className="shrink-0 text-amber-400" />
           <p className="text-sm text-amber-300">
             <span className="font-semibold">+{pointsToday} pts</span> today
             {mvdComplete && (

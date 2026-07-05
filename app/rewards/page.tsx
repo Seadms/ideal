@@ -5,7 +5,7 @@ import { formatPoints } from '@/lib/utils'
 import { RewardCard } from '@/components/rewards/reward-card'
 import { RewardsActions } from '@/components/rewards/rewards-actions'
 import { RedemptionHistory } from '@/components/rewards/redemption-history'
-import { Zap } from 'lucide-react'
+import { Zap, Gift } from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
 
@@ -66,8 +66,8 @@ export default async function RewardsPage() {
       <RewardsActions />
 
       {allSorted.length === 0 ? (
-        <div className="py-16 text-center">
-          <p className="text-3xl mb-3">🎁</p>
+        <div className="py-16 flex flex-col items-center gap-3">
+          <Gift size={28} className="text-zinc-700" />
           <p className="text-sm text-zinc-500">No rewards yet. Add something to work towards.</p>
         </div>
       ) : (

@@ -59,7 +59,7 @@ export async function GET(request: Request) {
       if (await claimNotification(`briefing-${today}`)) {
         const data = await getDayData({ fresh: true })
         const body = await composeBriefing(data)
-        await sendPushToAll({ title: 'Your day, prepared ☀️', body, url: '/' })
+        await sendPushToAll({ title: 'Your day, prepared', body, url: '/' })
         fired.push('briefing')
 
         // Piggyback ledger cleanup on the once-a-day path
@@ -103,7 +103,7 @@ export async function GET(request: Request) {
       if (hoursAway <= 2) {
         if (await claimNotification(`assign-${item.id}-final`)) {
           await sendPushToAll({
-            title: `⚠️ Due in ${Math.max(1, Math.round(hoursAway * 60))} min: ${item.title}`,
+            title: `Due in ${Math.max(1, Math.round(hoursAway * 60))} min: ${item.title}`,
             body: `${course} · due ${timeInAppTz(due)}. Submit it now.`,
             url: '/school',
           })

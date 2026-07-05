@@ -3,7 +3,8 @@
 import { useState, useTransition } from 'react'
 import { redeemReward, deleteReward, updateReward } from '@/lib/actions/rewards'
 import type { Reward } from '@/lib/db/schema'
-import { categoryEmoji, cn, formatPoints } from '@/lib/utils'
+import { cn, formatPoints } from '@/lib/utils'
+import { CategoryIcon } from '@/components/ui/category-icon'
 import { Button } from '@/components/ui/button'
 import { Eye, EyeOff, Pencil, Trash2, Zap } from 'lucide-react'
 import { EditRewardDialog } from './edit-reward-dialog'
@@ -84,8 +85,10 @@ export function RewardCard({ reward, currentPoints }: RewardCardProps) {
         </Button>
       </div>
 
-      {/* Category emoji */}
-      <div className="text-2xl mb-3">{categoryEmoji(reward.category)}</div>
+      {/* Category marker */}
+      <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-lg border border-zinc-800 bg-zinc-900">
+        <CategoryIcon category={reward.category} size={16} className="text-zinc-400" />
+      </div>
 
       {/* Title & description */}
       <h3 className="text-sm font-semibold text-zinc-100 leading-snug mb-1.5">

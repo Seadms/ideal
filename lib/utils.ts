@@ -203,27 +203,6 @@ export function formatDate(dateStr: string): string {
   return new Date(y, m - 1, d).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
 }
 
-export function categoryEmoji(category: string): string {
-  const map: Record<string, string> = {
-    fitness: '🏋️',
-    productivity: '✅',
-    'self-care': '🌿',
-    growth: '📚',
-    coding: '💻',
-    project: '🚀',
-    rest: '🛋️',
-    food: '🍗',
-    hobby: '🧱',
-    luxury: '💍',
-    chore: '🧹',
-    home: '🏠',
-    social: '💬',
-    creative: '🎨',
-    general: '⚡',
-  }
-  return map[category] ?? '⚡'
-}
-
 export function dayLabel(dateStr: string): string {
   const [y, m, d] = dateStr.split('-').map(Number)
   return ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'][new Date(y, m - 1, d).getDay()]

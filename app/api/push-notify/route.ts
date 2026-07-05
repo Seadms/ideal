@@ -52,7 +52,7 @@ export async function GET(request: Request) {
 
   let body: string
   if (pendingMvd.length === 0 && allHabits.length > 0) {
-    body = "MVD complete! Keep the streak alive. 🔥"
+    body = "MVD complete! Keep the streak alive."
   } else if (pendingMvd.length > 0) {
     body = `${pendingMvd.length} MVD habit${pendingMvd.length > 1 ? 's' : ''} still pending — don't break the streak.`
   } else {

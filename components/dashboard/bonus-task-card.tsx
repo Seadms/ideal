@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import { Sparkles, RefreshCw, Check, ChevronRight, Trophy } from 'lucide-react'
-import { categoryEmoji } from '@/lib/utils'
+import { CategoryIcon } from '@/components/ui/category-icon'
 import {
   generateBonusTask,
   acceptBonusTask,
@@ -154,7 +154,10 @@ export function BonusTaskCard({ initial }: { initial: BonusTask | null }) {
       <p className="text-sm text-zinc-200 font-medium leading-snug">{data.task.title}</p>
 
       <p className="text-xs text-zinc-500 flex items-center gap-2">
-        <span>{categoryEmoji(data.task.category)} {data.task.category} · {data.task.points} pts</span>
+        <span className="flex items-center gap-1.5">
+          <CategoryIcon category={data.task.category} size={11} />
+          {data.task.category} · {data.task.points} pts
+        </span>
         {!data.task.isActive && (
           <span className="text-violet-500/70">✦ AI</span>
         )}

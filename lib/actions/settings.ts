@@ -31,6 +31,6 @@ export async function sendTestBriefing(): Promise<{ sent: number; body: string }
   const { sendPushToAll } = await import('@/lib/push-server')
   const data = await getDayData({ fresh: true })
   const body = await composeBriefing(data)
-  const sent = await sendPushToAll({ title: 'Your day, prepared ☀️ (test)', body, url: '/' })
+  const sent = await sendPushToAll({ title: 'Your day, prepared (test)', body, url: '/' })
   return { sent, body }
 }

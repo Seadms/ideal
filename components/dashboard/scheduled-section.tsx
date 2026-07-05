@@ -5,7 +5,8 @@ import { useState } from 'react'
 import type { ScheduledTask } from '@/lib/db/schema'
 import { ScheduledTaskItem } from './scheduled-task-item'
 import { Badge } from '@/components/ui/badge'
-import { categoryEmoji, cn } from '@/lib/utils'
+import { cn } from '@/lib/utils'
+import { CategoryIcon } from '@/components/ui/category-icon'
 import { CalendarDays, Pencil, Repeat2 } from 'lucide-react'
 import { EditScheduledTaskDialog } from './edit-scheduled-task-dialog'
 
@@ -36,7 +37,10 @@ function ReadonlyRow({ task }: { task: ScheduledTask }) {
           isWeekly ? 'rounded-full' : 'rounded',
         )} />
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium text-zinc-400 truncate">{categoryEmoji(task.category)} {task.title}</p>
+          <p className="flex items-center gap-2 text-sm font-medium text-zinc-400">
+            <CategoryIcon category={task.category} className="text-zinc-600" />
+            <span className="truncate">{task.title}</span>
+          </p>
           <p className="text-xs text-zinc-600 mt-0.5 flex items-center gap-1">
             {isWeekly ? <Repeat2 size={10} className="shrink-0" /> : <CalendarDays size={10} className="shrink-0" />}
             {scheduleLabel(task)}
