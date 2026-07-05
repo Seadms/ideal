@@ -1,44 +1,10 @@
 import { db, initDb } from './index'
-import { habits, tasks, rewards, userStats, bonusTaskPool } from './schema'
+import { habits, tasks, rewards, userStats } from './schema'
 import { eq } from 'drizzle-orm'
 import { randomUUID } from 'crypto'
 
 export async function seedDatabase() {
   await initDb()
-
-  // Bonus pool runs first and independently — existing users must get it too
-  const existingBonus = await db.select().from(bonusTaskPool)
-  if (existingBonus.length === 0) {
-    await db.insert(bonusTaskPool).values([
-      // Fitness
-      { id: randomUUID(), title: 'Hit a quick hypertrophy workout', category: 'fitness', points: 60 },
-      { id: randomUUID(), title: 'Go for a 20-minute walk outside', category: 'fitness', points: 40 },
-      { id: randomUUID(), title: '10-minute stretch or mobility session', category: 'fitness', points: 30 },
-      // Hobbies
-      { id: randomUUID(), title: 'Practice guitar for 15 minutes', category: 'hobby', points: 50 },
-      { id: randomUUID(), title: 'Solve a Rubik\'s cube', category: 'hobby', points: 40 },
-      { id: randomUUID(), title: 'Play a game of chess', category: 'hobby', points: 45 },
-      { id: randomUUID(), title: 'Build a section of your LEGO set', category: 'hobby', points: 60 },
-      // Chores
-      { id: randomUUID(), title: 'Scoop the cat\'s litter box', category: 'chore', points: 25 },
-      { id: randomUUID(), title: 'Tidy up your desk or workspace', category: 'chore', points: 30 },
-      { id: randomUUID(), title: 'Quick apartment clean (10 min)', category: 'chore', points: 35 },
-      { id: randomUUID(), title: 'Take out the trash', category: 'chore', points: 20 },
-      { id: randomUUID(), title: 'Wipe down kitchen surfaces', category: 'chore', points: 25 },
-      // Growth
-      { id: randomUUID(), title: 'Brainstorm new features for aio.tcg', category: 'growth', points: 65 },
-      { id: randomUUID(), title: 'Write in a journal for 10 minutes', category: 'growth', points: 35 },
-      { id: randomUUID(), title: 'Watch a programming or design tutorial', category: 'growth', points: 50 },
-      { id: randomUUID(), title: 'Read for 20 minutes', category: 'growth', points: 40 },
-      // Creative
-      { id: randomUUID(), title: 'Cook or bake something you haven\'t made before', category: 'creative', points: 65 },
-      { id: randomUUID(), title: 'Draw or sketch something', category: 'creative', points: 40 },
-      { id: randomUUID(), title: 'Make a nice surprise for Kayd', category: 'creative', points: 80 },
-      // Social
-      { id: randomUUID(), title: 'Call or message a friend or family member', category: 'social', points: 35 },
-      { id: randomUUID(), title: 'Do something kind for someone today', category: 'social', points: 45 },
-    ])
-  }
 
   // Main data seed — only runs on a fresh DB
   const existingHabits = await db.select().from(habits)

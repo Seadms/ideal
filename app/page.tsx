@@ -1,7 +1,7 @@
 import { Suspense } from 'react'
 import { and, asc, eq, gte } from 'drizzle-orm'
 import { db } from '@/lib/db'
-import { habits, habitCompletions, tasks, userStats, bonusTaskSessions, bonusTaskPool, scheduledTasks, scheduledTaskCompletions } from '@/lib/db/schema'
+import { habits, habitCompletions, tasks, userStats, scheduledTasks, scheduledTaskCompletions } from '@/lib/db/schema'
 import { seedDatabase } from '@/lib/db/seed'
 import { checkStreakOnLoad } from '@/lib/actions/habits'
 import {
@@ -16,7 +16,6 @@ import { TaskItem } from '@/components/dashboard/task-item'
 import { DashboardActions } from '@/components/dashboard/dashboard-actions'
 import { ClearCompletedButton } from '@/components/dashboard/clear-completed-button'
 import { StreakAtRisk } from '@/components/dashboard/streak-at-risk'
-import { BonusTaskCard } from '@/components/dashboard/bonus-task-card'
 import { ScheduledSection } from '@/components/dashboard/scheduled-section'
 import { TodaySchedule, TodayScheduleSkeleton } from '@/components/dashboard/today-schedule'
 import { WeekStrip } from '@/components/dashboard/week-strip'
@@ -75,19 +74,6 @@ async function DashboardContent({ mvdMode }: { mvdMode: boolean }) {
   const pendingScheduled = visibleScheduled.filter(t => !completedScheduledIds.has(t.id))
   const completedScheduled = visibleScheduled.filter(t => completedScheduledIds.has(t.id))
 
-  // Bonus task — find today's active (non-skipped) session
-  const todayBonusSessions = await db.select().from(bonusTaskSessions)
-    .where(eq(bonusTaskSessions.date, today))
-  const activeSession = todayBonusSessions.find(s => s.state !== 'skipped') ?? null
-  let activeBonusTask = null
-  if (activeSession) {
-    const rows = await db.select().from(bonusTaskPool).where(eq(bonusTaskPool.id, activeSession.taskId))
-    activeBonusTask = rows[0] ?? null
-  }
-  const bonusInitial = activeSession && activeBonusTask
-    ? { session: activeSession, task: activeBonusTask }
-    : null
-
   // Stats
   const statsRows = await db.select().from(userStats).where(eq(userStats.id, 1))
   const stats = statsRows[0] ?? {
@@ -119,8 +105,7 @@ async function DashboardContent({ mvdMode }: { mvdMode: boolean }) {
     .filter(t => t.completedAt?.startsWith(today))
     .reduce((s, t) => s + t.points, 0)
   const scheduledPtsToday = todayScheduledCompletions.reduce((s, c) => s + c.pointsEarned, 0)
-  const bonusPtsToday = activeSession?.state === 'completed' ? (activeSession.pointsEarned ?? 0) : 0
-  const pointsToday = habitPtsToday + taskPtsToday + scheduledPtsToday + bonusPtsToday
+  const pointsToday = habitPtsToday + taskPtsToday + scheduledPtsToday
 
   // Whether today is already credited (freeze or full MVD complete)
   const todayAlreadyActive = stats.lastActiveDate === today
@@ -274,8 +259,6 @@ async function DashboardContent({ mvdMode }: { mvdMode: boolean }) {
           </div>
         </section>
       )}
-
-      {!mvdMode && <BonusTaskCard initial={bonusInitial} />}
 
       <DashboardActions />
     </div>
