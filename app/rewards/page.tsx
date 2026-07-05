@@ -6,7 +6,6 @@ import { RewardCard } from '@/components/rewards/reward-card'
 import { RewardsActions } from '@/components/rewards/rewards-actions'
 import { RedemptionHistory } from '@/components/rewards/redemption-history'
 import { Gift } from 'lucide-react'
-import { KMark } from '@/components/ui/k-mark'
 import { PageHeader } from '@/components/ui/page-header'
 
 export const dynamic = 'force-dynamic'
@@ -38,17 +37,16 @@ export default async function RewardsPage() {
   return (
     <div className="space-y-7">
       <div>
-        <PageHeader title="Rewards" ghost="Store" sub="Spend your kayd points on things that make life worth grinding for." />
+        <PageHeader title="Rewards" ghost="Store" sub="Spend your points on things that make life worth grinding for." />
       </div>
 
       {/* Balance */}
       <div className="flex items-center gap-4 rounded-xl border border-zinc-800 bg-zinc-900/60 px-5 py-4">
-        <KMark size="lg" className="h-10 w-10 text-base" />
         <div>
           <p className="text-xs text-zinc-500">Current balance</p>
-          <p className="font-display text-2xl font-bold text-lime-300 tabular-nums leading-none mt-0.5">
+          <p className="font-display text-2xl font-bold text-zinc-100 tabular-nums leading-none mt-0.5">
             {formatPoints(currentPoints)}
-            <span className="ml-1.5 text-xs font-semibold text-zinc-500">kayd points</span>
+            <span className="ml-1.5 text-xs font-semibold text-zinc-500">points</span>
           </p>
         </div>
         {affordable.length > 0 && (

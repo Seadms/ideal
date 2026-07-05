@@ -3,7 +3,6 @@ import type { UserStats } from '@/lib/db/schema'
 import { Flame } from 'lucide-react'
 import { FreezeStreakButton } from './freeze-streak-button'
 import { ActivityRings } from './activity-rings'
-import { KMark } from '@/components/ui/k-mark'
 
 interface StatsHeaderProps {
   stats: UserStats
@@ -73,18 +72,15 @@ export function StatsHeader({
         </div>
       </div>
 
-      {/* Kayd points balance */}
+      {/* Points balance */}
       <div className="mt-4 flex items-center justify-between border-t border-zinc-800/70 pt-4">
-        <div className="flex items-center gap-2.5">
-          <KMark size="lg" />
-          <div>
-            <p className="font-display text-2xl font-bold tabular-nums text-ring-xp leading-none">
-              {formatPoints(stats.currentPoints)}
-            </p>
-            <p className="text-xs text-zinc-600 mt-1">
-              kayd points · {formatPoints(stats.totalPointsEarned)} lifetime
-            </p>
-          </div>
+        <div>
+          <p className="font-display text-2xl font-bold tabular-nums text-zinc-100 leading-none">
+            {formatPoints(stats.currentPoints)}
+          </p>
+          <p className="text-xs text-zinc-600 mt-1">
+            points · {formatPoints(stats.totalPointsEarned)} lifetime
+          </p>
         </div>
         <FreezeStreakButton todayAlreadyActive={todayAlreadyActive} />
       </div>

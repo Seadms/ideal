@@ -7,7 +7,6 @@ import { cn, formatPoints } from '@/lib/utils'
 import { CategoryIcon } from '@/components/ui/category-icon'
 import { Button } from '@/components/ui/button'
 import { Eye, EyeOff, Pencil, Trash2 } from 'lucide-react'
-import { KMark } from '@/components/ui/k-mark'
 import { EditRewardDialog } from './edit-reward-dialog'
 
 interface RewardCardProps {
@@ -102,10 +101,7 @@ export function RewardCard({ reward, currentPoints }: RewardCardProps) {
       <div className="mt-auto space-y-2.5 pt-3 border-t border-zinc-800">
         {/* Cost */}
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-1.5">
-            <KMark size="sm" />
-            <span className="text-sm font-semibold text-lime-300">{formatPoints(reward.cost)} kayd pts</span>
-          </div>
+          <span className="text-sm font-semibold text-zinc-200">{formatPoints(reward.cost)} pts</span>
           {reward.timesRedeemed > 0 && (
             <span className="text-xs text-zinc-600">×{reward.timesRedeemed} redeemed</span>
           )}

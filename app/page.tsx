@@ -19,7 +19,6 @@ import { StreakAtRisk } from '@/components/dashboard/streak-at-risk'
 import { ScheduledSection } from '@/components/dashboard/scheduled-section'
 import { TodaySchedule, TodayScheduleSkeleton } from '@/components/dashboard/today-schedule'
 import { WeekStrip } from '@/components/dashboard/week-strip'
-import { KMark } from '@/components/ui/k-mark'
 
 export const dynamic = 'force-dynamic'
 
@@ -166,9 +165,8 @@ async function DashboardContent({ mvdMode }: { mvdMode: boolean }) {
 
       {pointsToday > 0 && (
         <div className="flex items-center gap-3 rounded-xl border border-lime-400/15 bg-lime-400/5 px-4 py-3">
-          <KMark size="sm" />
           <p className="text-sm text-lime-200">
-            <span className="font-semibold">+{pointsToday} kayd points</span> today
+            <span className="font-semibold">+{pointsToday} points</span> today
             {mvdComplete && (
               <span className="ml-2 text-emerald-400 font-medium">· MVD complete ✓</span>
             )}
