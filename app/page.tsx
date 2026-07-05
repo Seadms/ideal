@@ -34,32 +34,31 @@ async function DashboardContent({ mvdMode }: { mvdMode: boolean }) {
   const today = todayString()
   const yearAgo = daysAgoString(365)
 
-  // Habits — sorted by user-defined sort order
-  const allHabits = await db.select().from(habits)
-    .where(
-      mvdMode
-        ? and(eq(habits.isActive, true), eq(habits.isMinimumViable, true))
-        : eq(habits.isActive, true),
-    )
-    .orderBy(asc(habits.sortOrder))
-
-  // All completions for streaks & week stats (last year is plenty)
-  const allCompletions = await db.select().from(habitCompletions)
-    .where(gte(habitCompletions.completedDate, yearAgo))
-
-  // Tasks
-  const allTasks = await db.select().from(tasks)
-    .where(mvdMode
-      ? and(eq(tasks.isActive, true), eq(tasks.isCompleted, false))
-      : eq(tasks.isActive, true),
-    )
-
-  // Scheduled tasks
+  // All dashboard queries fire in parallel — sequential awaits made every
+  // load pay ~6 database round trips back to back (noticeable on Turso).
   const todayDow = new Date().getDay() // 0=Sun … 6=Sat
-  const allScheduledTasks = await db.select().from(scheduledTasks)
-    .where(eq(scheduledTasks.isActive, true))
-  const todayScheduledCompletions = await db.select().from(scheduledTaskCompletions)
-    .where(eq(scheduledTaskCompletions.completedDate, today))
+  const [allHabits, allCompletions, allTasks, allScheduledTasks, todayScheduledCompletions, statsRows] = await Promise.all([
+    // Habits — sorted by user-defined sort order
+    db.select().from(habits)
+      .where(
+        mvdMode
+          ? and(eq(habits.isActive, true), eq(habits.isMinimumViable, true))
+          : eq(habits.isActive, true),
+      )
+      .orderBy(asc(habits.sortOrder)),
+    // All completions for streaks & week stats (last year is plenty)
+    db.select().from(habitCompletions)
+      .where(gte(habitCompletions.completedDate, yearAgo)),
+    db.select().from(tasks)
+      .where(mvdMode
+        ? and(eq(tasks.isActive, true), eq(tasks.isCompleted, false))
+        : eq(tasks.isActive, true),
+      ),
+    db.select().from(scheduledTasks).where(eq(scheduledTasks.isActive, true)),
+    db.select().from(scheduledTaskCompletions)
+      .where(eq(scheduledTaskCompletions.completedDate, today)),
+    db.select().from(userStats).where(eq(userStats.id, 1)),
+  ])
   const completedScheduledIds = new Set(todayScheduledCompletions.map(c => c.taskId))
 
   // Which scheduled tasks are visible today
@@ -75,7 +74,6 @@ async function DashboardContent({ mvdMode }: { mvdMode: boolean }) {
   const completedScheduled = visibleScheduled.filter(t => completedScheduledIds.has(t.id))
 
   // Stats
-  const statsRows = await db.select().from(userStats).where(eq(userStats.id, 1))
   const stats = statsRows[0] ?? {
     id: 1, totalPointsEarned: 0, totalPointsSpent: 0, currentPoints: 0,
     currentStreak: 0, longestStreak: 0, lastActiveDate: null, createdAt: today,
