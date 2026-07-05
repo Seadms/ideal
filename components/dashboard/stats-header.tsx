@@ -1,96 +1,104 @@
 import { calculateLevel, formatPoints, dayLabel, cn } from '@/lib/utils'
 import type { UserStats } from '@/lib/db/schema'
-import { Flame, Star, Zap } from 'lucide-react'
+import { Flame } from 'lucide-react'
 import { FreezeStreakButton } from './freeze-streak-button'
+import { ActivityRings } from './activity-rings'
 
 interface StatsHeaderProps {
   stats: UserStats
   last7DaysStatus: { date: string; active: boolean; isToday: boolean }[]
   todayAlreadyActive: boolean
+  habitsDone: number
+  habitsTotal: number
+  mvdDone: number
+  mvdTotal: number
 }
 
-export function StatsHeader({ stats, last7DaysStatus, todayAlreadyActive }: StatsHeaderProps) {
+const RING = {
+  habit: { color: '#fa2d6e', track: 'rgba(250, 45, 110, 0.14)' },
+  xp: { color: '#c8f542', track: 'rgba(200, 245, 66, 0.13)' },
+  mvd: { color: '#2de8d8', track: 'rgba(45, 232, 216, 0.13)' },
+}
+
+function StatRow({ color, label, value }: { color: string; label: string; value: string }) {
+  return (
+    <div className="flex items-center gap-2.5">
+      <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: color }} />
+      <span className="text-xs text-zinc-500 w-14">{label}</span>
+      <span className="font-display text-sm font-semibold text-zinc-200 tabular-nums whitespace-nowrap">{value}</span>
+    </div>
+  )
+}
+
+export function StatsHeader({
+  stats, last7DaysStatus, todayAlreadyActive,
+  habitsDone, habitsTotal, mvdDone, mvdTotal,
+}: StatsHeaderProps) {
   const { level, progress, pointsIntoLevel, pointsNeeded } = calculateLevel(stats.totalPointsEarned)
 
+  const frac = (done: number, total: number) => (total > 0 ? done / total : 0)
+
   return (
-    <div className="space-y-3">
-      <div className="grid grid-cols-3 gap-3">
-        {/* Points */}
-        <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-4">
-          <div className="flex items-center gap-2 mb-1">
-            <Zap size={13} className="text-amber-400" />
-            <span className="text-xs text-zinc-500 uppercase tracking-wider">Points</span>
+    <section className="rounded-2xl border border-zinc-800/70 bg-zinc-900/40 p-5">
+      <div className="flex flex-col items-center gap-5 sm:flex-row sm:gap-6">
+        {/* Rings with the streak at their center */}
+        <div className="relative shrink-0">
+          <ActivityRings
+            size={150}
+            rings={[
+              { fraction: frac(habitsDone, habitsTotal), ...RING.habit },
+              { fraction: progress / 100, ...RING.xp },
+              { fraction: frac(mvdDone, mvdTotal), ...RING.mvd },
+            ]}
+          />
+          <div className="absolute inset-0 flex flex-col items-center justify-center">
+            <Flame
+              size={14}
+              className={stats.currentStreak > 0 ? 'text-ring-habit' : 'text-zinc-700'}
+            />
+            <span className={cn(
+              'font-display text-xl font-bold tabular-nums leading-tight',
+              stats.currentStreak > 0 ? 'text-zinc-100' : 'text-zinc-600',
+            )}>
+              {stats.currentStreak}
+            </span>
           </div>
-          <p className="text-2xl font-semibold text-amber-400 tabular-nums">
-            {formatPoints(stats.currentPoints)}
-          </p>
-          <p className="text-xs text-zinc-600 mt-0.5">
-            {formatPoints(stats.totalPointsEarned)} lifetime
-          </p>
         </div>
 
-        {/* Level */}
-        <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-4">
-          <div className="flex items-center gap-2 mb-1">
-            <Star size={13} className="text-violet-400" />
-            <span className="text-xs text-zinc-500 uppercase tracking-wider">Level</span>
-          </div>
-          <p className="text-2xl font-semibold text-violet-400 tabular-nums">{level}</p>
-          <p className="text-xs text-zinc-600 mt-0.5">
-            {formatPoints(pointsIntoLevel)} / {formatPoints(pointsNeeded)}
-          </p>
-        </div>
+        {/* Ring legend with live values */}
+        <div className="w-full flex-1 min-w-0 space-y-3">
+          <StatRow color={RING.habit.color} label="Habits" value={`${habitsDone}/${habitsTotal}`} />
+          <StatRow color={RING.xp.color} label={`Level ${level}`} value={`${formatPoints(pointsIntoLevel)}/${formatPoints(pointsNeeded)} xp`} />
+          <StatRow color={RING.mvd.color} label="MVD" value={mvdTotal > 0 ? `${mvdDone}/${mvdTotal}` : '—'} />
 
-        {/* Streak */}
-        <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-4">
-          <div className="flex items-center gap-2 mb-1">
-            <Flame size={13} className={stats.currentStreak > 0 ? 'text-emerald-400' : 'text-zinc-600'} />
-            <span className="text-xs text-zinc-500 uppercase tracking-wider">Streak</span>
-          </div>
-          <p className={cn(
-            'text-2xl font-semibold tabular-nums',
-            stats.currentStreak > 0 ? 'text-emerald-400' : 'text-zinc-600',
-          )}>
-            {stats.currentStreak}
-          </p>
-
-          {last7DaysStatus.length > 0 ? (
-            <div className="flex items-end gap-1 mt-1.5">
+          {last7DaysStatus.length > 0 && (
+            <div className="flex items-end gap-1.5 pt-1">
               {last7DaysStatus.map(({ date, active, isToday }) => (
-                <div key={date} className="flex flex-col items-center gap-0.5">
+                <div key={date} className="flex flex-col items-center gap-1">
                   <div className={cn(
-                    'h-2 w-2 rounded-full transition-colors',
-                    active ? 'bg-emerald-400' : 'bg-zinc-700',
-                    isToday && !active && 'ring-1 ring-emerald-600',
+                    'h-1.5 w-1.5 rounded-full transition-colors',
+                    active ? 'bg-ring-mvd' : 'bg-zinc-700',
+                    isToday && !active && 'ring-1 ring-ring-mvd/50',
                   )} />
                   <span className="text-[9px] text-zinc-700 leading-none">{dayLabel(date)[0]}</span>
                 </div>
               ))}
             </div>
-          ) : (
-            <p className="text-xs text-zinc-600 mt-0.5">best: {stats.longestStreak}d</p>
           )}
-
-          <FreezeStreakButton todayAlreadyActive={todayAlreadyActive} />
         </div>
       </div>
 
-      {/* XP bar */}
-      <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 px-4 py-3">
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-xs text-zinc-500">Level {level}</span>
-          <span className="text-xs text-zinc-500">Level {level + 1}</span>
+      {/* Points balance */}
+      <div className="mt-4 flex items-center justify-between border-t border-zinc-800/70 pt-4">
+        <div>
+          <p className="font-display text-2xl font-bold tabular-nums text-ring-xp leading-none">
+            {formatPoints(stats.currentPoints)}
+            <span className="ml-1.5 text-xs font-semibold text-zinc-500">pts</span>
+          </p>
+          <p className="text-xs text-zinc-600 mt-1">{formatPoints(stats.totalPointsEarned)} lifetime</p>
         </div>
-        <div className="h-1.5 w-full rounded-full bg-zinc-800 overflow-hidden">
-          <div
-            className="h-full rounded-full bg-gradient-to-r from-violet-600 to-violet-400 transition-all duration-700"
-            style={{ width: `${progress}%` }}
-          />
-        </div>
-        <p className="text-xs text-zinc-600 mt-1.5 text-center">
-          {formatPoints(pointsNeeded - pointsIntoLevel)} pts to next level
-        </p>
+        <FreezeStreakButton todayAlreadyActive={todayAlreadyActive} />
       </div>
-    </div>
+    </section>
   )
 }

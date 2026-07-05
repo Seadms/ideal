@@ -12,7 +12,7 @@ export function Badge({ children, variant = 'default', className }: BadgeProps) 
       'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium',
       {
         'bg-zinc-800 text-zinc-300': variant === 'default',
-        'bg-amber-500/10 text-amber-400': variant === 'gold',
+        'bg-lime-400/10 text-lime-300': variant === 'gold',
         'bg-violet-500/10 text-violet-400': variant === 'violet',
         'bg-emerald-500/10 text-emerald-400': variant === 'emerald',
         'bg-rose-500/10 text-rose-400': variant === 'rose',

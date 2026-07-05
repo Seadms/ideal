@@ -161,7 +161,15 @@ async function DashboardContent({ mvdMode }: { mvdMode: boolean }) {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <StatsHeader stats={stats} last7DaysStatus={last7DaysStatus} todayAlreadyActive={todayAlreadyActive} />
+      <StatsHeader
+        stats={stats}
+        last7DaysStatus={last7DaysStatus}
+        todayAlreadyActive={todayAlreadyActive}
+        habitsDone={completedHabits.length}
+        habitsTotal={allHabits.length}
+        mvdDone={mvdHabitIds.filter(id => completedHabitIds.has(id)).length}
+        mvdTotal={mvdHabitIds.length}
+      />
 
       <StreakAtRisk currentStreak={stats.currentStreak} todayAlreadyActive={todayAlreadyActive} />
 
@@ -172,9 +180,9 @@ async function DashboardContent({ mvdMode }: { mvdMode: boolean }) {
       />
 
       {pointsToday > 0 && (
-        <div className="flex items-center gap-3 rounded-xl border border-amber-500/15 bg-amber-500/5 px-4 py-3">
-          <Zap size={15} className="shrink-0 text-amber-400" />
-          <p className="text-sm text-amber-300">
+        <div className="flex items-center gap-3 rounded-xl border border-lime-400/15 bg-lime-400/5 px-4 py-3">
+          <Zap size={15} className="shrink-0 text-lime-300" />
+          <p className="text-sm text-lime-200">
             <span className="font-semibold">+{pointsToday} pts</span> today
             {mvdComplete && (
               <span className="ml-2 text-emerald-400 font-medium">· MVD complete ✓</span>

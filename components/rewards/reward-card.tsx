@@ -102,8 +102,8 @@ export function RewardCard({ reward, currentPoints }: RewardCardProps) {
         {/* Cost */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-1.5">
-            <Zap size={12} className="text-amber-400" />
-            <span className="text-sm font-semibold text-amber-400">{formatPoints(reward.cost)} pts</span>
+            <Zap size={12} className="text-lime-300" />
+            <span className="text-sm font-semibold text-lime-300">{formatPoints(reward.cost)} pts</span>
           </div>
           {reward.timesRedeemed > 0 && (
             <span className="text-xs text-zinc-600">×{reward.timesRedeemed} redeemed</span>

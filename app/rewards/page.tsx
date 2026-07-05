@@ -44,12 +44,12 @@ export default async function RewardsPage() {
 
       {/* Balance */}
       <div className="flex items-center gap-4 rounded-xl border border-zinc-800 bg-zinc-900/60 px-5 py-4">
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/10 border border-amber-500/15">
-          <Zap size={18} className="text-amber-400" />
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-lime-400/10 border border-lime-400/15">
+          <Zap size={18} className="text-lime-300" />
         </div>
         <div>
           <p className="text-xs text-zinc-500">Current balance</p>
-          <p className="text-2xl font-semibold text-amber-400 tabular-nums leading-none mt-0.5">
+          <p className="font-display text-2xl font-bold text-lime-300 tabular-nums leading-none mt-0.5">
             {formatPoints(currentPoints)} pts
           </p>
         </div>

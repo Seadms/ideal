@@ -19,30 +19,38 @@ const LINKS = [
   { href: '/settings', label: 'Settings', icon: Settings },
 ]
 
+// Floating liquid-glass tab bar. Icon-only tabs; the active one becomes a
+// white pill (the one high-contrast moment in the chrome).
 export function NavBar() {
   const pathname = usePathname()
 
   return (
-    <nav className="flex items-center gap-0.5 py-4 overflow-x-auto scrollbar-none">
-      {LINKS.map(({ href, label, icon: Icon }) => {
-        const active = href === '/' ? pathname === '/' : pathname.startsWith(href)
-        return (
-          <Link
-            key={href}
-            href={href}
-            aria-current={active ? 'page' : undefined}
-            className={cn(
-              'flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition-colors whitespace-nowrap',
-              active
-                ? 'text-zinc-100 bg-zinc-800'
-                : 'text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800/60',
-            )}
-          >
-            <Icon className={cn('h-3.5 w-3.5', active ? 'text-zinc-300' : 'text-zinc-500')} />
-            {label}
-          </Link>
-        )
-      })}
+    <nav
+      aria-label="Primary"
+      className="fixed inset-x-0 bottom-0 z-50 flex justify-center px-4 pb-[max(env(safe-area-inset-bottom),12px)]"
+    >
+      <div className="glass-nav flex items-center gap-0.5 rounded-full p-1.5">
+        {LINKS.map(({ href, label, icon: Icon }) => {
+          const active = href === '/' ? pathname === '/' : pathname.startsWith(href)
+          return (
+            <Link
+              key={href}
+              href={href}
+              aria-current={active ? 'page' : undefined}
+              aria-label={label}
+              title={label}
+              className={cn(
+                'flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-full transition-all duration-200',
+                active
+                  ? 'bg-zinc-100 text-zinc-950 shadow-lg'
+                  : 'text-zinc-400 hover:text-zinc-100 hover:bg-white/5',
+              )}
+            >
+              <Icon size={17} strokeWidth={active ? 2.4 : 2} />
+            </Link>
+          )
+        })}
+      </div>
     </nav>
   )
 }
