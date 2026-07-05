@@ -72,11 +72,31 @@ async function canvasFetch<T>(path: string, opts: FetchOpts = {}): Promise<T[]> 
 }
 
 export async function getCourses(opts: FetchOpts = {}): Promise<CanvasCourse[]> {
-  interface Raw { id: number; name?: string; course_code?: string; access_restricted_by_date?: boolean }
-  const raw = await canvasFetch<Raw>('/courses?enrollment_state=active&state[]=available', opts)
+  interface Raw {
+    id: number; name?: string; course_code?: string
+    access_restricted_by_date?: boolean
+    concluded?: boolean
+    term?: { start_at?: string | null; end_at?: string | null } | null
+  }
+  const raw = await canvasFetch<Raw>(
+    '/courses?enrollment_state=active&state[]=available&include[]=term&include[]=concluded', opts)
+  const now = new Date().toISOString()
   return raw
-    .filter(c => !c.access_restricted_by_date && c.name)
+    .filter(c =>
+      !c.access_restricted_by_date && c.name &&
+      // Canvas keeps finished courses "active" forever unless the instructor
+      // concludes them — only real, in-term classes count. Courses without
+      // term dates (orientation/resource pages in the Default Term) are noise.
+      !c.concluded &&
+      !!c.term?.end_at && c.term.end_at > now,
+    )
     .map(c => ({ id: c.id, name: c.name!, courseCode: c.course_code ?? '' }))
+}
+
+// Course ids the student is actually taking right now — used to scope
+// planner items and missing submissions to current classes.
+async function currentCourseIds(opts: FetchOpts = {}): Promise<Set<number>> {
+  return new Set((await getCourses(opts)).map(c => c.id))
 }
 
 // Planner items: everything Canvas shows in a student's to-do timeline.
@@ -100,22 +120,31 @@ export async function getPlannerItems(daysAhead = 14, opts: FetchOpts = {}): Pro
     submissions?: { submitted?: boolean; graded?: boolean } | false
   }
 
-  const raw = await canvasFetch<Raw>(
-    `/planner/items?start_date=${start.toISOString()}&end_date=${end.toISOString()}`, opts)
+  const [raw, courseIds] = await Promise.all([
+    canvasFetch<Raw>(
+      `/planner/items?start_date=${start.toISOString()}&end_date=${end.toISOString()}`, opts),
+    currentCourseIds(opts),
+  ])
 
   return raw
     .filter(i => i.plannable_type !== 'announcement') // due-date work only
-    .map(i => ({
+    .filter(i => i.course_id == null || courseIds.has(i.course_id)) // current classes only
+    .map(i => {
+      const rawTitle = i.plannable?.title ?? i.plannable?.name ?? 'Untitled'
+      return {
       id: `${i.plannable_type}-${i.plannable_id}`,
       type: i.plannable_type,
-      title: i.plannable?.title ?? i.plannable?.name ?? 'Untitled',
+      // Course calendar events are often named with the full registrar string
+      // ("202660-Summer 2026-ITSC-4155-080-…") — shorten to the course code.
+      title: /^\d{6}-/.test(rawTitle) ? `${cleanCourseName(rawTitle)} class event` : rawTitle,
       courseId: i.course_id ?? null,
       courseName: i.context_name ?? null,
       dueAt: i.plannable?.due_at ?? i.plannable?.todo_date ?? i.plannable_date ?? null,
       pointsPossible: i.plannable?.points_possible ?? null,
       htmlUrl: i.html_url ? (i.html_url.startsWith('http') ? i.html_url : `${BASE_URL}${i.html_url}`) : null,
       submitted: typeof i.submissions === 'object' && !!i.submissions?.submitted,
-    }))
+      }
+    })
     .sort((a, b) => (a.dueAt ?? '9999').localeCompare(b.dueAt ?? '9999'))
 }
 
@@ -124,8 +153,11 @@ export async function getMissingSubmissions(opts: FetchOpts = {}): Promise<Missi
     id: number; name?: string; course_id: number
     due_at?: string | null; points_possible?: number | null; html_url?: string | null
   }
-  const raw = await canvasFetch<Raw>('/users/self/missing_submissions?filter[]=submittable', opts)
-  return raw.map(a => ({
+  const [raw, courseIds] = await Promise.all([
+    canvasFetch<Raw>('/users/self/missing_submissions?filter[]=submittable', opts),
+    currentCourseIds(opts),
+  ])
+  return raw.filter(a => courseIds.has(a.course_id)).map(a => ({
     id: a.id,
     name: a.name ?? 'Untitled',
     courseId: a.course_id,
