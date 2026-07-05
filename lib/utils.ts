@@ -170,15 +170,16 @@ export function calculateHabitStreak(
   }
 }
 
+// A day is "active" (perfect) when every listed habit was completed that day.
 export function getLast7DaysStatus(
-  mvdHabitIds: string[],
+  habitIds: string[],
   completions: { habitId: string; completedDate: string }[],
 ): { date: string; active: boolean; isToday: boolean }[] {
-  if (mvdHabitIds.length === 0) return []
+  if (habitIds.length === 0) return []
   const today = todayString()
   return getLast7Days().map(date => {
     const doneIds = new Set(completions.filter(c => c.completedDate === date).map(c => c.habitId))
-    const active = mvdHabitIds.every(id => doneIds.has(id))
+    const active = habitIds.every(id => doneIds.has(id))
     return { date, active, isToday: date === today }
   })
 }

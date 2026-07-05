@@ -80,15 +80,6 @@ export function EditHabitDialog({ habit, open, onClose }: EditHabitDialogProps) 
             <option value="1">1× / week</option>
           </Select>
         </div>
-        <label className="flex items-center gap-3 cursor-pointer select-none">
-          <div
-            onClick={() => setForm(f => ({ ...f, isMinimumViable: !f.isMinimumViable }))}
-            className={`relative h-5 w-9 rounded-full transition-colors ${form.isMinimumViable ? 'bg-emerald-500' : 'bg-zinc-700'}`}
-          >
-            <div className={`absolute top-0.5 left-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform ${form.isMinimumViable ? 'translate-x-4' : ''}`} />
-          </div>
-          <span className="text-sm text-zinc-300">Minimum Viable Day</span>
-        </label>
         <div className="flex gap-2 pt-1">
           <Button type="button" variant="destructive" size="sm" onClick={handleDelete} disabled={isPending}>
             Archive

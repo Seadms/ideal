@@ -9,14 +9,14 @@ interface StatsHeaderProps {
   todayAlreadyActive: boolean
   habitsDone: number
   habitsTotal: number
-  mvdDone: number
-  mvdTotal: number
+  choresDone: number
+  choresTotal: number
 }
 
 const RING = {
   habit: { color: '#fa2d6e', track: 'rgba(250, 45, 110, 0.14)' },
   xp: { color: '#c8f542', track: 'rgba(200, 245, 66, 0.13)' },
-  mvd: { color: '#2de8d8', track: 'rgba(45, 232, 216, 0.13)' },
+  chore: { color: '#2de8d8', track: 'rgba(45, 232, 216, 0.13)' },
 }
 
 function StatRow({ color, label, value }: { color: string; label: string; value: string }) {
@@ -31,7 +31,7 @@ function StatRow({ color, label, value }: { color: string; label: string; value:
 
 export function StatsHeader({
   stats, todayAlreadyActive,
-  habitsDone, habitsTotal, mvdDone, mvdTotal,
+  habitsDone, habitsTotal, choresDone, choresTotal,
 }: StatsHeaderProps) {
   const { level, progress, pointsIntoLevel, pointsNeeded } = calculateLevel(stats.totalPointsEarned)
 
@@ -47,7 +47,7 @@ export function StatsHeader({
             rings={[
               { fraction: frac(habitsDone, habitsTotal), ...RING.habit },
               { fraction: progress / 100, ...RING.xp },
-              { fraction: frac(mvdDone, mvdTotal), ...RING.mvd },
+              { fraction: frac(choresDone, choresTotal), ...RING.chore },
             ]}
           />
           <div className="absolute inset-0 flex flex-col items-center justify-center">
@@ -68,14 +68,14 @@ export function StatsHeader({
         <div className="w-full flex-1 min-w-0 space-y-3">
           <StatRow color={RING.habit.color} label="Habits" value={`${habitsDone}/${habitsTotal}`} />
           <StatRow color={RING.xp.color} label={`Level ${level}`} value={`${formatPoints(pointsIntoLevel)}/${formatPoints(pointsNeeded)} xp`} />
-          <StatRow color={RING.mvd.color} label="MVD" value={mvdTotal > 0 ? `${mvdDone}/${mvdTotal}` : '—'} />
+          <StatRow color={RING.chore.color} label="Chores" value={choresTotal > 0 ? `${choresDone}/${choresTotal}` : '—'} />
         </div>
       </div>
 
       {/* Points balance */}
       <div className="mt-4 flex items-center justify-between border-t border-zinc-800/70 pt-4">
         <div>
-          <p className="font-display text-2xl font-bold tabular-nums text-zinc-100 leading-none">
+          <p className="font-display text-2xl font-bold tabular-nums text-slate-300 leading-none">
             {formatPoints(stats.currentPoints)}
           </p>
           <p className="text-xs text-zinc-600 mt-1">

@@ -100,14 +100,9 @@ export function HabitItem({ habit, completedToday, streakDays, weeklyCount, isFi
           )}
         </div>
 
-        {/* Right side */}
+        {/* Right side: controls first, badge pinned to the right edge */}
         <div className="flex items-center gap-1.5 shrink-0">
-          <Badge variant={completedToday ? 'emerald' : 'gold'}>+{habit.points}</Badge>
-          {habit.isMinimumViable && (
-            <Badge variant="muted" className="hidden sm:inline-flex">MVD</Badge>
-          )}
-          {/* Reorder chevrons */}
-          <div className="hover-reveal flex flex-col transition-opacity">
+          <div className="hover-reveal flex flex-col">
             <button
               onClick={() => move('up')}
               disabled={isMoving || isFirst}
@@ -125,14 +120,16 @@ export function HabitItem({ habit, completedToday, streakDays, weeklyCount, isFi
               <ChevronDown size={12} />
             </button>
           </div>
-          {/* Edit */}
           <button
             onClick={() => setEditOpen(true)}
-            className="hover-reveal p-2 -m-1 rounded text-zinc-600 hover:text-zinc-300 transition-all"
+            className="hover-reveal p-2 -m-1 rounded text-zinc-600 hover:text-zinc-300 transition-colors"
             aria-label="Edit habit"
           >
             <Pencil size={12} />
           </button>
+          <Badge variant={completedToday ? 'emerald' : 'gold'} className="min-w-[52px] justify-center">
+            +{habit.points}
+          </Badge>
         </div>
 
         {/* Level-up overlay */}

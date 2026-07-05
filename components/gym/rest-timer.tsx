@@ -79,14 +79,17 @@ export function RestTimer() {
     return () => { clearInterval(iv); document.removeEventListener('visibilitychange', sync) }
   }, [running])
 
-  // Fire the alarm exactly when a running countdown reaches zero.
+  // Fire the alarm exactly when a running countdown reaches zero. Deferred a
+  // frame so the state updates don't cascade inside the effect itself.
   useEffect(() => {
     if (!running || remaining > 0) return
-    setRunning(false)
-    alarm()
-    setFlash(true)
+    const raf = requestAnimationFrame(() => {
+      setRunning(false)
+      alarm()
+      setFlash(true)
+    })
     const t = setTimeout(() => setFlash(false), 1500)
-    return () => clearTimeout(t)
+    return () => { cancelAnimationFrame(raf); clearTimeout(t) }
   }, [running, remaining])
 
   const start = (seconds: number) => {

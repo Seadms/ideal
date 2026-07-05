@@ -41,22 +41,21 @@ export default async function RewardsPage() {
       </div>
 
       {/* Balance */}
-      <div className="flex items-center gap-4 rounded-xl border border-zinc-800 bg-zinc-900/60 px-5 py-4">
+      <div className="flex items-center justify-between rounded-2xl border border-zinc-800 bg-zinc-900/60 px-5 py-5">
         <div>
-          <p className="text-xs text-zinc-500">Current balance</p>
-          <p className="font-display text-2xl font-bold text-zinc-100 tabular-nums leading-none mt-0.5">
+          <p className="text-xs uppercase tracking-wider text-zinc-500">Balance</p>
+          <p className="mt-1.5 font-display text-3xl font-bold leading-none tabular-nums text-slate-300">
             {formatPoints(currentPoints)}
-            <span className="ml-1.5 text-xs font-semibold text-zinc-500">points</span>
+            <span className="ml-2 text-sm font-semibold text-zinc-500">points</span>
           </p>
         </div>
-        {affordable.length > 0 && (
-          <div className="ml-auto text-right">
-            <p className="text-xs text-zinc-500">You can afford</p>
-            <p className="text-sm font-medium text-emerald-400">
-              {affordable.length} reward{affordable.length !== 1 ? 's' : ''}
-            </p>
-          </div>
-        )}
+        <div className="text-right">
+          <p className="text-xs uppercase tracking-wider text-zinc-500">Affordable</p>
+          <p className={`mt-1.5 font-display text-3xl font-bold leading-none tabular-nums ${affordable.length > 0 ? 'text-emerald-400' : 'text-zinc-600'}`}>
+            {affordable.length}
+            <span className="ml-2 text-sm font-semibold text-zinc-500">of {available.length}</span>
+          </p>
+        </div>
       </div>
 
       <RewardsActions />

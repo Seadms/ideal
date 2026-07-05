@@ -22,7 +22,7 @@ export function WeekSummary({ habitsCompleted, ptsEarned, tasksCompleted }: Week
         )}
         {ptsEarned > 0 && (
           <span className="ml-2">
-            · <span className="text-lime-300">+{formatPoints(ptsEarned)}</span> pts
+            · <span className="text-slate-300">+{formatPoints(ptsEarned)}</span> pts
           </span>
         )}
         {tasksCompleted > 0 && (

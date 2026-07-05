@@ -16,7 +16,7 @@ export interface DayData {
   dueToday: CanvasItem[]
   dueSoon: CanvasItem[]          // after today, within 7 days
   missing: MissingSubmission[]
-  pendingMvdCount: number
+  pendingHabitCount: number
   scheduledToday: string[]       // pending scheduled-task titles
   openTaskCount: number
 }
@@ -42,13 +42,13 @@ export async function getDayData(opts: { fresh?: boolean } = {}): Promise<DayDat
     return d > today
   })
 
-  // Pending MVD habits
-  const mvdHabits = await db.select().from(habits)
-    .where(and(eq(habits.isActive, true), eq(habits.isMinimumViable, true)))
+  // Pending daily habits (weekly-quota habits aren't required daily)
+  const dailyHabits = await db.select().from(habits)
+    .where(and(eq(habits.isActive, true), eq(habits.frequencyPerWeek, 7)))
   const doneToday = await db.select().from(habitCompletions)
     .where(eq(habitCompletions.completedDate, today))
   const doneIds = new Set(doneToday.map(c => c.habitId))
-  const pendingMvdCount = mvdHabits.filter(h => !doneIds.has(h.id)).length
+  const pendingHabitCount = dailyHabits.filter(h => !doneIds.has(h.id)).length
 
   // Today's pending scheduled tasks
   const allScheduled = await db.select().from(scheduledTasks).where(eq(scheduledTasks.isActive, true))
@@ -65,7 +65,7 @@ export async function getDayData(opts: { fresh?: boolean } = {}): Promise<DayDat
   const openTasks = await db.select().from(tasks)
     .where(and(eq(tasks.isActive, true), eq(tasks.isCompleted, false)))
 
-  return { todayEvents, dueToday, dueSoon, missing, pendingMvdCount, scheduledToday, openTaskCount: openTasks.length }
+  return { todayEvents, dueToday, dueSoon, missing, pendingHabitCount, scheduledToday, openTaskCount: openTasks.length }
 }
 
 function fallbackBriefing(d: DayData): string {
@@ -79,9 +79,9 @@ function fallbackBriefing(d: DayData): string {
     parts.push(`${d.dueToday.length} Canvas item${d.dueToday.length > 1 ? 's' : ''} due today`)
   }
   if (d.missing.length > 0) parts.push(`${d.missing.length} missing submission${d.missing.length > 1 ? 's' : ''}`)
-  if (d.pendingMvdCount > 0) parts.push(`${d.pendingMvdCount} MVD habits to hit`)
+  if (d.pendingHabitCount > 0) parts.push(`${d.pendingHabitCount} daily habit${d.pendingHabitCount > 1 ? 's' : ''} to hit`)
   if (d.scheduledToday.length > 0) parts.push(`${d.scheduledToday.length} chores on deck`)
-  return parts.length > 0 ? parts.join(' · ') : 'Clear schedule today — pick something great to build.'
+  return parts.length > 0 ? parts.join(' · ') : 'Clear schedule today. Pick something great to build.'
 }
 
 export async function composeBriefing(d: DayData): Promise<string> {
@@ -110,7 +110,7 @@ DUE LATER THIS WEEK:
 ${soonLines || '(nothing)'}
 
 MISSING SUBMISSIONS: ${d.missing.length}
-PENDING DAILY HABITS: ${d.pendingMvdCount}
+PENDING DAILY HABITS: ${d.pendingHabitCount}
 CHORES TODAY: ${d.scheduledToday.join(', ') || 'none'}
 
 Write the briefing as 2-4 short sentences, max 320 characters total. Lead with the most time-critical thing. Be concrete with times and course names. No greetings, no emojis, no markdown, no bullet points, no em dashes. If there are missing submissions, mention them firmly.`

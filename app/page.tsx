@@ -1,5 +1,5 @@
 import { Suspense } from 'react'
-import { and, asc, eq, gte } from 'drizzle-orm'
+import { asc, eq, gte } from 'drizzle-orm'
 import { db } from '@/lib/db'
 import { habits, habitCompletions, tasks, userStats, scheduledTasks, scheduledTaskCompletions } from '@/lib/db/schema'
 import { seedDatabase } from '@/lib/db/seed'
@@ -10,7 +10,6 @@ import {
 } from '@/lib/utils'
 import { StatsHeader } from '@/components/dashboard/stats-header'
 import { WeekSummary } from '@/components/dashboard/week-summary'
-import { MvdToggle } from '@/components/dashboard/mvd-toggle'
 import { HabitItem } from '@/components/dashboard/habit-item'
 import { TaskItem } from '@/components/dashboard/task-item'
 import { DashboardActions } from '@/components/dashboard/dashboard-actions'
@@ -22,11 +21,7 @@ import { WeekStrip } from '@/components/dashboard/week-strip'
 
 export const dynamic = 'force-dynamic'
 
-interface PageProps {
-  searchParams: Promise<{ mvd?: string }>
-}
-
-async function DashboardContent({ mvdMode }: { mvdMode: boolean }) {
+async function DashboardContent() {
   await seedDatabase()
   await checkStreakOnLoad()
 
@@ -39,20 +34,12 @@ async function DashboardContent({ mvdMode }: { mvdMode: boolean }) {
   const [allHabits, allCompletions, allTasks, allScheduledTasks, todayScheduledCompletions, statsRows] = await Promise.all([
     // Habits — sorted by user-defined sort order
     db.select().from(habits)
-      .where(
-        mvdMode
-          ? and(eq(habits.isActive, true), eq(habits.isMinimumViable, true))
-          : eq(habits.isActive, true),
-      )
+      .where(eq(habits.isActive, true))
       .orderBy(asc(habits.sortOrder)),
     // All completions for streaks & week stats (last year is plenty)
     db.select().from(habitCompletions)
       .where(gte(habitCompletions.completedDate, yearAgo)),
-    db.select().from(tasks)
-      .where(mvdMode
-        ? and(eq(tasks.isActive, true), eq(tasks.isCompleted, false))
-        : eq(tasks.isActive, true),
-      ),
+    db.select().from(tasks).where(eq(tasks.isActive, true)),
     db.select().from(scheduledTasks).where(eq(scheduledTasks.isActive, true)),
     db.select().from(scheduledTaskCompletions)
       .where(eq(scheduledTaskCompletions.completedDate, today)),
@@ -104,18 +91,15 @@ async function DashboardContent({ mvdMode }: { mvdMode: boolean }) {
   const scheduledPtsToday = todayScheduledCompletions.reduce((s, c) => s + c.pointsEarned, 0)
   const pointsToday = habitPtsToday + taskPtsToday + scheduledPtsToday
 
-  // Whether today is already credited (freeze or full MVD complete)
+  // Whether today is already credited (freeze or every daily habit complete)
   const todayAlreadyActive = stats.lastActiveDate === today
 
-  // MVD complete check
-  const mvdHabitIds = allHabits.filter(h => h.isMinimumViable).map(h => h.id)
-  const mvdComplete = mvdHabitIds.length > 0 && mvdHabitIds.every(id => completedHabitIds.has(id))
+  // Perfect-day check: every daily habit done (weekly-quota habits exempt)
+  const dailyHabitIds = allHabits.filter(h => h.frequencyPerWeek === 7).map(h => h.id)
+  const perfectDay = dailyHabitIds.length > 0 && dailyHabitIds.every(id => completedHabitIds.has(id))
 
-  // 7-day streak dots
-  const last7DaysStatus = getLast7DaysStatus(
-    allHabits.filter(h => h.isMinimumViable).map(h => h.id),
-    allCompletions,
-  )
+  // Week strip: which of the last 7 days were perfect
+  const last7DaysStatus = getLast7DaysStatus(dailyHabitIds, allCompletions)
 
   // Per-habit streaks (respects frequencyPerWeek)
   const habitStreaks = new Map(allHabits.map(h => [h.id, calculateHabitStreak(h.id, allCompletions, h.frequencyPerWeek)]))
@@ -149,8 +133,8 @@ async function DashboardContent({ mvdMode }: { mvdMode: boolean }) {
         todayAlreadyActive={todayAlreadyActive}
         habitsDone={completedHabits.length}
         habitsTotal={allHabits.length}
-        mvdDone={mvdHabitIds.filter(id => completedHabitIds.has(id)).length}
-        mvdTotal={mvdHabitIds.length}
+        choresDone={completedScheduled.length}
+        choresTotal={visibleScheduled.length}
       />
 
       <WeekStrip days={last7DaysStatus} />
@@ -164,40 +148,27 @@ async function DashboardContent({ mvdMode }: { mvdMode: boolean }) {
       />
 
       {pointsToday > 0 && (
-        <div className="flex items-center gap-3 rounded-xl border border-lime-400/15 bg-lime-400/5 px-4 py-3">
-          <p className="text-sm text-lime-200">
+        <div className="flex items-center gap-3 rounded-xl border border-slate-400/15 bg-slate-400/5 px-4 py-3">
+          <p className="text-sm text-slate-300">
             <span className="font-semibold">+{pointsToday} points</span> today
-            {mvdComplete && (
-              <span className="ml-2 text-emerald-400 font-medium">· MVD complete ✓</span>
+            {perfectDay && (
+              <span className="ml-2 text-emerald-400 font-medium">· perfect day ✓</span>
             )}
           </p>
         </div>
       )}
 
       {/* Today's schedule — calendar events + Canvas deadlines */}
-      {!mvdMode && (
-        <Suspense fallback={<TodayScheduleSkeleton />}>
-          <TodaySchedule />
-        </Suspense>
-      )}
-
-      <Suspense>
-        <MvdToggle />
+      <Suspense fallback={<TodayScheduleSkeleton />}>
+        <TodaySchedule />
       </Suspense>
 
       {/* Habits */}
       <section>
         <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <h2 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">
-              Daily Habits
-            </h2>
-            {mvdMode && (
-              <span className="text-xs text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded-full px-2 py-0.5">
-                MVD only
-              </span>
-            )}
-          </div>
+          <h2 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">
+            Daily Habits
+          </h2>
           <span className="text-xs text-zinc-600">{completedHabits.length} / {allHabits.length}</span>
         </div>
         <div className="space-y-2">
@@ -226,42 +197,37 @@ async function DashboardContent({ mvdMode }: { mvdMode: boolean }) {
       </section>
 
       {/* Scheduled tasks */}
-      {!mvdMode && (
-        <ScheduledSection
-          allTasks={allScheduledTasks}
-          pending={pendingScheduled}
-          completed={completedScheduled}
-          completedIds={[...completedScheduledIds]}
-        />
-      )}
+      <ScheduledSection
+        allTasks={allScheduledTasks}
+        pending={pendingScheduled}
+        completed={completedScheduled}
+        completedIds={[...completedScheduledIds]}
+      />
 
       {/* Tasks */}
-      {!mvdMode && (
-        <section>
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">
-              One-Off Tasks
-            </h2>
-            {completedTasks.length > 0 && (
-              <ClearCompletedButton count={completedTasks.filter(t => !t.completedAt?.startsWith(today)).length} />
-            )}
-          </div>
-          <div className="space-y-2">
-            {activeTasks.map(t => <TaskItem key={t.id} task={t} />)}
-            {completedTasks.map(t => <TaskItem key={t.id} task={t} />)}
-            {allTasks.length === 0 && (
-              <p className="text-sm text-zinc-600 py-6 text-center">No tasks yet. Add one below.</p>
-            )}
-          </div>
-        </section>
-      )}
+      <section>
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">
+            One-Off Tasks
+          </h2>
+          {completedTasks.length > 0 && (
+            <ClearCompletedButton count={completedTasks.filter(t => !t.completedAt?.startsWith(today)).length} />
+          )}
+        </div>
+        <div className="space-y-2">
+          {activeTasks.map(t => <TaskItem key={t.id} task={t} />)}
+          {completedTasks.map(t => <TaskItem key={t.id} task={t} />)}
+          {allTasks.length === 0 && (
+            <p className="text-sm text-zinc-600 py-6 text-center">No tasks yet. Add one below.</p>
+          )}
+        </div>
+      </section>
 
       <DashboardActions />
     </div>
   )
 }
 
-export default async function Home({ searchParams }: PageProps) {
-  const params = await searchParams
-  return <DashboardContent mvdMode={params.mvd === '1'} />
+export default async function Home() {
+  return <DashboardContent />
 }

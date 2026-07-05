@@ -19,8 +19,8 @@ const config: Config = {
         // Activity-ring trio — the app's gamification palette
         ring: {
           habit: '#fa2d6e',   // rose — today's habits
-          xp: '#c8f542',      // lime — points toward next level
-          mvd: '#2de8d8',     // cyan — minimum viable day
+          xp: '#c8f542',      // lime — progress toward next level
+          chore: '#2de8d8',   // cyan — today's chores
         },
       },
       animation: {

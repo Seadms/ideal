@@ -46,14 +46,15 @@ function ReadonlyRow({ task }: { task: ScheduledTask }) {
             {scheduleLabel(task)}
           </p>
         </div>
-        <div className="flex items-center gap-2 shrink-0">
-          <Badge variant="muted">+{task.points}</Badge>
+        <div className="flex items-center gap-1.5 shrink-0">
           <button
             onClick={() => setEditOpen(true)}
-            className="hover-reveal p-2 -m-1 rounded text-zinc-600 hover:text-zinc-300 transition-all"
+            aria-label="Edit scheduled task"
+            className="hover-reveal p-2 -m-1 rounded text-zinc-600 hover:text-zinc-300 transition-colors"
           >
             <Pencil size={12} />
           </button>
+          <Badge variant="muted" className="min-w-[52px] justify-center">+{task.points}</Badge>
         </div>
       </div>
       <EditScheduledTaskDialog task={task} open={editOpen} onClose={() => setEditOpen(false)} />

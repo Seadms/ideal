@@ -52,7 +52,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <div className="mx-auto max-w-2xl px-4">
           <header className="flex items-center justify-between py-5">
             <span className="font-display text-lg font-bold tracking-tight text-zinc-100">
-              ideal<span className="text-ring-xp">.</span>
+              ideal<span className="text-ring-habit">.</span>
             </span>
             <span className="text-xs text-zinc-600">
               {new Intl.DateTimeFormat('en-US', {

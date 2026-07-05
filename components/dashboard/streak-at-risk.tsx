@@ -28,7 +28,7 @@ export function StreakAtRisk({ currentStreak, todayAlreadyActive }: StreakAtRisk
       <AlertTriangle size={15} className="shrink-0 text-orange-400" />
       <p className="text-sm text-orange-300">
         <span className="font-semibold">{currentStreak}-day streak at risk.</span>
-        {' '}Complete your MVD habits before midnight.
+        {' '}Complete your daily habits before midnight.
       </p>
     </div>
   )

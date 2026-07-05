@@ -95,16 +95,18 @@ export function ScheduledTaskItem({ task, completedToday }: ScheduledTaskItemPro
           </p>
         </div>
 
-        {/* Right */}
-        <div className="flex items-center gap-2 shrink-0">
-          <Badge variant={completedToday ? 'emerald' : 'gold'}>+{task.points}</Badge>
+        {/* Right side: controls first, badge pinned to the right edge */}
+        <div className="flex items-center gap-1.5 shrink-0">
           <button
             onClick={() => setEditOpen(true)}
-            className="hover-reveal p-2 -m-1 rounded text-zinc-600 hover:text-zinc-300 transition-all"
+            className="hover-reveal p-2 -m-1 rounded text-zinc-600 hover:text-zinc-300 transition-colors"
             aria-label="Edit scheduled task"
           >
             <Pencil size={12} />
           </button>
+          <Badge variant={completedToday ? 'emerald' : 'gold'} className="min-w-[52px] justify-center">
+            +{task.points}
+          </Badge>
         </div>
 
         {/* Level-up overlay */}

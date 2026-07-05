@@ -68,18 +68,23 @@ export function SettingsClient({ reminderTime, streakFreezeCount, archivedHabits
   const [pushPending, setPushPending] = useState(false)
 
   useEffect(() => {
-    if (typeof Notification !== 'undefined') {
-      setPermState(Notification.permission)
-    }
-    if ('serviceWorker' in navigator && 'PushManager' in window) {
-      setPushSupported(true)
-      // Check if already subscribed
-      navigator.serviceWorker.ready.then(reg => {
-        reg.pushManager.getSubscription().then(sub => {
-          setPushSubscribed(!!sub)
+    // Deferred a frame: reads browser capabilities after mount without
+    // cascading a synchronous re-render inside the effect.
+    const raf = requestAnimationFrame(() => {
+      if (typeof Notification !== 'undefined') {
+        setPermState(Notification.permission)
+      }
+      if ('serviceWorker' in navigator && 'PushManager' in window) {
+        setPushSupported(true)
+        // Check if already subscribed
+        navigator.serviceWorker.ready.then(reg => {
+          reg.pushManager.getSubscription().then(sub => {
+            setPushSubscribed(!!sub)
+          })
         })
-      })
-    }
+      }
+    })
+    return () => cancelAnimationFrame(raf)
   }, [])
 
   const requestPermission = async () => {

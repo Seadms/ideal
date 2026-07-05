@@ -5,7 +5,7 @@ interface WeekStripProps {
 }
 
 // Horizontal 7-day strip: day-of-month numerals with today pinned in a white
-// pill and a cyan dot under each day the MVD was fully hit.
+// pill and a rose dot under each perfect day (every daily habit completed).
 export function WeekStrip({ days }: WeekStripProps) {
   if (days.length === 0) return null
 
@@ -24,7 +24,7 @@ export function WeekStrip({ days }: WeekStripProps) {
             </span>
             <span className={cn(
               'h-1 w-1 rounded-full',
-              active ? 'bg-ring-mvd' : 'bg-transparent',
+              active ? 'bg-ring-habit' : 'bg-transparent',
             )} />
           </div>
         )

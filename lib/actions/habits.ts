@@ -25,17 +25,19 @@ async function refreshStreak() {
 
 async function checkAndUpdateStreakForToday() {
   const today = todayString()
-  const mvdHabits = await db.select()
+  // Over-performer model: the day counts when EVERY daily habit is done.
+  // Habits on a weekly quota (frequencyPerWeek < 7) aren't required daily.
+  const dailyHabits = await db.select()
     .from(habits)
-    .where(and(eq(habits.isMinimumViable, true), eq(habits.isActive, true)))
-  if (mvdHabits.length === 0) return
+    .where(and(eq(habits.isActive, true), eq(habits.frequencyPerWeek, 7)))
+  if (dailyHabits.length === 0) return
 
   const completedToday = await db.select()
     .from(habitCompletions)
     .where(eq(habitCompletions.completedDate, today))
 
   const completedIds = new Set(completedToday.map(c => c.habitId))
-  if (!mvdHabits.every(h => completedIds.has(h.id))) return
+  if (!dailyHabits.every(h => completedIds.has(h.id))) return
 
   const rows = await db.select().from(userStats).where(eq(userStats.id, 1))
   const stats = rows[0]

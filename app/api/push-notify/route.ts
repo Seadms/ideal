@@ -41,20 +41,20 @@ export async function GET(request: Request) {
     return NextResponse.json({ sent: 0, reason: 'reminder not configured' })
   }
 
-  // Build a personalized message based on pending habits
+  // Build a personalized message based on pending daily habits
   const today = todayString()
-  const allHabits = await db.select().from(habits)
-    .where(and(eq(habits.isActive, true), eq(habits.isMinimumViable, true)))
+  const dailyHabits = await db.select().from(habits)
+    .where(and(eq(habits.isActive, true), eq(habits.frequencyPerWeek, 7)))
   const todayCompletions = await db.select().from(habitCompletions)
     .where(eq(habitCompletions.completedDate, today))
   const completedIds = new Set(todayCompletions.map(c => c.habitId))
-  const pendingMvd = allHabits.filter(h => !completedIds.has(h.id))
+  const pending = dailyHabits.filter(h => !completedIds.has(h.id))
 
   let body: string
-  if (pendingMvd.length === 0 && allHabits.length > 0) {
-    body = "MVD complete! Keep the streak alive."
-  } else if (pendingMvd.length > 0) {
-    body = `${pendingMvd.length} MVD habit${pendingMvd.length > 1 ? 's' : ''} still pending — don't break the streak.`
+  if (pending.length === 0 && dailyHabits.length > 0) {
+    body = "Perfect day! Every habit done. Keep the streak alive."
+  } else if (pending.length > 0) {
+    body = `${pending.length} habit${pending.length > 1 ? 's' : ''} still pending. Don't break the streak.`
   } else {
     body = "Time to check your habits for today."
   }

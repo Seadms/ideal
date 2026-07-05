@@ -22,7 +22,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
               variant === 'destructive',
             'border border-zinc-700 text-zinc-300 hover:border-zinc-500 hover:text-zinc-100 bg-transparent':
               variant === 'outline',
-            'bg-lime-400/10 text-lime-300 hover:bg-lime-400/20 border border-lime-400/20':
+            'bg-slate-400/10 text-slate-200 hover:bg-slate-400/20 border border-slate-400/20':
               variant === 'gold',
           },
           {

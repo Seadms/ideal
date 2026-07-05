@@ -65,19 +65,23 @@ export function FacialExercises() {
   // day) doesn't wipe the checklist. localStorage is read after mount to avoid
   // a hydration mismatch.
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY)
-      if (raw) {
-        const saved = JSON.parse(raw) as { date: string; names: string[] }
-        if (saved.date === todayString()) {
-          const valid = saved.names.filter(n => EXERCISES.some(ex => ex.name === n))
-          setDone(new Set(valid))
+    // Deferred a frame so the restore doesn't cascade into the initial render
+    const raf = requestAnimationFrame(() => {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY)
+        if (raw) {
+          const saved = JSON.parse(raw) as { date: string; names: string[] }
+          if (saved.date === todayString()) {
+            const valid = saved.names.filter(n => EXERCISES.some(ex => ex.name === n))
+            setDone(new Set(valid))
+          }
         }
+      } catch {
+        // corrupted storage — start fresh
       }
-    } catch {
-      // corrupted storage — start fresh
-    }
-    setLoaded(true)
+      setLoaded(true)
+    })
+    return () => cancelAnimationFrame(raf)
   }, [])
 
   useEffect(() => {
