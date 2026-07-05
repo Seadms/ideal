@@ -42,6 +42,14 @@ body {
   background: #52525b;
 }
 
+/* Hide the scrollbar on horizontally scrolling nav pills */
+.scrollbar-none {
+  scrollbar-width: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
 /* Date input dark styling */
 input[type="date"]::-webkit-calendar-picker-indicator {
   filter: invert(0.5);

@@ -64,6 +64,9 @@ export const userStats = sqliteTable('user_stats', {
   lastActiveDate: text('last_active_date'),
   reminderTime: text('reminder_time'),        // "HH:MM" 24h or null
   streakFreezeCount: integer('streak_freeze_count').notNull().default(0),
+  briefingTime: text('briefing_time'),        // "HH:MM" — morning briefing push, null = off
+  eventLeadMinutes: integer('event_lead_minutes').notNull().default(30),
+  assignmentAlertHours: integer('assignment_alert_hours').notNull().default(24),
   createdAt: text('created_at').notNull().default(sql`(datetime('now'))`),
 })
 
@@ -73,6 +76,14 @@ export const pushSubscriptions = sqliteTable('push_subscriptions', {
   p256dh: text('p256dh').notNull(),
   auth: text('auth').notNull(),
   createdAt: text('created_at').notNull().default(sql`(datetime('now'))`),
+})
+
+// Dedupe ledger for assistant pushes — one row per notification actually sent.
+// `key` encodes what fired (e.g. 'briefing-2026-07-04', 'event-<uid>-<start>',
+// 'assign-<id>-24h') so /api/tick can run every few minutes without repeats.
+export const sentNotifications = sqliteTable('sent_notifications', {
+  key: text('key').primaryKey(),
+  sentAt: text('sent_at').notNull().default(sql`(datetime('now'))`),
 })
 
 export const scheduledTasks = sqliteTable('scheduled_tasks', {

@@ -2,6 +2,9 @@ import { eq } from 'drizzle-orm'
 import { db, initDb } from '@/lib/db'
 import { habits, userStats } from '@/lib/db/schema'
 import { SettingsClient } from '@/components/settings/settings-client'
+import { AssistantSettings } from '@/components/settings/assistant-settings'
+import { canvasConfigured } from '@/lib/canvas'
+import { calendarConfigured } from '@/lib/calendar'
 
 export const dynamic = 'force-dynamic'
 
@@ -23,6 +26,17 @@ export default async function SettingsPage() {
         <h1 className="text-lg font-semibold text-zinc-100">Settings</h1>
         <p className="text-xs text-zinc-500 mt-0.5">Preferences and data management</p>
       </div>
+      <AssistantSettings
+        briefingTime={stats?.briefingTime ?? null}
+        eventLeadMinutes={stats?.eventLeadMinutes ?? 30}
+        assignmentAlertHours={stats?.assignmentAlertHours ?? 24}
+        integrations={{
+          canvas: canvasConfigured(),
+          calendar: calendarConfigured(),
+          gemini: !!process.env.GEMINI_API_KEY,
+          push: !!process.env.VAPID_PUBLIC_KEY && !!process.env.VAPID_PRIVATE_KEY,
+        }}
+      />
       <SettingsClient
         reminderTime={stats?.reminderTime ?? null}
         streakFreezeCount={stats?.streakFreezeCount ?? 0}

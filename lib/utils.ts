@@ -79,6 +79,25 @@ export function getWeekStart(dateStr?: string): string {
   return ymd(date.getFullYear(), date.getMonth() + 1, date.getDate())
 }
 
+// App-timezone wall-clock helpers for real Date instants (calendar events,
+// Canvas due times). Distinct from the YYYY-MM-DD string helpers above.
+
+export function timeInAppTz(d: Date): string {
+  return new Intl.DateTimeFormat('en-US', {
+    ...(APP_TZ ? { timeZone: APP_TZ } : {}), hour: 'numeric', minute: '2-digit',
+  }).format(d) // "3:30 PM"
+}
+
+export function hmInAppTz(d: Date): string {
+  return new Intl.DateTimeFormat('en-GB', {
+    ...(APP_TZ ? { timeZone: APP_TZ } : {}), hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
+  }).format(d) // "15:30" — comparable against stored "HH:MM" prefs
+}
+
+export function dateInAppTz(d: Date): string {
+  return localDateString(d) // YYYY-MM-DD
+}
+
 // ── Level formula ─────────────────────────────────────────────────────────────
 // level = floor(sqrt(totalEarned / 100)) + 1
 // L1=0pts, L2=100pts, L3=400pts, L5=1600pts, L10=8100pts

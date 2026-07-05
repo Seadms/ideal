@@ -19,6 +19,15 @@ screen.
   water tracker.
 - **History** — a 35-day activity heatmap, 60-day habit performance, and a
   date-grouped activity feed.
+- **School** — live Canvas (UNCC) integration: courses, upcoming assignments,
+  missing submissions, and deadline push reminders.
+- **Assistant** — an AI morning briefing (calendar + Canvas + habits, written by
+  Gemini) pushed at your chosen time, plus lead-time reminders before calendar
+  events and assignment deadlines. Timed pushes are driven by `/api/tick`,
+  designed to be hit every ~10 min by a free external pinger (cron-job.org)
+  since Vercel Hobby crons only run daily.
+- **Calendar** — reads your Google Calendar private ICS feed(s), recurring
+  events included, and shows a Today timeline on the dashboard.
 - **Reminders** — web-push notifications via a daily Vercel cron, with an in-app
   fallback reminder.
 - **Data** — one-click export/import backup (raw SQLite locally, JSON on cloud).
@@ -53,8 +62,12 @@ See `.env.example`. All are optional for local development:
   with `npx web-push generate-vapid-keys`).
 - `CRON_SECRET` — shared secret the daily push cron (`/api/push-notify`, scheduled
   in `vercel.json`) must present.
-- `GEMINI_API_KEY` — enables AI-generated bonus-task suggestions (falls back to a
-  built-in pool when unset).
+- `GEMINI_API_KEY` — enables AI-generated bonus-task suggestions and the AI
+  morning briefing (both fall back gracefully when unset).
+- `CANVAS_BASE_URL` / `CANVAS_API_TOKEN` — Canvas LMS integration (School page,
+  assignment reminders). Token: Canvas → Account → Settings → New Access Token.
+- `GCAL_ICS_URLS` — comma-separated private ICS feed URLs (`Label|url` supported)
+  for the Today timeline and event reminders.
 
 ## Scripts
 

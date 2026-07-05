@@ -101,6 +101,10 @@ async function doInitDb() {
       auth TEXT NOT NULL,
       created_at TEXT NOT NULL DEFAULT (datetime('now'))
     )`,
+    `CREATE TABLE IF NOT EXISTS sent_notifications (
+      key TEXT PRIMARY KEY,
+      sent_at TEXT NOT NULL DEFAULT (datetime('now'))
+    )`,
     `CREATE TABLE IF NOT EXISTS scheduled_tasks (
       id TEXT PRIMARY KEY,
       title TEXT NOT NULL,
@@ -255,6 +259,9 @@ async function doInitDb() {
     `ALTER TABLE habits ADD COLUMN frequency_per_week INTEGER NOT NULL DEFAULT 7`,
     `ALTER TABLE user_stats ADD COLUMN reminder_time TEXT`,
     `ALTER TABLE user_stats ADD COLUMN streak_freeze_count INTEGER NOT NULL DEFAULT 0`,
+    `ALTER TABLE user_stats ADD COLUMN briefing_time TEXT`,
+    `ALTER TABLE user_stats ADD COLUMN event_lead_minutes INTEGER NOT NULL DEFAULT 30`,
+    `ALTER TABLE user_stats ADD COLUMN assignment_alert_hours INTEGER NOT NULL DEFAULT 24`,
     `ALTER TABLE split_exercises ADD COLUMN exercise_type TEXT NOT NULL DEFAULT 'strength'`,
     `ALTER TABLE split_exercises ADD COLUMN target TEXT`,
     `UPDATE split_exercises SET exercise_type = 'cardio' WHERE name LIKE '%Cardio%'`,

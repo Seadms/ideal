@@ -18,6 +18,7 @@ import { ClearCompletedButton } from '@/components/dashboard/clear-completed-but
 import { StreakAtRisk } from '@/components/dashboard/streak-at-risk'
 import { BonusTaskCard } from '@/components/dashboard/bonus-task-card'
 import { ScheduledSection } from '@/components/dashboard/scheduled-section'
+import { TodaySchedule, TodayScheduleSkeleton } from '@/components/dashboard/today-schedule'
 
 export const dynamic = 'force-dynamic'
 
@@ -179,6 +180,13 @@ async function DashboardContent({ mvdMode }: { mvdMode: boolean }) {
             )}
           </p>
         </div>
+      )}
+
+      {/* Today's schedule — calendar events + Canvas deadlines */}
+      {!mvdMode && (
+        <Suspense fallback={<TodayScheduleSkeleton />}>
+          <TodaySchedule />
+        </Suspense>
       )}
 
       <Suspense>

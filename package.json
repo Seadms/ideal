@@ -17,6 +17,7 @@
     "drizzle-orm": "^0.31.2",
     "lucide-react": "^0.400.0",
     "next": "^16.2.6",
+    "node-ical": "^0.26.1",
     "react": "^18",
     "react-dom": "^18",
     "tailwind-merge": "^2.3.0",
