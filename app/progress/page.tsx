@@ -20,7 +20,7 @@ export default async function ProgressPage() {
   ])
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-6">
       <div>
         <PageHeader title="Progress" ghost="Recomp" sub="Fat down, strength up. Track the recomp." />
       </div>

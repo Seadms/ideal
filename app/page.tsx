@@ -146,7 +146,7 @@ async function DashboardContent({ mvdMode }: { mvdMode: boolean }) {
     .reduce((s, t) => s + t.points, 0)
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-6">
       <StatsHeader
         stats={stats}
         todayAlreadyActive={todayAlreadyActive}

@@ -71,7 +71,7 @@ function Section({ label, count, children }: { label: string; count?: number; ch
 export default async function SchoolPage() {
   if (!canvasConfigured()) {
     return (
-      <div className="space-y-6 animate-fade-in">
+      <div className="space-y-6">
         <PageHeader title="School" ghost="Canvas" sub="Canvas courses and deadlines" />
         <div className="rounded-xl border border-zinc-800 bg-zinc-900/30 px-5 py-6 space-y-4">
           <div className="flex items-center gap-3">
@@ -107,7 +107,7 @@ export default async function SchoolPage() {
   const dueLater = open.filter(i => dateInAppTz(new Date(i.dueAt!)) > weekEnd)
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-6">
       <PageHeader
         title="School"
         ghost="Canvas"

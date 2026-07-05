@@ -150,7 +150,7 @@ export default async function HistoryPage() {
   const totalPtsSpent = allRedemptions.reduce((s, r) => s + r.pointsSpent, 0)
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-6">
       <div>
         <PageHeader title="History" ghost="60 days" sub="Activity over the last 60 days" />
       </div>

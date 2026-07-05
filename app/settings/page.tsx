@@ -22,7 +22,7 @@ export default async function SettingsPage() {
   const stats = statsRows[0]
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-6">
       <div>
         <PageHeader title="Settings" ghost="Preferences" sub="Preferences and data management" />
       </div>

@@ -32,7 +32,7 @@ export default async function DietPage() {
   const goals = goalsRows[0] ?? DEFAULTS
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-6">
       <div>
         <PageHeader title="Diet" ghost="Nutrition" sub="Cut + calisthenics recomp · lean, V-taper aesthetic" />
       </div>

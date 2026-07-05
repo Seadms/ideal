@@ -36,7 +36,7 @@ export default async function RewardsPage() {
     .limit(30)
 
   return (
-    <div className="space-y-7 animate-fade-in">
+    <div className="space-y-7">
       <div>
         <PageHeader title="Rewards" ghost="Store" sub="Spend your kayd points on things that make life worth grinding for." />
       </div>

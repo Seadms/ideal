@@ -50,7 +50,7 @@ export default async function GymPage() {
   }
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-6">
       <PageHeader title="Gym" ghost="Training" sub="Today's training and nutrition" />
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
         <SplitSection days={daysWithExercises} prevLogs={prevLogs} />
