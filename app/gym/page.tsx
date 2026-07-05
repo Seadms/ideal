@@ -7,6 +7,7 @@ import { SplitSection } from '@/components/gym/split-section'
 import { NutritionLog } from '@/components/gym/nutrition-log'
 import { ProgressionSection } from '@/components/gym/progression-section'
 import { FacialExercises } from '@/components/gym/facial-exercises'
+import { PageHeader } from '@/components/ui/page-header'
 
 export const dynamic = 'force-dynamic'
 
@@ -50,10 +51,7 @@ export default async function GymPage() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div>
-        <h1 className="text-lg font-semibold text-zinc-100">Gym</h1>
-        <p className="text-xs text-zinc-500 mt-0.5">Today's training &amp; nutrition</p>
-      </div>
+      <PageHeader title="Gym" ghost="Training" sub="Today's training and nutrition" />
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
         <SplitSection days={daysWithExercises} prevLogs={prevLogs} />
         <NutritionLog entries={nutrition} goals={goals} />

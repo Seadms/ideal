@@ -27,9 +27,9 @@ export function NavBar() {
   return (
     <nav
       aria-label="Primary"
-      className="fixed inset-x-0 bottom-0 z-50 flex justify-center px-4 pb-[max(env(safe-area-inset-bottom),12px)]"
+      className="fixed inset-x-0 bottom-0 z-50 flex justify-center px-3 pb-[max(env(safe-area-inset-bottom),12px)]"
     >
-      <div className="glass-nav flex items-center gap-0 sm:gap-1 rounded-full p-1 sm:p-2">
+      <div className="glass-nav flex items-center gap-0 sm:gap-1 rounded-[26px] p-1">
         {LINKS.map(({ href, label, icon: Icon }) => {
           const active = href === '/' ? pathname === '/' : pathname.startsWith(href)
           return (
@@ -37,16 +37,20 @@ export function NavBar() {
               key={href}
               href={href}
               aria-current={active ? 'page' : undefined}
-              aria-label={label}
-              title={label}
               className={cn(
-                'flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-full transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400',
+                'flex w-[42px] sm:w-14 flex-col items-center justify-center gap-0.5 rounded-[20px] py-1.5 sm:py-2 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400',
                 active
                   ? 'bg-zinc-100 text-zinc-950 shadow-lg'
                   : 'text-zinc-400 hover:text-zinc-100 hover:bg-white/5',
               )}
             >
-              <Icon className="h-[19px] w-[19px] sm:h-[22px] sm:w-[22px]" strokeWidth={active ? 2.4 : 2} />
+              <Icon className="h-[18px] w-[18px] sm:h-5 sm:w-5" strokeWidth={active ? 2.4 : 2} />
+              <span className={cn(
+                'text-[8px] sm:text-[9px] font-medium leading-none tracking-tight',
+                active ? 'text-zinc-950' : 'text-zinc-500',
+              )}>
+                {label === 'Dashboard' ? 'Home' : label}
+              </span>
             </Link>
           )
         })}

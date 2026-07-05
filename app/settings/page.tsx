@@ -5,6 +5,7 @@ import { SettingsClient } from '@/components/settings/settings-client'
 import { AssistantSettings } from '@/components/settings/assistant-settings'
 import { canvasConfigured } from '@/lib/canvas'
 import { calendarConfigured } from '@/lib/calendar'
+import { PageHeader } from '@/components/ui/page-header'
 
 export const dynamic = 'force-dynamic'
 
@@ -23,8 +24,7 @@ export default async function SettingsPage() {
   return (
     <div className="space-y-6 animate-fade-in">
       <div>
-        <h1 className="text-lg font-semibold text-zinc-100">Settings</h1>
-        <p className="text-xs text-zinc-500 mt-0.5">Preferences and data management</p>
+        <PageHeader title="Settings" ghost="Preferences" sub="Preferences and data management" />
       </div>
       <AssistantSettings
         briefingTime={stats?.briefingTime ?? null}

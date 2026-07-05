@@ -3,6 +3,7 @@ import { db, initDb } from '@/lib/db'
 import { habits, habitCompletions, tasks, rewards, rewardRedemptions, bonusTaskSessions, bonusTaskPool } from '@/lib/db/schema'
 import { todayString, daysAgoString, formatPoints, cn } from '@/lib/utils'
 import { CategoryIcon } from '@/components/ui/category-icon'
+import { PageHeader } from '@/components/ui/page-header'
 
 export const dynamic = 'force-dynamic'
 
@@ -151,8 +152,7 @@ export default async function HistoryPage() {
   return (
     <div className="space-y-6 animate-fade-in">
       <div>
-        <h1 className="text-lg font-semibold text-zinc-100">History</h1>
-        <p className="text-xs text-zinc-500 mt-0.5">Activity over the last 60 days</p>
+        <PageHeader title="History" ghost="60 days" sub="Activity over the last 60 days" />
       </div>
 
       {/* Summary strip */}

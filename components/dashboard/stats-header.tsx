@@ -1,12 +1,12 @@
-import { calculateLevel, formatPoints, dayLabel, cn } from '@/lib/utils'
+import { calculateLevel, formatPoints, cn } from '@/lib/utils'
 import type { UserStats } from '@/lib/db/schema'
 import { Flame } from 'lucide-react'
 import { FreezeStreakButton } from './freeze-streak-button'
 import { ActivityRings } from './activity-rings'
+import { KMark } from '@/components/ui/k-mark'
 
 interface StatsHeaderProps {
   stats: UserStats
-  last7DaysStatus: { date: string; active: boolean; isToday: boolean }[]
   todayAlreadyActive: boolean
   habitsDone: number
   habitsTotal: number
@@ -31,7 +31,7 @@ function StatRow({ color, label, value }: { color: string; label: string; value:
 }
 
 export function StatsHeader({
-  stats, last7DaysStatus, todayAlreadyActive,
+  stats, todayAlreadyActive,
   habitsDone, habitsTotal, mvdDone, mvdTotal,
 }: StatsHeaderProps) {
   const { level, progress, pointsIntoLevel, pointsNeeded } = calculateLevel(stats.totalPointsEarned)
@@ -70,32 +70,21 @@ export function StatsHeader({
           <StatRow color={RING.habit.color} label="Habits" value={`${habitsDone}/${habitsTotal}`} />
           <StatRow color={RING.xp.color} label={`Level ${level}`} value={`${formatPoints(pointsIntoLevel)}/${formatPoints(pointsNeeded)} xp`} />
           <StatRow color={RING.mvd.color} label="MVD" value={mvdTotal > 0 ? `${mvdDone}/${mvdTotal}` : '—'} />
-
-          {last7DaysStatus.length > 0 && (
-            <div className="flex items-end gap-1.5 pt-1">
-              {last7DaysStatus.map(({ date, active, isToday }) => (
-                <div key={date} className="flex flex-col items-center gap-1">
-                  <div className={cn(
-                    'h-1.5 w-1.5 rounded-full transition-colors',
-                    active ? 'bg-ring-mvd' : 'bg-zinc-700',
-                    isToday && !active && 'ring-1 ring-ring-mvd/50',
-                  )} />
-                  <span className="text-[9px] text-zinc-700 leading-none">{dayLabel(date)[0]}</span>
-                </div>
-              ))}
-            </div>
-          )}
         </div>
       </div>
 
-      {/* Points balance */}
+      {/* Kayd points balance */}
       <div className="mt-4 flex items-center justify-between border-t border-zinc-800/70 pt-4">
-        <div>
-          <p className="font-display text-2xl font-bold tabular-nums text-ring-xp leading-none">
-            {formatPoints(stats.currentPoints)}
-            <span className="ml-1.5 text-xs font-semibold text-zinc-500">pts</span>
-          </p>
-          <p className="text-xs text-zinc-600 mt-1">{formatPoints(stats.totalPointsEarned)} lifetime</p>
+        <div className="flex items-center gap-2.5">
+          <KMark size="lg" />
+          <div>
+            <p className="font-display text-2xl font-bold tabular-nums text-ring-xp leading-none">
+              {formatPoints(stats.currentPoints)}
+            </p>
+            <p className="text-xs text-zinc-600 mt-1">
+              kayd points · {formatPoints(stats.totalPointsEarned)} lifetime
+            </p>
+          </div>
         </div>
         <FreezeStreakButton todayAlreadyActive={todayAlreadyActive} />
       </div>

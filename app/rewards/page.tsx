@@ -5,7 +5,9 @@ import { formatPoints } from '@/lib/utils'
 import { RewardCard } from '@/components/rewards/reward-card'
 import { RewardsActions } from '@/components/rewards/rewards-actions'
 import { RedemptionHistory } from '@/components/rewards/redemption-history'
-import { Zap, Gift } from 'lucide-react'
+import { Gift } from 'lucide-react'
+import { KMark } from '@/components/ui/k-mark'
+import { PageHeader } from '@/components/ui/page-header'
 
 export const dynamic = 'force-dynamic'
 
@@ -36,21 +38,17 @@ export default async function RewardsPage() {
   return (
     <div className="space-y-7 animate-fade-in">
       <div>
-        <h1 className="text-xl font-semibold text-zinc-100 tracking-tight">Rewards Store</h1>
-        <p className="text-sm text-zinc-500 mt-1">
-          Spend your points on things that make life worth grinding for.
-        </p>
+        <PageHeader title="Rewards" ghost="Store" sub="Spend your kayd points on things that make life worth grinding for." />
       </div>
 
       {/* Balance */}
       <div className="flex items-center gap-4 rounded-xl border border-zinc-800 bg-zinc-900/60 px-5 py-4">
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-lime-400/10 border border-lime-400/15">
-          <Zap size={18} className="text-lime-300" />
-        </div>
+        <KMark size="lg" className="h-10 w-10 text-base" />
         <div>
           <p className="text-xs text-zinc-500">Current balance</p>
           <p className="font-display text-2xl font-bold text-lime-300 tabular-nums leading-none mt-0.5">
-            {formatPoints(currentPoints)} pts
+            {formatPoints(currentPoints)}
+            <span className="ml-1.5 text-xs font-semibold text-zinc-500">kayd points</span>
           </p>
         </div>
         {affordable.length > 0 && (

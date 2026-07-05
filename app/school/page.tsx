@@ -1,6 +1,7 @@
 import { ExternalLink, AlertTriangle, BookOpen } from 'lucide-react'
 import { getCourses, getPlannerItems, getMissingSubmissions, canvasConfigured, cleanCourseName, type CanvasItem } from '@/lib/canvas'
 import { todayString, shiftDays, dateInAppTz, timeInAppTz, formatDate, cn } from '@/lib/utils'
+import { PageHeader } from '@/components/ui/page-header'
 
 export const dynamic = 'force-dynamic'
 
@@ -71,10 +72,7 @@ export default async function SchoolPage() {
   if (!canvasConfigured()) {
     return (
       <div className="space-y-6 animate-fade-in">
-        <div>
-          <h1 className="text-lg font-semibold text-zinc-100">School</h1>
-          <p className="text-xs text-zinc-500 mt-0.5">Canvas courses and deadlines</p>
-        </div>
+        <PageHeader title="School" ghost="Canvas" sub="Canvas courses and deadlines" />
         <div className="rounded-xl border border-zinc-800 bg-zinc-900/30 px-5 py-6 space-y-4">
           <div className="flex items-center gap-3">
             <BookOpen className="h-5 w-5 text-violet-400" />
@@ -110,12 +108,11 @@ export default async function SchoolPage() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div>
-        <h1 className="text-lg font-semibold text-zinc-100">School</h1>
-        <p className="text-xs text-zinc-500 mt-0.5">
-          {courses.length} active course{courses.length === 1 ? '' : 's'} · {open.length} open item{open.length === 1 ? '' : 's'}
-        </p>
-      </div>
+      <PageHeader
+        title="School"
+        ghost="Canvas"
+        sub={`${courses.length} active course${courses.length === 1 ? '' : 's'} · ${open.length} open item${open.length === 1 ? '' : 's'}`}
+      />
 
       {courses.length > 0 && (
         <div className="flex flex-wrap gap-1.5">

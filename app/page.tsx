@@ -1,5 +1,4 @@
 import { Suspense } from 'react'
-import { Zap } from 'lucide-react'
 import { and, asc, eq, gte } from 'drizzle-orm'
 import { db } from '@/lib/db'
 import { habits, habitCompletions, tasks, userStats, bonusTaskSessions, bonusTaskPool, scheduledTasks, scheduledTaskCompletions } from '@/lib/db/schema'
@@ -20,6 +19,8 @@ import { StreakAtRisk } from '@/components/dashboard/streak-at-risk'
 import { BonusTaskCard } from '@/components/dashboard/bonus-task-card'
 import { ScheduledSection } from '@/components/dashboard/scheduled-section'
 import { TodaySchedule, TodayScheduleSkeleton } from '@/components/dashboard/today-schedule'
+import { WeekStrip } from '@/components/dashboard/week-strip'
+import { KMark } from '@/components/ui/k-mark'
 
 export const dynamic = 'force-dynamic'
 
@@ -163,13 +164,14 @@ async function DashboardContent({ mvdMode }: { mvdMode: boolean }) {
     <div className="space-y-6 animate-fade-in">
       <StatsHeader
         stats={stats}
-        last7DaysStatus={last7DaysStatus}
         todayAlreadyActive={todayAlreadyActive}
         habitsDone={completedHabits.length}
         habitsTotal={allHabits.length}
         mvdDone={mvdHabitIds.filter(id => completedHabitIds.has(id)).length}
         mvdTotal={mvdHabitIds.length}
       />
+
+      <WeekStrip days={last7DaysStatus} />
 
       <StreakAtRisk currentStreak={stats.currentStreak} todayAlreadyActive={todayAlreadyActive} />
 
@@ -181,9 +183,9 @@ async function DashboardContent({ mvdMode }: { mvdMode: boolean }) {
 
       {pointsToday > 0 && (
         <div className="flex items-center gap-3 rounded-xl border border-lime-400/15 bg-lime-400/5 px-4 py-3">
-          <Zap size={15} className="shrink-0 text-lime-300" />
+          <KMark size="sm" />
           <p className="text-sm text-lime-200">
-            <span className="font-semibold">+{pointsToday} pts</span> today
+            <span className="font-semibold">+{pointsToday} kayd points</span> today
             {mvdComplete && (
               <span className="ml-2 text-emerald-400 font-medium">· MVD complete ✓</span>
             )}
