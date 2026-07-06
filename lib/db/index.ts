@@ -292,6 +292,26 @@ async function doInitDb() {
   await seedSplitIfNeeded()
   await seedDietIfEmpty()
   await seedHouseholdTasksIfNeeded()
+  await seedMobilityHabitIfNeeded()
+}
+
+// ── Seed: Daily mobility habit ────────────────────────────────────────────────
+// One-time insert so the mobility block (Gym page) feeds the streak and points.
+
+async function seedMobilityHabitIfNeeded() {
+  const existing = await client.execute(
+    "SELECT id FROM habits WHERE title = 'Mobility routine' LIMIT 1",
+  )
+  if (existing.rows.length > 0) return
+  const maxRow = await client.execute(
+    'SELECT COALESCE(MAX(sort_order), 0) AS m FROM habits WHERE is_active = 1',
+  )
+  const sortOrder = Number(maxRow.rows[0]?.m ?? 0) + 1
+  await client.execute({
+    sql: `INSERT INTO habits (id, title, description, points, category, frequency_per_week, sort_order)
+          VALUES (?, 'Mobility routine', 'About 10 min: squat hold, couch stretch, hangs. Checklist on the Gym page', 30, 'fitness', 7, ?)`,
+    args: [randomUUID(), sortOrder],
+  })
 }
 
 // ── Seed: Aesthetic Recomp Split — 4-Day Calisthenics (Rings, Bar & Bands) ────

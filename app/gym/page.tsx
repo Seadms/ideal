@@ -7,6 +7,7 @@ import { SplitSection } from '@/components/gym/split-section'
 import { NutritionLog } from '@/components/gym/nutrition-log'
 import { ProgressionSection } from '@/components/gym/progression-section'
 import { FacialExercises } from '@/components/gym/facial-exercises'
+import { MobilityRoutine } from '@/components/gym/mobility-routine'
 import { PageHeader } from '@/components/ui/page-header'
 
 export const dynamic = 'force-dynamic'
@@ -57,6 +58,7 @@ export default async function GymPage() {
         <NutritionLog entries={nutrition} goals={goals} />
       </div>
       <ProgressionSection days={daysWithExercises} logsByExercise={logsByExercise} />
+      <MobilityRoutine />
       <FacialExercises />
     </div>
   )
