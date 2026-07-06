@@ -38,7 +38,7 @@ export async function TodaySchedule() {
 
   const entries: Entry[] = [
     ...events
-      .filter(e => dateInAppTz(e.start) === today)
+      .filter(e => e.dayKey === today)
       .map(e => ({
         key: e.id,
         at: e.allDay ? null : e.start,

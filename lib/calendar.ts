@@ -7,6 +7,7 @@
 // are expanded by node-ical's expandRecurringEvent.
 
 import ical, { expandRecurringEvent } from 'node-ical'
+import { dateInAppTz } from '@/lib/utils'
 
 export interface CalEvent {
   id: string          // uid + start instant — stable dedupe key
@@ -14,8 +15,20 @@ export interface CalEvent {
   start: Date
   end: Date | null
   allDay: boolean
+  // The event's calendar day (YYYY-MM-DD) in the app timezone. All-day events
+  // need special handling: node-ical parses date-only values as SERVER-local
+  // midnight, so converting that instant through the app timezone shifts the
+  // date on UTC servers (a "July 6" holiday became July 5 on Vercel). Always
+  // compare against this, never against dateInAppTz(start).
+  dayKey: string
   location: string | null
   calendar: string    // feed label
+}
+
+// The literal calendar date node-ical encoded, read back in the same
+// (server-local) frame it was written in.
+function localYmd(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 
 interface Feed { label: string; url: string }
@@ -54,6 +67,7 @@ function expandEvents(parsed: ical.CalendarResponse, label: string, rangeStart: 
           start: inst.start,
           end: inst.end ?? null,
           allDay: inst.isFullDay,
+          dayKey: inst.isFullDay ? localYmd(inst.start) : dateInAppTz(inst.start),
           location: inst.event.location?.toString() || null,
           calendar: label,
         })

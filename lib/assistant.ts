@@ -33,7 +33,7 @@ export async function getDayData(opts: { fresh?: boolean } = {}): Promise<DayDat
     canvasConfigured() ? getMissingSubmissions(opts) : Promise.resolve([]),
   ])
 
-  const todayEvents = events.filter(e => dateInAppTz(e.start) === today)
+  const todayEvents = events.filter(e => e.dayKey === today)
 
   const unsubmitted = planner.filter(i => !i.submitted && i.dueAt)
   const dueToday = unsubmitted.filter(i => dateInAppTz(new Date(i.dueAt!)) === today)
