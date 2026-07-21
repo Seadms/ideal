@@ -12,9 +12,10 @@ import { EditRewardDialog } from './edit-reward-dialog'
 interface RewardCardProps {
   reward: Reward
   currentPoints: number
+  unit?: string
 }
 
-export function RewardCard({ reward, currentPoints }: RewardCardProps) {
+export function RewardCard({ reward, currentPoints, unit = 'pts' }: RewardCardProps) {
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
   const [showConfirm, setShowConfirm] = useState(false)
@@ -101,7 +102,7 @@ export function RewardCard({ reward, currentPoints }: RewardCardProps) {
       <div className="mt-auto space-y-2.5 pt-3 border-t border-zinc-800">
         {/* Cost */}
         <div className="flex items-center justify-between">
-          <span className="text-sm font-semibold text-zinc-200">{formatPoints(reward.cost)} pts</span>
+          <span className="text-sm font-semibold text-zinc-200">{formatPoints(reward.cost)} {unit}</span>
           {reward.timesRedeemed > 0 && (
             <span className="text-xs text-zinc-600">×{reward.timesRedeemed} redeemed</span>
           )}
@@ -126,7 +127,7 @@ export function RewardCard({ reward, currentPoints }: RewardCardProps) {
                 ? 'Confirm redeem?'
                 : canAfford
                   ? 'Redeem'
-                  : `${formatPoints(reward.cost - currentPoints)} pts short`}
+                  : `${formatPoints(reward.cost - currentPoints)} ${unit} short`}
         </Button>
 
         {showConfirm && (

@@ -45,6 +45,7 @@ export const rewards = sqliteTable('rewards', {
   category: text('category').notNull().default('general'),
   isAvailable: integer('is_available', { mode: 'boolean' }).notNull().default(true),
   timesRedeemed: integer('times_redeemed').notNull().default(0),
+  source: text('source').notNull().default('self'), // 'self' | 'wife'
   createdAt: text('created_at').notNull().default(sql`(datetime('now'))`),
 })
 
@@ -60,6 +61,7 @@ export const userStats = sqliteTable('user_stats', {
   totalPointsEarned: integer('total_points_earned').notNull().default(0),
   totalPointsSpent: integer('total_points_spent').notNull().default(0),
   currentPoints: integer('current_points').notNull().default(0),
+  goodBoyPoints: integer('good_boy_points').notNull().default(0), // wife-store currency
   currentStreak: integer('current_streak').notNull().default(0),
   longestStreak: integer('longest_streak').notNull().default(0),
   lastActiveDate: text('last_active_date'),

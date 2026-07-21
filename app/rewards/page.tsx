@@ -5,7 +5,7 @@ import { formatPoints } from '@/lib/utils'
 import { RewardCard } from '@/components/rewards/reward-card'
 import { RewardsActions } from '@/components/rewards/rewards-actions'
 import { RedemptionHistory } from '@/components/rewards/redemption-history'
-import { Gift } from 'lucide-react'
+import { Gift, Heart } from 'lucide-react'
 import { PageHeader } from '@/components/ui/page-header'
 
 export const dynamic = 'force-dynamic'
@@ -15,9 +15,14 @@ export default async function RewardsPage() {
   const allRewards = await db.select().from(rewards)
   const statsRows = await db.select().from(userStats).where(eq(userStats.id, 1))
   const currentPoints = statsRows[0]?.currentPoints ?? 0
+  const goodBoyPoints = statsRows[0]?.goodBoyPoints ?? 0
 
-  const available = allRewards.filter(r => r.isAvailable).sort((a, b) => a.cost - b.cost)
-  const hidden = allRewards.filter(r => !r.isAvailable).sort((a, b) => a.cost - b.cost)
+  const byCost = (a: { cost: number }, b: { cost: number }) => a.cost - b.cost
+  const selfRewards = allRewards.filter(r => r.source !== 'wife')
+  const wifeRewards = allRewards.filter(r => r.source === 'wife').sort(byCost)
+
+  const available = selfRewards.filter(r => r.isAvailable).sort(byCost)
+  const hidden = selfRewards.filter(r => !r.isAvailable).sort(byCost)
   const allSorted = [...available, ...hidden]
   const affordable = available.filter(r => r.cost <= currentPoints)
 
@@ -40,20 +45,20 @@ export default async function RewardsPage() {
         <PageHeader title="Rewards" ghost="Store" sub="Spend your points on things that make life worth grinding for." />
       </div>
 
-      {/* Balance */}
+      {/* Balances: points + good-boy points */}
       <div className="flex items-center justify-between rounded-2xl border border-zinc-800 bg-zinc-900/60 px-5 py-5">
         <div>
-          <p className="text-xs uppercase tracking-wider text-zinc-500">Balance</p>
+          <p className="text-xs uppercase tracking-wider text-zinc-500">Points</p>
           <p className="mt-1.5 font-display text-3xl font-bold leading-none tabular-nums text-slate-300">
             {formatPoints(currentPoints)}
-            <span className="ml-2 text-sm font-semibold text-zinc-500">points</span>
           </p>
         </div>
         <div className="text-right">
-          <p className="text-xs uppercase tracking-wider text-zinc-500">Affordable</p>
-          <p className={`mt-1.5 font-display text-3xl font-bold leading-none tabular-nums ${affordable.length > 0 ? 'text-emerald-400' : 'text-zinc-600'}`}>
-            {affordable.length}
-            <span className="ml-2 text-sm font-semibold text-zinc-500">of {available.length}</span>
+          <p className="flex items-center justify-end gap-1 text-xs uppercase tracking-wider text-zinc-500">
+            <Heart className="h-3 w-3 fill-sky-300 text-sky-300" /> Good boy
+          </p>
+          <p className="mt-1.5 font-display text-3xl font-bold leading-none tabular-nums text-sky-300">
+            {formatPoints(goodBoyPoints)}
           </p>
         </div>
       </div>
@@ -71,6 +76,21 @@ export default async function RewardsPage() {
             <RewardCard key={reward.id} reward={reward} currentPoints={currentPoints} />
           ))}
         </div>
+      )}
+
+      {/* Wife Store — spends good-boy points */}
+      {wifeRewards.length > 0 && (
+        <section className="space-y-4 pt-2">
+          <div className="flex items-center gap-1.5">
+            <Heart className="h-3.5 w-3.5 fill-sky-300 text-sky-300" />
+            <h2 className="text-xs font-semibold uppercase tracking-wider text-sky-300">Wife Store</h2>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {wifeRewards.map(reward => (
+              <RewardCard key={reward.id} reward={reward} currentPoints={goodBoyPoints} unit="good boy pts" />
+            ))}
+          </div>
+        </section>
       )}
 
       <RedemptionHistory redemptions={redemptions} />

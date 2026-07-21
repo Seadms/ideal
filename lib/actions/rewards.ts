@@ -15,8 +15,10 @@ export async function redeemReward(rewardId: string): Promise<{ success: boolean
   const stats = statsRows[0]
   if (!stats) return { success: false, error: 'Stats not found' }
 
-  if (stats.currentPoints < reward.cost) {
-    return { success: false, error: `Need ${reward.cost - stats.currentPoints} more points` }
+  const isWife = reward.source === 'wife'
+  const balance = isWife ? stats.goodBoyPoints : stats.currentPoints
+  if (balance < reward.cost) {
+    return { success: false, error: `Need ${reward.cost - balance} more ${isWife ? 'good boy points' : 'points'}` }
   }
 
   await db.insert(rewardRedemptions).values({
@@ -29,14 +31,28 @@ export async function redeemReward(rewardId: string): Promise<{ success: boolean
     .set({ timesRedeemed: sql`${rewards.timesRedeemed} + 1` })
     .where(eq(rewards.id, rewardId))
 
-  await db.update(userStats).set({
-    totalPointsSpent: sql`${userStats.totalPointsSpent} + ${reward.cost}`,
-    currentPoints: sql`${userStats.currentPoints} - ${reward.cost}`,
-  }).where(eq(userStats.id, 1))
+  await db.update(userStats).set(
+    isWife
+      ? { goodBoyPoints: sql`${userStats.goodBoyPoints} - ${reward.cost}` }
+      : {
+          totalPointsSpent: sql`${userStats.totalPointsSpent} + ${reward.cost}`,
+          currentPoints: sql`${userStats.currentPoints} - ${reward.cost}`,
+        },
+  ).where(eq(userStats.id, 1))
 
   revalidatePath('/')
   revalidatePath('/rewards')
   return { success: true }
+}
+
+// Public: the wife page stocks her store (untrusted input — clamp).
+export async function createWifeReward(title: string, cost: number): Promise<{ ok: boolean }> {
+  const clean = title.trim().slice(0, 120)
+  if (!clean) return { ok: false }
+  const c = Math.max(1, Math.min(9999, Math.round(cost) || 1))
+  await db.insert(rewards).values({ id: randomUUID(), title: clean, cost: c, category: 'social', source: 'wife' })
+  revalidatePath('/rewards')
+  return { ok: true }
 }
 
 export async function createReward(data: {

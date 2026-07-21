@@ -17,11 +17,20 @@ export async function completeTask(taskId: string): Promise<CompletionResult> {
   const stats = statsRows[0]
   if (!stats) return { leveledUp: false, newLevel: 1, pointsEarned: 0 }
 
-  const oldLevel = levelFromPoints(stats.totalPointsEarned)
-
   await db.update(tasks)
     .set({ isCompleted: true, completedAt: nowString() })
     .where(eq(tasks.id, taskId))
+
+  // Wife tasks pay good-boy points (separate currency, no XP/level).
+  if (task.source === 'wife') {
+    await db.update(userStats)
+      .set({ goodBoyPoints: sql`${userStats.goodBoyPoints} + ${task.points}` })
+      .where(eq(userStats.id, 1))
+    revalidatePath('/')
+    return { leveledUp: false, newLevel: levelFromPoints(stats.totalPointsEarned), pointsEarned: task.points }
+  }
+
+  const oldLevel = levelFromPoints(stats.totalPointsEarned)
   await db.update(userStats).set({
     totalPointsEarned: sql`${userStats.totalPointsEarned} + ${task.points}`,
     currentPoints: sql`${userStats.currentPoints} + ${task.points}`,
@@ -39,12 +48,17 @@ export async function uncompleteTask(taskId: string) {
 
   await db.update(tasks).set({ isCompleted: false, completedAt: null }).where(eq(tasks.id, taskId))
 
-  // Exact atomic reversal of the award — clamping to 0 here would let
-  // totalPointsEarned drift out of sync with totalPointsSpent and the level.
-  await db.update(userStats).set({
-    totalPointsEarned: sql`${userStats.totalPointsEarned} - ${task.points}`,
-    currentPoints: sql`${userStats.currentPoints} - ${task.points}`,
-  }).where(eq(userStats.id, 1))
+  // Exact atomic reversal of the award, from whichever wallet it credited.
+  if (task.source === 'wife') {
+    await db.update(userStats)
+      .set({ goodBoyPoints: sql`${userStats.goodBoyPoints} - ${task.points}` })
+      .where(eq(userStats.id, 1))
+  } else {
+    await db.update(userStats).set({
+      totalPointsEarned: sql`${userStats.totalPointsEarned} - ${task.points}`,
+      currentPoints: sql`${userStats.currentPoints} - ${task.points}`,
+    }).where(eq(userStats.id, 1))
+  }
   revalidatePath('/')
 }
 
