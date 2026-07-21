@@ -25,6 +25,7 @@ export const tasks = sqliteTable('tasks', {
   completedAt: text('completed_at'),
   dueDate: text('due_date'),
   isActive: integer('is_active', { mode: 'boolean' }).notNull().default(true),
+  source: text('source').notNull().default('self'), // 'self' | 'wife'
   createdAt: text('created_at').notNull().default(sql`(datetime('now'))`),
 })
 

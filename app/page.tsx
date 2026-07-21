@@ -1,4 +1,5 @@
 import { Suspense } from 'react'
+import { Heart } from 'lucide-react'
 import { asc, eq, gte } from 'drizzle-orm'
 import { db } from '@/lib/db'
 import { habits, habitCompletions, tasks, userStats, scheduledTasks, scheduledTaskCompletions } from '@/lib/db/schema'
@@ -82,6 +83,9 @@ async function DashboardContent() {
       return a.dueDate.localeCompare(b.dueDate)
     })
   const completedTasks = allTasks.filter(t => t.isCompleted)
+  const wifeTasks = allTasks.filter(t => t.source === 'wife')
+  const selfActive = activeTasks.filter(t => t.source !== 'wife')
+  const selfCompleted = completedTasks.filter(t => t.source !== 'wife')
 
   // Points earned today (habits + tasks)
   const habitPtsToday = todayCompletions.reduce((s, c) => s + c.pointsEarned, 0)
@@ -204,20 +208,33 @@ async function DashboardContent() {
         completedIds={[...completedScheduledIds]}
       />
 
+      {/* Wife Tasks */}
+      {wifeTasks.length > 0 && (
+        <section>
+          <div className="flex items-center gap-1.5 mb-3">
+            <Heart className="h-3 w-3 fill-rose-400 text-rose-400" />
+            <h2 className="text-xs font-semibold text-rose-300 uppercase tracking-wider">Wife Tasks</h2>
+          </div>
+          <div className="space-y-2">
+            {wifeTasks.map(t => <TaskItem key={t.id} task={t} />)}
+          </div>
+        </section>
+      )}
+
       {/* Tasks */}
       <section>
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">
             One-Off Tasks
           </h2>
-          {completedTasks.length > 0 && (
-            <ClearCompletedButton count={completedTasks.filter(t => !t.completedAt?.startsWith(today)).length} />
+          {selfCompleted.length > 0 && (
+            <ClearCompletedButton count={selfCompleted.filter(t => !t.completedAt?.startsWith(today)).length} />
           )}
         </div>
         <div className="space-y-2">
-          {activeTasks.map(t => <TaskItem key={t.id} task={t} />)}
-          {completedTasks.map(t => <TaskItem key={t.id} task={t} />)}
-          {allTasks.length === 0 && (
+          {selfActive.map(t => <TaskItem key={t.id} task={t} />)}
+          {selfCompleted.map(t => <TaskItem key={t.id} task={t} />)}
+          {selfActive.length === 0 && selfCompleted.length === 0 && (
             <p className="text-sm text-zinc-600 py-6 text-center">No tasks yet. Add one below.</p>
           )}
         </div>

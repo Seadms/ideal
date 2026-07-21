@@ -262,6 +262,7 @@ async function doInitDb() {
     `ALTER TABLE user_stats ADD COLUMN briefing_time TEXT`,
     `ALTER TABLE user_stats ADD COLUMN event_lead_minutes INTEGER NOT NULL DEFAULT 30`,
     `ALTER TABLE user_stats ADD COLUMN assignment_alert_hours INTEGER NOT NULL DEFAULT 24`,
+    `ALTER TABLE tasks ADD COLUMN source TEXT NOT NULL DEFAULT 'self'`,
     `ALTER TABLE split_exercises ADD COLUMN exercise_type TEXT NOT NULL DEFAULT 'strength'`,
     `ALTER TABLE split_exercises ADD COLUMN target TEXT`,
     `UPDATE split_exercises SET exercise_type = 'cardio' WHERE name LIKE '%Cardio%'`,
