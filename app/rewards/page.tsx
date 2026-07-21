@@ -87,7 +87,7 @@ export default async function RewardsPage() {
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {wifeRewards.map(reward => (
-              <RewardCard key={reward.id} reward={reward} currentPoints={goodBoyPoints} unit="good boy pts" />
+              <RewardCard key={reward.id} reward={reward} currentPoints={goodBoyPoints} unit="good boy pts" readonly />
             ))}
           </div>
         </section>

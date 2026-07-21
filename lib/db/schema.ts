@@ -78,6 +78,7 @@ export const pushSubscriptions = sqliteTable('push_subscriptions', {
   endpoint: text('endpoint').notNull(),
   p256dh: text('p256dh').notNull(),
   auth: text('auth').notNull(),
+  owner: text('owner').notNull().default('self'), // 'self' (Daniel) | 'wife'
   createdAt: text('created_at').notNull().default(sql`(datetime('now'))`),
 })
 

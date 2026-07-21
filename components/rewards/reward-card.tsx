@@ -13,9 +13,10 @@ interface RewardCardProps {
   reward: Reward
   currentPoints: number
   unit?: string
+  readonly?: boolean // hide edit/delete (wife-store rewards — she manages them)
 }
 
-export function RewardCard({ reward, currentPoints, unit = 'pts' }: RewardCardProps) {
+export function RewardCard({ reward, currentPoints, unit = 'pts', readonly = false }: RewardCardProps) {
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
   const [showConfirm, setShowConfirm] = useState(false)
@@ -57,7 +58,7 @@ export function RewardCard({ reward, currentPoints, unit = 'pts' }: RewardCardPr
           : 'border-zinc-800/50 bg-zinc-900/30 opacity-60',
     )}>
       {/* Actions (edit / toggle / delete) */}
-      <div className="absolute top-3 right-3 flex gap-1 hover-reveal transition-opacity">
+      <div className={cn('absolute top-3 right-3 flex gap-1 hover-reveal transition-opacity', readonly && 'hidden')}>
         <button
           onClick={() => setEditOpen(true)}
           title="Edit reward"

@@ -8,7 +8,12 @@ export function pushConfigured(): boolean {
   return !!process.env.VAPID_PUBLIC_KEY && !!process.env.VAPID_PRIVATE_KEY
 }
 
-export async function sendPushToAll(payload: { title: string; body: string; url?: string }): Promise<number> {
+// owner scopes delivery: 'self' = Daniel's devices (habits, deadlines,
+// briefings), 'wife' = Kayd's devices (reward-claimed alerts).
+export async function sendPushToAll(
+  payload: { title: string; body: string; url?: string },
+  owner: string = 'self',
+): Promise<number> {
   if (!pushConfigured()) return 0
   webpush.setVapidDetails(
     process.env.VAPID_SUBJECT ?? 'mailto:admin@example.com',
@@ -16,7 +21,7 @@ export async function sendPushToAll(payload: { title: string; body: string; url?
     process.env.VAPID_PRIVATE_KEY!,
   )
 
-  const subs = await db.select().from(pushSubscriptions)
+  const subs = await db.select().from(pushSubscriptions).where(eq(pushSubscriptions.owner, owner))
   const json = JSON.stringify(payload)
   let sent = 0
   const expired: string[] = []

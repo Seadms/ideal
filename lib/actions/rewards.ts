@@ -40,6 +40,15 @@ export async function redeemReward(rewardId: string): Promise<{ success: boolean
         },
   ).where(eq(userStats.id, 1))
 
+  // Ping Kayd's phone when he cashes in from her store.
+  if (isWife) {
+    const { sendPushToAll } = await import('@/lib/push-server')
+    await sendPushToAll(
+      { title: 'Daniel claimed a reward', body: `${reward.title} (-${reward.cost} good boy points)` },
+      'wife',
+    )
+  }
+
   revalidatePath('/')
   revalidatePath('/rewards')
   return { success: true }

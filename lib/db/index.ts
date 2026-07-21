@@ -265,6 +265,7 @@ async function doInitDb() {
     `ALTER TABLE tasks ADD COLUMN source TEXT NOT NULL DEFAULT 'self'`,
     `ALTER TABLE rewards ADD COLUMN source TEXT NOT NULL DEFAULT 'self'`,
     `ALTER TABLE user_stats ADD COLUMN good_boy_points INTEGER NOT NULL DEFAULT 0`,
+    `ALTER TABLE push_subscriptions ADD COLUMN owner TEXT NOT NULL DEFAULT 'self'`,
     `ALTER TABLE split_exercises ADD COLUMN exercise_type TEXT NOT NULL DEFAULT 'strength'`,
     `ALTER TABLE split_exercises ADD COLUMN target TEXT`,
     `UPDATE split_exercises SET exercise_type = 'cardio' WHERE name LIKE '%Cardio%'`,
