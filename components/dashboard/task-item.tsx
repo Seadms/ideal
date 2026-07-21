@@ -101,7 +101,7 @@ export function TaskItem({ task }: TaskItemProps) {
           >
             <Pencil size={12} />
           </button>
-          <Badge variant={task.isCompleted ? 'muted' : isOverdue ? 'rose' : 'gold'} className="min-w-[52px] justify-center">
+          <Badge variant={task.isCompleted ? 'muted' : task.source === 'wife' ? 'wife' : isOverdue ? 'rose' : 'gold'} className="min-w-[52px] justify-center">
             +{task.points}
           </Badge>
         </div>

@@ -2,7 +2,7 @@ import { cn } from '@/lib/utils'
 
 interface BadgeProps {
   children: React.ReactNode
-  variant?: 'default' | 'gold' | 'violet' | 'emerald' | 'rose' | 'muted'
+  variant?: 'default' | 'gold' | 'violet' | 'emerald' | 'rose' | 'muted' | 'wife'
   className?: string
 }
 
@@ -17,6 +17,7 @@ export function Badge({ children, variant = 'default', className }: BadgeProps) 
         'bg-emerald-500/10 text-emerald-400': variant === 'emerald',
         'bg-rose-500/10 text-rose-400': variant === 'rose',
         'bg-zinc-800/50 text-zinc-500': variant === 'muted',
+        'bg-sky-500/10 text-sky-300': variant === 'wife', // good-boy points — separate currency
       },
       className,
     )}>
