@@ -61,6 +61,7 @@ export async function createWifeReward(title: string, cost: number): Promise<{ o
   const c = Math.max(1, Math.min(9999, Math.round(cost) || 1))
   await db.insert(rewards).values({ id: randomUUID(), title: clean, cost: c, category: 'social', source: 'wife' })
   revalidatePath('/rewards')
+  revalidatePath('/wife')
   return { ok: true }
 }
 
@@ -83,9 +84,15 @@ export async function updateReward(id: string, data: Partial<{
 }>) {
   await db.update(rewards).set(data).where(eq(rewards.id, id))
   revalidatePath('/rewards')
+  revalidatePath('/wife')
 }
 
 export async function deleteReward(id: string) {
+  // Redemptions reference the reward (FK) — clear them first or the delete
+  // throws under enforced foreign keys. History for a removed reward isn't
+  // shown anyway (the rewards page inner-joins on existing rewards).
+  await db.delete(rewardRedemptions).where(eq(rewardRedemptions.rewardId, id))
   await db.delete(rewards).where(eq(rewards.id, id))
   revalidatePath('/rewards')
+  revalidatePath('/wife')
 }
