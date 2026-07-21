@@ -24,6 +24,9 @@ const LINKS = [
 export function NavBar() {
   const pathname = usePathname()
 
+  // /wife is Kayd's standalone page — no navigation into the rest of the app.
+  if (pathname.startsWith('/wife')) return null
+
   return (
     <nav
       aria-label="Primary"
