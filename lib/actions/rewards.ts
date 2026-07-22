@@ -16,6 +16,9 @@ export async function redeemReward(rewardId: string): Promise<{ success: boolean
   if (!stats) return { success: false, error: 'Stats not found' }
 
   const isWife = reward.source === 'wife'
+  if (reward.maxRedemptions && reward.timesRedeemed >= reward.maxRedemptions) {
+    return { success: false, error: 'All used up' }
+  }
   const balance = isWife ? stats.goodBoyPoints : stats.currentPoints
   if (balance < reward.cost) {
     return { success: false, error: `Need ${reward.cost - balance} more ${isWife ? 'good boy points' : 'points'}` }
@@ -85,11 +88,13 @@ export async function resolveClaim(claimId: string, decision: 'accept' | 'declin
 }
 
 // Public: the wife page stocks her store (untrusted input — clamp).
-export async function createWifeReward(title: string, cost: number): Promise<{ ok: boolean }> {
+// maxRedemptions 0 (or missing) = unlimited.
+export async function createWifeReward(title: string, cost: number, maxRedemptions = 0): Promise<{ ok: boolean }> {
   const clean = title.trim().slice(0, 120)
   if (!clean) return { ok: false }
   const c = Math.max(1, Math.min(9999, Math.round(cost) || 1))
-  await db.insert(rewards).values({ id: randomUUID(), title: clean, cost: c, category: 'social', source: 'wife' })
+  const max = Math.max(0, Math.min(999, Math.round(maxRedemptions) || 0)) || null
+  await db.insert(rewards).values({ id: randomUUID(), title: clean, cost: c, maxRedemptions: max, category: 'social', source: 'wife' })
   revalidatePath('/rewards')
   revalidatePath('/wife')
   return { ok: true }
@@ -111,6 +116,7 @@ export async function updateReward(id: string, data: Partial<{
   cost: number
   category: string
   isAvailable: boolean
+  maxRedemptions: number | null
 }>) {
   await db.update(rewards).set(data).where(eq(rewards.id, id))
   revalidatePath('/rewards')

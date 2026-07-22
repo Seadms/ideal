@@ -45,6 +45,7 @@ export const rewards = sqliteTable('rewards', {
   category: text('category').notNull().default('general'),
   isAvailable: integer('is_available', { mode: 'boolean' }).notNull().default(true),
   timesRedeemed: integer('times_redeemed').notNull().default(0),
+  maxRedemptions: integer('max_redemptions'), // null/0 = unlimited
   source: text('source').notNull().default('self'), // 'self' | 'wife'
   createdAt: text('created_at').notNull().default(sql`(datetime('now'))`),
 })

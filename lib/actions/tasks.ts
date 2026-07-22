@@ -84,6 +84,19 @@ export async function createTask(data: {
   revalidatePath('/')
 }
 
+// Soft-delete wife tasks left over from previous days so the dashboard doesn't
+// fill up. Runs on dashboard load (the app is opened daily) — no cron needed.
+export async function clearStaleWifeTasks() {
+  const today = todayString()
+  await db.update(tasks)
+    .set({ isActive: false })
+    .where(and(
+      eq(tasks.source, 'wife'),
+      eq(tasks.isActive, true),
+      sql`substr(${tasks.createdAt}, 1, 10) < ${today}`,
+    ))
+}
+
 // Public: the wife page posts here (untrusted input — clamp title & points).
 export async function createWifeTask(title: string, points: number): Promise<{ ok: boolean }> {
   const clean = title.trim().slice(0, 120)

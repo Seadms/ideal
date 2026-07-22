@@ -23,7 +23,9 @@ export function RewardCard({ reward, currentPoints, unit = 'pts', readonly = fal
   const [showConfirm, setShowConfirm] = useState(false)
   const [editOpen, setEditOpen] = useState(false)
   const canAfford = currentPoints >= reward.cost
-  const available = reward.isAvailable
+  const soldOut = !!reward.maxRedemptions && reward.timesRedeemed >= reward.maxRedemptions
+  const remaining = reward.maxRedemptions ? reward.maxRedemptions - reward.timesRedeemed : null
+  const available = reward.isAvailable && !soldOut
   const needsApproval = reward.source === 'wife' // request → she approves
 
   const handleRedeem = () => {
@@ -107,9 +109,11 @@ export function RewardCard({ reward, currentPoints, unit = 'pts', readonly = fal
         {/* Cost */}
         <div className="flex items-center justify-between">
           <span className="text-sm font-semibold text-zinc-200">{formatPoints(reward.cost)} {unit}</span>
-          {reward.timesRedeemed > 0 && (
+          {remaining !== null ? (
+            <span className="text-xs text-zinc-600">{remaining > 0 ? `${remaining} left` : 'none left'}</span>
+          ) : reward.timesRedeemed > 0 ? (
             <span className="text-xs text-zinc-600">×{reward.timesRedeemed} redeemed</span>
-          )}
+          ) : null}
         </div>
 
         {/* Error */}
@@ -127,7 +131,9 @@ export function RewardCard({ reward, currentPoints, unit = 'pts', readonly = fal
         >
           {isPending
             ? 'Processing...'
-            : !available
+            : soldOut
+              ? 'All used up'
+              : !available
               ? 'Unavailable'
               : showConfirm
                 ? (needsApproval ? 'Send request?' : 'Confirm redeem?')

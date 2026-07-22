@@ -21,7 +21,7 @@ export default async function WifePage() {
   ])
   return (
     <WifeClient
-      rewards={storeRewards.map(r => ({ id: r.id, title: r.title, cost: r.cost }))}
+      rewards={storeRewards.map(r => ({ id: r.id, title: r.title, cost: r.cost, maxRedemptions: r.maxRedemptions, timesRedeemed: r.timesRedeemed }))}
       claims={pending.map(c => ({ id: c.id, title: c.title, cost: c.cost }))}
       vapidPublicKey={process.env.VAPID_PUBLIC_KEY ?? ''}
     />

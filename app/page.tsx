@@ -5,6 +5,7 @@ import { db } from '@/lib/db'
 import { habits, habitCompletions, tasks, userStats, scheduledTasks, scheduledTaskCompletions } from '@/lib/db/schema'
 import { seedDatabase } from '@/lib/db/seed'
 import { checkStreakOnLoad } from '@/lib/actions/habits'
+import { clearStaleWifeTasks } from '@/lib/actions/tasks'
 import {
   todayString, daysAgoString, getLast7Days, getLast7DaysStatus,
   calculateHabitStreak, getWeekStart,
@@ -25,6 +26,7 @@ export const dynamic = 'force-dynamic'
 async function DashboardContent() {
   await seedDatabase()
   await checkStreakOnLoad()
+  await clearStaleWifeTasks()
 
   const today = todayString()
   const yearAgo = daysAgoString(365)

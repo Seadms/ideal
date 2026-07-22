@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Heart, Bell, Trash2 } from 'lucide-react'
 
-interface StoreReward { id: string; title: string; cost: number }
+interface StoreReward { id: string; title: string; cost: number; maxRedemptions: number | null; timesRedeemed: number }
 interface Claim { id: string; title: string; cost: number }
 
 function urlBase64ToUint8Array(base64: string) {
@@ -22,6 +22,7 @@ export function WifeClient({ rewards, claims, vapidPublicKey }: { rewards: Store
   const [points, setPoints] = useState('50')
   const [reward, setReward] = useState('')
   const [cost, setCost] = useState('200')
+  const [limit, setLimit] = useState('1')
   const [flash, setFlash] = useState<string | null>(null)
   const [pushOn, setPushOn] = useState(false)
   const [isPending, startTransition] = useTransition()
@@ -41,8 +42,8 @@ export function WifeClient({ rewards, claims, vapidPublicKey }: { rewards: Store
     e.preventDefault()
     if (!reward.trim()) return
     startTransition(async () => {
-      const res = await createWifeReward(reward, Number(cost) || 1)
-      if (res.ok) { setReward(''); setCost('200'); done('Added to his store.') }
+      const res = await createWifeReward(reward, Number(cost) || 1, Number(limit) || 0)
+      if (res.ok) { setReward(''); setCost('200'); setLimit('1'); done('Added to his store.') }
     })
   }
 
@@ -105,6 +106,10 @@ export function WifeClient({ rewards, claims, vapidPublicKey }: { rewards: Store
             <Input type="number" min={1} max={9999} value={cost} onChange={e => setCost(e.target.value)} className="w-24" />
             <span className="text-xs text-zinc-500">good boy points</span>
           </div>
+          <div className="flex items-center gap-3">
+            <Input type="number" min={0} max={999} value={limit} onChange={e => setLimit(e.target.value)} className="w-24" />
+            <span className="text-xs text-zinc-500">times redeemable (0 = unlimited)</span>
+          </div>
           <Button type="submit" variant="outline" disabled={isPending || !reward.trim()} className="w-full">Add reward</Button>
         </div>
       </form>
@@ -134,9 +139,10 @@ function ClaimRow({ claim, onDone }: { claim: Claim; onDone: (m: string) => void
   )
 }
 
-// One store reward: editable price + delete.
+// One store reward: editable price + redeem limit + delete.
 function StoreRow({ reward, onChange }: { reward: StoreReward; onChange: (m: string) => void }) {
   const [price, setPrice] = useState(String(reward.cost))
+  const [limit, setLimit] = useState(String(reward.maxRedemptions ?? 0))
   const [isPending, startTransition] = useTransition()
 
   const savePrice = () => {
@@ -144,20 +150,34 @@ function StoreRow({ reward, onChange }: { reward: StoreReward; onChange: (m: str
     if (c === reward.cost) return
     startTransition(async () => { await updateReward(reward.id, { cost: c }); onChange('Price updated.') })
   }
+  const saveLimit = () => {
+    const n = Math.max(0, Math.min(999, Number(limit) || 0))
+    if ((n || null) === (reward.maxRedemptions ?? null)) return
+    startTransition(async () => { await updateReward(reward.id, { maxRedemptions: n || null }); onChange('Limit updated.') })
+  }
   const remove = () => startTransition(async () => { await deleteReward(reward.id); onChange('Removed.') })
 
+  const remaining = reward.maxRedemptions ? reward.maxRedemptions - reward.timesRedeemed : null
+
   return (
-    <div className="flex items-center gap-2 rounded-lg border border-zinc-800 bg-zinc-900/40 px-3 py-2">
-      <span className="flex-1 truncate text-sm text-zinc-200">{reward.title}</span>
-      <Input
-        type="number" min={1} max={9999} value={price}
-        onChange={e => setPrice(e.target.value)} onBlur={savePrice}
-        className="w-20 text-right" aria-label={`Price for ${reward.title}`}
-      />
-      <button onClick={remove} disabled={isPending} aria-label={`Remove ${reward.title}`}
-        className="p-1 text-zinc-600 hover:text-rose-400 transition-colors">
-        <Trash2 size={14} />
-      </button>
+    <div className="rounded-lg border border-zinc-800 bg-zinc-900/40 px-3 py-2.5">
+      <div className="flex items-center gap-2">
+        <span className="flex-1 truncate text-sm text-zinc-200">{reward.title}</span>
+        <button onClick={remove} disabled={isPending} aria-label={`Remove ${reward.title}`}
+          className="p-1 text-zinc-600 hover:text-rose-400 transition-colors">
+          <Trash2 size={14} />
+        </button>
+      </div>
+      <div className="mt-2 flex items-center gap-2 text-xs text-zinc-500">
+        <Input type="number" min={1} max={9999} value={price}
+          onChange={e => setPrice(e.target.value)} onBlur={savePrice}
+          className="w-16 text-right" aria-label={`Price for ${reward.title}`} />
+        <span>pts ·</span>
+        <Input type="number" min={0} max={999} value={limit}
+          onChange={e => setLimit(e.target.value)} onBlur={saveLimit}
+          className="w-14 text-right" aria-label={`Limit for ${reward.title}`} />
+        <span>{Number(limit) === 0 ? 'unlimited' : remaining !== null ? `left of ${reward.maxRedemptions}` : 'times'}</span>
+      </div>
     </div>
   )
 }
