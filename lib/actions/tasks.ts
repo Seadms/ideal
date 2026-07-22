@@ -97,6 +97,19 @@ export async function clearStaleWifeTasks() {
     ))
 }
 
+// Public: Kayd tips good-boy points directly, no task required.
+export async function tipGoodBoyPoints(amount: number): Promise<{ ok: boolean }> {
+  const pts = Math.max(1, Math.min(999, Math.round(amount) || 1))
+  await db.update(userStats)
+    .set({ goodBoyPoints: sql`${userStats.goodBoyPoints} + ${pts}` })
+    .where(eq(userStats.id, 1))
+  const { sendPushToAll } = await import('@/lib/push-server')
+  await sendPushToAll({ title: 'Kayd tipped you', body: `+${pts} good boy points`, url: '/rewards' }, 'self')
+  revalidatePath('/')
+  revalidatePath('/rewards')
+  return { ok: true }
+}
+
 // Public: the wife page posts here (untrusted input — clamp title & points).
 export async function createWifeTask(title: string, points: number): Promise<{ ok: boolean }> {
   const clean = title.trim().slice(0, 120)

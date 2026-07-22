@@ -1,12 +1,12 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import { createWifeTask } from '@/lib/actions/tasks'
+import { createWifeTask, tipGoodBoyPoints } from '@/lib/actions/tasks'
 import { createWifeReward, updateReward, deleteReward, resolveClaim } from '@/lib/actions/rewards'
 import { savePushSubscription } from '@/lib/actions/push'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Heart, Bell, Trash2 } from 'lucide-react'
+import { Heart, Bell, Trash2, Gift } from 'lucide-react'
 
 interface StoreReward { id: string; title: string; cost: number; maxRedemptions: number | null; timesRedeemed: number }
 interface Claim { id: string; title: string; cost: number }
@@ -23,6 +23,7 @@ export function WifeClient({ rewards, claims, vapidPublicKey }: { rewards: Store
   const [reward, setReward] = useState('')
   const [cost, setCost] = useState('200')
   const [limit, setLimit] = useState('1')
+  const [tip, setTip] = useState('25')
   const [flash, setFlash] = useState<string | null>(null)
   const [pushOn, setPushOn] = useState(false)
   const [isPending, startTransition] = useTransition()
@@ -44,6 +45,14 @@ export function WifeClient({ rewards, claims, vapidPublicKey }: { rewards: Store
     startTransition(async () => {
       const res = await createWifeReward(reward, Number(cost) || 1, Number(limit) || 0)
       if (res.ok) { setReward(''); setCost('200'); setLimit('1'); done('Added to his store.') }
+    })
+  }
+
+  const sendTip = (e: React.FormEvent) => {
+    e.preventDefault()
+    startTransition(async () => {
+      const res = await tipGoodBoyPoints(Number(tip) || 1)
+      if (res.ok) { setTip('25'); done(`Tipped him ${Number(tip) || 1} good boy points.`) }
     })
   }
 
@@ -88,6 +97,18 @@ export function WifeClient({ rewards, claims, vapidPublicKey }: { rewards: Store
           <span className="text-xs text-zinc-500">good boy points</span>
         </div>
         <Button type="submit" disabled={isPending || !task.trim()} className="w-full">Send task</Button>
+      </form>
+
+      <form onSubmit={sendTip} className="space-y-4 border-t border-zinc-800 pt-8">
+        <h2 className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-sky-300">
+          <Gift size={13} /> Just give him points
+        </h2>
+        <p className="text-xs text-zinc-500">A tip, no task needed. Straight into his good boy points.</p>
+        <div className="flex items-center gap-3">
+          <Input type="number" min={1} max={999} value={tip} onChange={e => setTip(e.target.value)} className="w-24" />
+          <span className="text-xs text-zinc-500">good boy points</span>
+        </div>
+        <Button type="submit" variant="outline" disabled={isPending} className="w-full">Give points</Button>
       </form>
 
       <form onSubmit={addReward} className="space-y-4 border-t border-zinc-800 pt-8">
