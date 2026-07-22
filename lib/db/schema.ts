@@ -46,6 +46,7 @@ export const rewards = sqliteTable('rewards', {
   isAvailable: integer('is_available', { mode: 'boolean' }).notNull().default(true),
   timesRedeemed: integer('times_redeemed').notNull().default(0),
   maxRedemptions: integer('max_redemptions'), // null/0 = unlimited
+  soldOutAt: text('sold_out_at'), // set when fully claimed; cleared away next day
   source: text('source').notNull().default('self'), // 'self' | 'wife'
   createdAt: text('created_at').notNull().default(sql`(datetime('now'))`),
 })

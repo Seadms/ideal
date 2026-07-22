@@ -29,7 +29,9 @@ export async function GET(request: Request) {
     return new NextResponse('Unauthorized', { status: 401 })
   }
 
-  const subs = await db.select().from(pushSubscriptions)
+  // Only Daniel's devices — Kayd's 'wife' subscription must not get his
+  // habit reminders (she only receives wife-store alerts).
+  const subs = await db.select().from(pushSubscriptions).where(eq(pushSubscriptions.owner, 'self'))
   if (subs.length === 0) {
     return NextResponse.json({ sent: 0, reason: 'no subscriptions' })
   }

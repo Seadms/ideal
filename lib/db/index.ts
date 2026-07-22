@@ -274,6 +274,7 @@ async function doInitDb() {
     `ALTER TABLE tasks ADD COLUMN source TEXT NOT NULL DEFAULT 'self'`,
     `ALTER TABLE rewards ADD COLUMN source TEXT NOT NULL DEFAULT 'self'`,
     `ALTER TABLE rewards ADD COLUMN max_redemptions INTEGER`,
+    `ALTER TABLE rewards ADD COLUMN sold_out_at TEXT`,
     `ALTER TABLE user_stats ADD COLUMN good_boy_points INTEGER NOT NULL DEFAULT 0`,
     `ALTER TABLE push_subscriptions ADD COLUMN owner TEXT NOT NULL DEFAULT 'self'`,
     `ALTER TABLE split_exercises ADD COLUMN exercise_type TEXT NOT NULL DEFAULT 'strength'`,

@@ -7,11 +7,13 @@ import { RewardsActions } from '@/components/rewards/rewards-actions'
 import { RedemptionHistory } from '@/components/rewards/redemption-history'
 import { Gift, Heart } from 'lucide-react'
 import { PageHeader } from '@/components/ui/page-header'
+import { clearSpentRewards } from '@/lib/actions/rewards'
 
 export const dynamic = 'force-dynamic'
 
 export default async function RewardsPage() {
   await initDb()
+  await clearSpentRewards()
   const allRewards = await db.select().from(rewards)
   const statsRows = await db.select().from(userStats).where(eq(userStats.id, 1))
   const currentPoints = statsRows[0]?.currentPoints ?? 0

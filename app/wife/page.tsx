@@ -1,6 +1,7 @@
 import { eq } from 'drizzle-orm'
 import { db, initDb } from '@/lib/db'
 import { rewards, rewardClaims } from '@/lib/db/schema'
+import { clearSpentRewards } from '@/lib/actions/rewards'
 import type { Metadata } from 'next'
 import { WifeClient } from '@/components/wife/wife-client'
 
@@ -15,6 +16,7 @@ export const metadata: Metadata = {
 
 export default async function WifePage() {
   await initDb()
+  await clearSpentRewards()
   const [storeRewards, pending] = await Promise.all([
     db.select().from(rewards).where(eq(rewards.source, 'wife')),
     db.select().from(rewardClaims).where(eq(rewardClaims.status, 'pending')),

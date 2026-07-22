@@ -2,9 +2,10 @@
 
 import { revalidatePath } from 'next/cache'
 import { randomUUID } from 'crypto'
-import { eq, sql } from 'drizzle-orm'
+import { and, eq, isNotNull, sql } from 'drizzle-orm'
 import { db } from '@/lib/db'
 import { rewardClaims, rewardRedemptions, rewards, userStats } from '@/lib/db/schema'
+import { todayString } from '@/lib/utils'
 
 export async function redeemReward(rewardId: string): Promise<{ success: boolean; error?: string }> {
   const rewardRows = await db.select().from(rewards).where(eq(rewards.id, rewardId))
@@ -46,8 +47,9 @@ export async function redeemReward(rewardId: string): Promise<{ success: boolean
 
   // His own rewards redeem instantly.
   await db.insert(rewardRedemptions).values({ id: randomUUID(), rewardId, pointsSpent: reward.cost })
+  const filled = !!reward.maxRedemptions && reward.timesRedeemed + 1 >= reward.maxRedemptions
   await db.update(rewards)
-    .set({ timesRedeemed: sql`${rewards.timesRedeemed} + 1` })
+    .set({ timesRedeemed: reward.timesRedeemed + 1, ...(filled && !reward.soldOutAt ? { soldOutAt: new Date().toISOString() } : {}) })
     .where(eq(rewards.id, rewardId))
   await db.update(userStats).set({
     totalPointsSpent: sql`${userStats.totalPointsSpent} + ${reward.cost}`,
@@ -72,7 +74,14 @@ export async function resolveClaim(claimId: string, decision: 'accept' | 'declin
   const { sendPushToAll } = await import('@/lib/push-server')
   if (decision === 'accept') {
     if (claim.rewardId) {
-      await db.update(rewards).set({ timesRedeemed: sql`${rewards.timesRedeemed} + 1` }).where(eq(rewards.id, claim.rewardId))
+      const rw = (await db.select().from(rewards).where(eq(rewards.id, claim.rewardId)))[0]
+      if (rw) {
+        const newCount = rw.timesRedeemed + 1
+        const filled = !!rw.maxRedemptions && newCount >= rw.maxRedemptions
+        await db.update(rewards)
+          .set({ timesRedeemed: newCount, ...(filled && !rw.soldOutAt ? { soldOutAt: new Date().toISOString() } : {}) })
+          .where(eq(rewards.id, claim.rewardId))
+      }
     }
     await sendPushToAll({ title: 'Kayd accepted your reward', body: `${claim.title} — enjoy it`, url: '/rewards' }, 'self')
   } else {
@@ -131,4 +140,18 @@ export async function deleteReward(id: string) {
   await db.delete(rewards).where(eq(rewards.id, id))
   revalidatePath('/rewards')
   revalidatePath('/wife')
+}
+
+// Remove fully-claimed rewards a day after they sold out (both /rewards and
+// /wife call this on load). Clears dependent redemptions/claims first (FK).
+export async function clearSpentRewards() {
+  const today = todayString()
+  const spent = await db.select().from(rewards).where(
+    and(isNotNull(rewards.soldOutAt), sql`substr(${rewards.soldOutAt}, 1, 10) < ${today}`),
+  )
+  for (const r of spent) {
+    await db.delete(rewardRedemptions).where(eq(rewardRedemptions.rewardId, r.id))
+    await db.delete(rewardClaims).where(eq(rewardClaims.rewardId, r.id))
+    await db.delete(rewards).where(eq(rewards.id, r.id))
+  }
 }
