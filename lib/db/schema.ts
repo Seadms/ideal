@@ -56,6 +56,19 @@ export const rewardRedemptions = sqliteTable('reward_redemptions', {
   pointsSpent: integer('points_spent').notNull(),
 })
 
+// A redemption request awaiting Kayd's approval. Snapshots title/cost so it
+// survives the reward being deleted; good-boy points are reserved (deducted)
+// at request time and refunded on decline.
+export const rewardClaims = sqliteTable('reward_claims', {
+  id: text('id').primaryKey(),
+  rewardId: text('reward_id'),
+  title: text('title').notNull(),
+  cost: integer('cost').notNull(),
+  status: text('status').notNull().default('pending'), // 'pending' | 'accepted' | 'declined'
+  createdAt: text('created_at').notNull().default(sql`(datetime('now'))`),
+  resolvedAt: text('resolved_at'),
+})
+
 export const userStats = sqliteTable('user_stats', {
   id: integer('id').primaryKey().default(1),
   totalPointsEarned: integer('total_points_earned').notNull().default(0),
@@ -267,6 +280,7 @@ export const progressPhotos = sqliteTable('progress_photos', {
 export type Habit = typeof habits.$inferSelect
 export type Task = typeof tasks.$inferSelect
 export type Reward = typeof rewards.$inferSelect
+export type RewardClaim = typeof rewardClaims.$inferSelect
 export type HabitCompletion = typeof habitCompletions.$inferSelect
 export type UserStats = typeof userStats.$inferSelect
 export type BonusTaskPoolItem = typeof bonusTaskPool.$inferSelect

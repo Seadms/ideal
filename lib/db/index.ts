@@ -82,6 +82,15 @@ async function doInitDb() {
       redeemed_at TEXT NOT NULL DEFAULT (datetime('now')),
       points_spent INTEGER NOT NULL
     )`,
+    `CREATE TABLE IF NOT EXISTS reward_claims (
+      id TEXT PRIMARY KEY,
+      reward_id TEXT,
+      title TEXT NOT NULL,
+      cost INTEGER NOT NULL,
+      status TEXT NOT NULL DEFAULT 'pending',
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      resolved_at TEXT
+    )`,
     `CREATE TABLE IF NOT EXISTS user_stats (
       id INTEGER PRIMARY KEY DEFAULT 1,
       total_points_earned INTEGER NOT NULL DEFAULT 0,

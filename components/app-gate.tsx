@@ -15,35 +15,34 @@ const KEY = 'app-unlocked'
 
 export function AppGate({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
-  const [state, setState] = useState<'checking' | 'locked' | 'open'>('checking')
+  const [mounted, setMounted] = useState(false)
+  const [unlocked, setUnlocked] = useState(false)
   const [entry, setEntry] = useState('')
   const [wrong, setWrong] = useState(false)
 
   useEffect(() => {
-    // /wife is Kayd's page and stays open. Everything else needs the password.
-    const raf = requestAnimationFrame(() => {
-      if (pathname.startsWith('/wife') || localStorage.getItem(KEY) === '1') {
-        setState('open')
-      } else {
-        setState('locked')
-      }
-    })
-    return () => cancelAnimationFrame(raf)
+    // Reading localStorage is client-only, so it happens after mount. A plain
+    // setState here (not rAF) is deliberate: rAF is paused in backgrounded tabs
+    // and would leave the whole app blank on a throttled PWA launch.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setMounted(true)
+     
+    setUnlocked(pathname.startsWith('/wife') || localStorage.getItem(KEY) === '1')
   }, [pathname])
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault()
     if (entry === PASSWORD) {
       localStorage.setItem(KEY, '1')
-      setState('open')
+      setUnlocked(true)
     } else {
       setWrong(true)
       setEntry('')
     }
   }
 
-  if (state === 'checking') return null
-  if (state === 'open') return <>{children}</>
+  if (!mounted) return null
+  if (unlocked) return <>{children}</>
 
   return (
     <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-zinc-950 px-6">

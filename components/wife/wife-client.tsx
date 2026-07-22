@@ -2,13 +2,14 @@
 
 import { useState, useTransition } from 'react'
 import { createWifeTask } from '@/lib/actions/tasks'
-import { createWifeReward, updateReward, deleteReward } from '@/lib/actions/rewards'
+import { createWifeReward, updateReward, deleteReward, resolveClaim } from '@/lib/actions/rewards'
 import { savePushSubscription } from '@/lib/actions/push'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Heart, Bell, Trash2 } from 'lucide-react'
 
 interface StoreReward { id: string; title: string; cost: number }
+interface Claim { id: string; title: string; cost: number }
 
 function urlBase64ToUint8Array(base64: string) {
   const padding = '='.repeat((4 - (base64.length % 4)) % 4)
@@ -16,7 +17,7 @@ function urlBase64ToUint8Array(base64: string) {
   return Uint8Array.from([...atob(b)].map(c => c.charCodeAt(0)))
 }
 
-export function WifeClient({ rewards, vapidPublicKey }: { rewards: StoreReward[]; vapidPublicKey: string }) {
+export function WifeClient({ rewards, claims, vapidPublicKey }: { rewards: StoreReward[]; claims: Claim[]; vapidPublicKey: string }) {
   const [task, setTask] = useState('')
   const [points, setPoints] = useState('50')
   const [reward, setReward] = useState('')
@@ -71,6 +72,13 @@ export function WifeClient({ rewards, vapidPublicKey }: { rewards: StoreReward[]
         <Bell size={13} /> {pushOn ? 'Notifications on' : 'Notify me when he claims a reward'}
       </Button>
 
+      {claims.length > 0 && (
+        <div className="space-y-3">
+          <h2 className="text-xs font-semibold uppercase tracking-wider text-sky-300">He wants to claim</h2>
+          {claims.map(c => <ClaimRow key={c.id} claim={c} onDone={done} />)}
+        </div>
+      )}
+
       <form onSubmit={sendTask} className="space-y-4">
         <h2 className="text-xs font-semibold uppercase tracking-wider text-zinc-400">Give him a task</h2>
         <Input value={task} onChange={e => setTask(e.target.value)} placeholder="e.g. Rub my feet" />
@@ -102,6 +110,26 @@ export function WifeClient({ rewards, vapidPublicKey }: { rewards: StoreReward[]
       </form>
 
       {flash && <p className="text-center text-sm text-rose-300">{flash}</p>}
+    </div>
+  )
+}
+
+// A pending claim: accept or decline his reward request.
+function ClaimRow({ claim, onDone }: { claim: Claim; onDone: (m: string) => void }) {
+  const [isPending, startTransition] = useTransition()
+  const decide = (decision: 'accept' | 'decline') =>
+    startTransition(async () => {
+      await resolveClaim(claim.id, decision)
+      onDone(decision === 'accept' ? 'Accepted.' : 'Declined, points refunded.')
+    })
+  return (
+    <div className="rounded-lg border border-sky-500/20 bg-sky-500/5 px-3 py-3">
+      <p className="text-sm text-zinc-200">{claim.title}</p>
+      <p className="text-xs text-zinc-500">{claim.cost} good boy points</p>
+      <div className="mt-2.5 flex gap-2">
+        <Button size="sm" onClick={() => decide('accept')} disabled={isPending} className="flex-1">Accept</Button>
+        <Button size="sm" variant="ghost" onClick={() => decide('decline')} disabled={isPending} className="flex-1">Decline</Button>
+      </div>
     </div>
   )
 }

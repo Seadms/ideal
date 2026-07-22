@@ -92,15 +92,18 @@ export function TaskItem({ task }: TaskItemProps) {
           )}
         </div>
 
-        {/* Right side: controls first, badge pinned to the right edge */}
+        {/* Right side: controls first, badge pinned to the right edge.
+            Wife tasks are hers to edit — he can only complete them. */}
         <div className="flex items-center gap-1.5 shrink-0">
-          <button
-            onClick={() => setEditOpen(true)}
-            className="hover-reveal p-2 -m-1 rounded text-zinc-600 hover:text-zinc-300 transition-colors"
-            aria-label="Edit task"
-          >
-            <Pencil size={12} />
-          </button>
+          {task.source !== 'wife' && (
+            <button
+              onClick={() => setEditOpen(true)}
+              className="hover-reveal p-2 -m-1 rounded text-zinc-600 hover:text-zinc-300 transition-colors"
+              aria-label="Edit task"
+            >
+              <Pencil size={12} />
+            </button>
+          )}
           <Badge variant={task.isCompleted ? 'muted' : task.source === 'wife' ? 'wife' : isOverdue ? 'rose' : 'gold'} className="min-w-[52px] justify-center">
             +{task.points}
           </Badge>

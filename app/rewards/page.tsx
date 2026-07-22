@@ -1,6 +1,6 @@
 import { desc, eq } from 'drizzle-orm'
 import { db, initDb } from '@/lib/db'
-import { rewards, rewardRedemptions, userStats } from '@/lib/db/schema'
+import { rewards, rewardRedemptions, rewardClaims, userStats } from '@/lib/db/schema'
 import { formatPoints } from '@/lib/utils'
 import { RewardCard } from '@/components/rewards/reward-card'
 import { RewardsActions } from '@/components/rewards/rewards-actions'
@@ -16,6 +16,7 @@ export default async function RewardsPage() {
   const statsRows = await db.select().from(userStats).where(eq(userStats.id, 1))
   const currentPoints = statsRows[0]?.currentPoints ?? 0
   const goodBoyPoints = statsRows[0]?.goodBoyPoints ?? 0
+  const pendingClaims = await db.select().from(rewardClaims).where(eq(rewardClaims.status, 'pending'))
 
   const byCost = (a: { cost: number }, b: { cost: number }) => a.cost - b.cost
   const selfRewards = allRewards.filter(r => r.source !== 'wife')
@@ -76,6 +77,19 @@ export default async function RewardsPage() {
             <RewardCard key={reward.id} reward={reward} currentPoints={currentPoints} />
           ))}
         </div>
+      )}
+
+      {/* Awaiting Kayd's approval */}
+      {pendingClaims.length > 0 && (
+        <section className="space-y-2 pt-2">
+          <h2 className="text-xs font-semibold uppercase tracking-wider text-sky-300">Awaiting Kayd</h2>
+          {pendingClaims.map(c => (
+            <div key={c.id} className="flex items-center justify-between rounded-xl border border-sky-500/20 bg-sky-500/5 px-4 py-3">
+              <span className="text-sm text-zinc-200">{c.title}</span>
+              <span className="text-xs text-sky-300">{c.cost} good boy pts · pending</span>
+            </div>
+          ))}
+        </section>
       )}
 
       {/* Wife Store — spends good-boy points */}

@@ -4,7 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { randomUUID } from 'crypto'
 import { eq, sql } from 'drizzle-orm'
 import { db } from '@/lib/db'
-import { rewardRedemptions, rewards, userStats } from '@/lib/db/schema'
+import { rewardClaims, rewardRedemptions, rewards, userStats } from '@/lib/db/schema'
 
 export async function redeemReward(rewardId: string): Promise<{ success: boolean; error?: string }> {
   const rewardRows = await db.select().from(rewards).where(eq(rewards.id, rewardId))
@@ -21,37 +21,67 @@ export async function redeemReward(rewardId: string): Promise<{ success: boolean
     return { success: false, error: `Need ${reward.cost - balance} more ${isWife ? 'good boy points' : 'points'}` }
   }
 
-  await db.insert(rewardRedemptions).values({
-    id: randomUUID(),
-    rewardId,
-    pointsSpent: reward.cost,
-  })
+  // Wife rewards need her approval: reserve the points and file a pending
+  // claim. Points are refunded if she declines (see declineClaim).
+  if (isWife) {
+    await db.update(userStats)
+      .set({ goodBoyPoints: sql`${userStats.goodBoyPoints} - ${reward.cost}` })
+      .where(eq(userStats.id, 1))
+    await db.insert(rewardClaims).values({
+      id: randomUUID(), rewardId, title: reward.title, cost: reward.cost,
+    })
+    const { sendPushToAll } = await import('@/lib/push-server')
+    await sendPushToAll(
+      { title: 'Daniel wants a reward', body: `${reward.title} — accept or decline`, url: '/wife' },
+      'wife',
+    )
+    revalidatePath('/')
+    revalidatePath('/rewards')
+    revalidatePath('/wife')
+    return { success: true }
+  }
 
+  // His own rewards redeem instantly.
+  await db.insert(rewardRedemptions).values({ id: randomUUID(), rewardId, pointsSpent: reward.cost })
   await db.update(rewards)
     .set({ timesRedeemed: sql`${rewards.timesRedeemed} + 1` })
     .where(eq(rewards.id, rewardId))
-
-  await db.update(userStats).set(
-    isWife
-      ? { goodBoyPoints: sql`${userStats.goodBoyPoints} - ${reward.cost}` }
-      : {
-          totalPointsSpent: sql`${userStats.totalPointsSpent} + ${reward.cost}`,
-          currentPoints: sql`${userStats.currentPoints} - ${reward.cost}`,
-        },
-  ).where(eq(userStats.id, 1))
-
-  // Ping Kayd's phone when he cashes in from her store.
-  if (isWife) {
-    const { sendPushToAll } = await import('@/lib/push-server')
-    await sendPushToAll(
-      { title: 'Daniel claimed a reward', body: `${reward.title} (-${reward.cost} good boy points)` },
-      'wife',
-    )
-  }
+  await db.update(userStats).set({
+    totalPointsSpent: sql`${userStats.totalPointsSpent} + ${reward.cost}`,
+    currentPoints: sql`${userStats.currentPoints} - ${reward.cost}`,
+  }).where(eq(userStats.id, 1))
 
   revalidatePath('/')
   revalidatePath('/rewards')
   return { success: true }
+}
+
+// Kayd approves/denies a pending claim (from /wife).
+export async function resolveClaim(claimId: string, decision: 'accept' | 'decline'): Promise<{ ok: boolean }> {
+  const rows = await db.select().from(rewardClaims).where(eq(rewardClaims.id, claimId))
+  const claim = rows[0]
+  if (!claim || claim.status !== 'pending') return { ok: false }
+
+  await db.update(rewardClaims)
+    .set({ status: decision === 'accept' ? 'accepted' : 'declined', resolvedAt: new Date().toISOString() })
+    .where(eq(rewardClaims.id, claimId))
+
+  const { sendPushToAll } = await import('@/lib/push-server')
+  if (decision === 'accept') {
+    if (claim.rewardId) {
+      await db.update(rewards).set({ timesRedeemed: sql`${rewards.timesRedeemed} + 1` }).where(eq(rewards.id, claim.rewardId))
+    }
+    await sendPushToAll({ title: 'Kayd accepted your reward', body: `${claim.title} — enjoy it`, url: '/rewards' }, 'self')
+  } else {
+    // Refund the reserved good-boy points.
+    await db.update(userStats).set({ goodBoyPoints: sql`${userStats.goodBoyPoints} + ${claim.cost}` }).where(eq(userStats.id, 1))
+    await sendPushToAll({ title: 'Kayd declined your reward', body: `${claim.title} — points refunded`, url: '/rewards' }, 'self')
+  }
+
+  revalidatePath('/')
+  revalidatePath('/rewards')
+  revalidatePath('/wife')
+  return { ok: true }
 }
 
 // Public: the wife page stocks her store (untrusted input — clamp).

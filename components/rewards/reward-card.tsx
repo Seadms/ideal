@@ -19,10 +19,12 @@ interface RewardCardProps {
 export function RewardCard({ reward, currentPoints, unit = 'pts', readonly = false }: RewardCardProps) {
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
+  const [requested, setRequested] = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
   const [editOpen, setEditOpen] = useState(false)
   const canAfford = currentPoints >= reward.cost
   const available = reward.isAvailable
+  const needsApproval = reward.source === 'wife' // request → she approves
 
   const handleRedeem = () => {
     if (!showConfirm) { setShowConfirm(true); return }
@@ -30,6 +32,7 @@ export function RewardCard({ reward, currentPoints, unit = 'pts', readonly = fal
     startTransition(async () => {
       const result = await redeemReward(reward.id)
       if (!result.success) setError(result.error ?? 'Failed')
+      else if (needsApproval) setRequested(true)
       setShowConfirm(false)
     })
   }
@@ -112,7 +115,9 @@ export function RewardCard({ reward, currentPoints, unit = 'pts', readonly = fal
         {/* Error */}
         {error && <p className="text-xs text-rose-400">{error}</p>}
 
-        {/* Redeem button */}
+        {requested ? (
+          <p className="text-center text-xs text-sky-300">Requested — waiting for Kayd.</p>
+        ) : (
         <Button
           variant={showConfirm ? 'gold' : canAfford && available ? 'outline' : 'ghost'}
           size="sm"
@@ -125,13 +130,14 @@ export function RewardCard({ reward, currentPoints, unit = 'pts', readonly = fal
             : !available
               ? 'Unavailable'
               : showConfirm
-                ? 'Confirm redeem?'
+                ? (needsApproval ? 'Send request?' : 'Confirm redeem?')
                 : canAfford
-                  ? 'Redeem'
+                  ? (needsApproval ? 'Request' : 'Redeem')
                   : `${formatPoints(reward.cost - currentPoints)} ${unit} short`}
         </Button>
+        )}
 
-        {showConfirm && (
+        {showConfirm && !requested && (
           <button
             className="w-full text-xs text-zinc-500 hover:text-zinc-300 transition-colors"
             onClick={() => setShowConfirm(false)}
