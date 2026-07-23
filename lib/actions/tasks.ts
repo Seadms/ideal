@@ -26,6 +26,11 @@ export async function completeTask(taskId: string): Promise<CompletionResult> {
     await db.update(userStats)
       .set({ goodBoyPoints: sql`${userStats.goodBoyPoints} + ${task.points}` })
       .where(eq(userStats.id, 1))
+    const { sendPushToAll } = await import('@/lib/push-server')
+    await sendPushToAll(
+      { title: 'Daniel finished your task', body: `${task.title} (+${task.points} good boy points)`, url: '/wife' },
+      'wife',
+    )
     revalidatePath('/')
     return { leveledUp: false, newLevel: levelFromPoints(stats.totalPointsEarned), pointsEarned: task.points }
   }

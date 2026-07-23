@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm'
 import { db, initDb } from '@/lib/db'
-import { rewards, rewardClaims } from '@/lib/db/schema'
+import { rewards, rewardClaims, userStats } from '@/lib/db/schema'
 import { clearSpentRewards } from '@/lib/actions/rewards'
 import type { Metadata } from 'next'
 import { WifeClient } from '@/components/wife/wife-client'
@@ -17,14 +17,16 @@ export const metadata: Metadata = {
 export default async function WifePage() {
   await initDb()
   await clearSpentRewards()
-  const [storeRewards, pending] = await Promise.all([
+  const [storeRewards, pending, statsRows] = await Promise.all([
     db.select().from(rewards).where(eq(rewards.source, 'wife')),
     db.select().from(rewardClaims).where(eq(rewardClaims.status, 'pending')),
+    db.select({ goodBoyPoints: userStats.goodBoyPoints }).from(userStats).where(eq(userStats.id, 1)),
   ])
   return (
     <WifeClient
       rewards={storeRewards.map(r => ({ id: r.id, title: r.title, cost: r.cost, maxRedemptions: r.maxRedemptions, timesRedeemed: r.timesRedeemed }))}
       claims={pending.map(c => ({ id: c.id, title: c.title, cost: c.cost }))}
+      goodBoyPoints={statsRows[0]?.goodBoyPoints ?? 0}
       vapidPublicKey={process.env.VAPID_PUBLIC_KEY ?? ''}
     />
   )

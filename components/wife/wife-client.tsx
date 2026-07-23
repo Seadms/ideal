@@ -17,7 +17,7 @@ function urlBase64ToUint8Array(base64: string) {
   return Uint8Array.from([...atob(b)].map(c => c.charCodeAt(0)))
 }
 
-export function WifeClient({ rewards, claims, vapidPublicKey }: { rewards: StoreReward[]; claims: Claim[]; vapidPublicKey: string }) {
+export function WifeClient({ rewards, claims, goodBoyPoints, vapidPublicKey }: { rewards: StoreReward[]; claims: Claim[]; goodBoyPoints: number; vapidPublicKey: string }) {
   const [task, setTask] = useState('')
   const [points, setPoints] = useState('50')
   const [reward, setReward] = useState('')
@@ -76,6 +76,11 @@ export function WifeClient({ rewards, claims, vapidPublicKey }: { rewards: Store
       <div className="flex items-center gap-2">
         <Heart className="h-5 w-5 fill-rose-400 text-rose-400" />
         <h1 className="font-display text-2xl font-bold text-zinc-100">For Daniel</h1>
+      </div>
+
+      <div className="flex items-center justify-between rounded-2xl border border-sky-500/20 bg-sky-500/5 px-5 py-4">
+        <span className="text-xs uppercase tracking-wider text-zinc-400">His good boy points</span>
+        <span className="font-display text-2xl font-bold tabular-nums text-sky-300">{goodBoyPoints.toLocaleString()}</span>
       </div>
 
       <Button variant="outline" size="sm" onClick={enablePush} disabled={pushOn} className="w-full">
