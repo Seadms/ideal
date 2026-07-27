@@ -10,6 +10,7 @@ import { Heart, Bell, Trash2, Gift, Plus, Minus } from 'lucide-react'
 
 interface StoreReward { id: string; title: string; cost: number; maxRedemptions: number | null; timesRedeemed: number }
 interface Claim { id: string; title: string; cost: number }
+interface OpenTask { id: string; title: string; points: number }
 
 function urlBase64ToUint8Array(base64: string) {
   const padding = '='.repeat((4 - (base64.length % 4)) % 4)
@@ -17,7 +18,7 @@ function urlBase64ToUint8Array(base64: string) {
   return Uint8Array.from([...atob(b)].map(c => c.charCodeAt(0)))
 }
 
-export function WifeClient({ rewards, claims, goodBoyPoints, vapidPublicKey }: { rewards: StoreReward[]; claims: Claim[]; goodBoyPoints: number; vapidPublicKey: string }) {
+export function WifeClient({ rewards, claims, openTasks, goodBoyPoints, vapidPublicKey }: { rewards: StoreReward[]; claims: Claim[]; openTasks: OpenTask[]; goodBoyPoints: number; vapidPublicKey: string }) {
   const [task, setTask] = useState('')
   const [points, setPoints] = useState('50')
   const [reward, setReward] = useState('')
@@ -102,6 +103,20 @@ export function WifeClient({ rewards, claims, goodBoyPoints, vapidPublicKey }: {
           <span className="text-xs text-zinc-500">good boy points</span>
         </div>
         <Button type="submit" disabled={isPending || !task.trim()} className="w-full">Send task</Button>
+
+        {openTasks.length > 0 && (
+          <div className="space-y-2 pt-2">
+            <p className="text-[11px] uppercase tracking-wider text-zinc-500">
+              Waiting on him · {openTasks.length}
+            </p>
+            {openTasks.map(t => (
+              <div key={t.id} className="flex items-center justify-between rounded-lg border border-zinc-800 bg-zinc-900/40 px-3 py-2.5">
+                <span className="min-w-0 flex-1 truncate text-sm text-zinc-200">{t.title}</span>
+                <span className="ml-3 shrink-0 text-xs text-sky-300">+{t.points}</span>
+              </div>
+            ))}
+          </div>
+        )}
       </form>
 
       <div className="space-y-4 border-t border-zinc-800 pt-8">
