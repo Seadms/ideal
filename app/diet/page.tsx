@@ -34,7 +34,7 @@ export default async function DietPage() {
   return (
     <div className="space-y-6">
       <div>
-        <PageHeader title="Diet" ghost="Nutrition" sub="Cut + calisthenics recomp · lean, V-taper aesthetic" />
+        <PageHeader title="Diet" ghost="Nutrition" sub="Cut + gym training · lean, V-taper aesthetic" />
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">

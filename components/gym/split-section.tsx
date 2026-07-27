@@ -196,7 +196,7 @@ export function SplitSection({ days, prevLogs }: Props) {
 
               {/* Program notes */}
               <div className="rounded-lg bg-zinc-800/40 px-3 py-2 text-[10px] leading-relaxed text-zinc-500">
-                <span className="text-zinc-400">Overload:</span> at the top of a rep range, advance the variation or add load.
+                <span className="text-zinc-400">Overload:</span> hit the top of a rep range with clean form, then add weight.
                 <span className="text-zinc-400"> · Conditioning:</span> 2×/wk zone-2, 20–40 min.
                 <span className="text-zinc-400"> · Mobility:</span> 5 min daily.
               </div>

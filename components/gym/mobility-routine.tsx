@@ -7,7 +7,7 @@ import { cn, todayString } from '@/lib/utils'
 // Daily mobility block targeting the three goals that converge on the same
 // tissue: full range of motion, posture, and bedroom athleticism. All of it
 // comes down to hips, thoracic spine, and the front line shortened by desk
-// sitting. Doable in ~10 minutes with the home setup (bar, bands, doorway).
+// sitting. Doable in ~10 minutes with a pull-up bar and a doorway.
 const EXERCISES = [
   {
     name: 'Deep Squat Hold',
