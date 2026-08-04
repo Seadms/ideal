@@ -10,6 +10,16 @@ import { cn, todayString } from '@/lib/utils'
 // sitting. Doable in ~10 minutes with a pull-up bar and a doorway.
 const EXERCISES = [
   {
+    name: 'Knee-to-Wall Ankle',
+    dose: '2 min / side',
+    why: 'The most likely thing capping your squat depth. Tight ankles force the heels up or the back to round.',
+    steps: [
+      'Half-kneel facing a wall, front foot about a fist-width back from it.',
+      'Drive that knee forward over the toes to touch the wall, heel glued down.',
+      'If it touches easily, slide the foot back an inch and go again. That distance is your progress metric.',
+    ],
+  },
+  {
     name: 'Deep Squat Hold',
     dose: '2–3 min total',
     why: 'The single best ROM investment: ankles, knees, hips, and low back all at once.',
@@ -50,6 +60,16 @@ const EXERCISES = [
     ],
   },
   {
+    name: 'Seated Hamstring Stretch',
+    dose: '90s / side',
+    why: 'The one big range nothing else here trains. Toe-touch depth and deep hip positions both gate on it.',
+    steps: [
+      'Sit with one leg straight, the other bent with that foot against your inner thigh.',
+      'Hinge from the hip toward the straight leg with a long spine, not a rounded back.',
+      'Exhale and inch a little further each breath. Keep the stretched knee soft, not locked hard.',
+    ],
+  },
+  {
     name: 'Dead Hang',
     dose: '60–90s total',
     why: 'Decompresses the spine and opens the shoulders and lats. Free posture from the bar you already own.',
@@ -67,6 +87,16 @@ const EXERCISES = [
       'Forearm on a doorframe, elbow at shoulder height.',
       'Step the same-side foot through the doorway until the chest stretches.',
       'Keep the ribs down; adjust elbow height to move the stretch around.',
+    ],
+  },
+  {
+    name: 'Open Book',
+    dose: '10 / side',
+    why: 'Wall slides train extension; this trains rotation, the range that keeps pressing and overhead work healthy.',
+    steps: [
+      'Lie on your side, knees stacked and bent 90°, both arms straight out in front.',
+      'Keep the knees pinned down and sweep the top arm across your body toward the floor behind you.',
+      'Follow the hand with your eyes and exhale at end range. Do not let the knees lift to cheat depth.',
     ],
   },
   {
@@ -130,7 +160,7 @@ export function MobilityRoutine() {
         <div className="flex items-center gap-2">
           <PersonStanding size={15} className="text-ring-chore" />
           <h2 className="text-sm font-semibold text-zinc-200">Mobility</h2>
-          <span className="text-[10px] text-zinc-600">~10 min daily</span>
+          <span className="text-[10px] text-zinc-600">~13 min daily</span>
         </div>
         {allDone && (
           <span className="text-[11px] text-emerald-400 font-medium">All done</span>
@@ -182,10 +212,18 @@ export function MobilityRoutine() {
         })}
       </div>
 
+      <div className="rounded-xl border border-teal-500/20 bg-teal-500/5 px-4 py-3">
+        <p className="text-[11px] leading-relaxed text-zinc-400">
+          <span className="font-medium text-teal-300">When to do it:</span> after lifting, or on
+          rest days. Long holds before heavy squats and presses temporarily blunt strength, so keep
+          pre-lift work dynamic (leg swings, the 90/90s, empty-bar sets).
+        </p>
+      </div>
+
       <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/40 px-4 py-3 space-y-1.5">
         <p className="text-[11px] font-medium text-zinc-400">How this pays off</p>
         <p className="text-[11px] text-zinc-500 leading-relaxed">
-          Consistency beats intensity: 10 mediocre minutes daily outperforms one heroic hour a
+          Consistency beats intensity: 13 mediocre minutes daily outperforms one heroic hour a
           week. Posture = this plus your face pulls, rows, and chin tucks. Bedroom performance =
           open hip flexors + strong glutes (take the hip thrusts seriously) + zone-2 cardio for
           endurance. Same inputs, three payoffs.

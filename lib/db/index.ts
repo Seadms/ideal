@@ -281,6 +281,7 @@ async function doInitDb() {
     // would make a perfect day unreachable. Only nudges the untouched default.
     `UPDATE habits SET frequency_per_week = 5 WHERE title = 'Hit PPLUL gym split' AND frequency_per_week = 7`,
     `UPDATE habits SET description = 'Push / Pull / Legs / Upper / Lower — follow the current rotation' WHERE title = 'Hit PPLUL gym split'`,
+    `UPDATE habits SET description = 'About 13 min: ankles, hips, hamstrings, t-spine. Checklist on the Gym page' WHERE title = 'Mobility routine'`,
     `ALTER TABLE split_exercises ADD COLUMN exercise_type TEXT NOT NULL DEFAULT 'strength'`,
     `ALTER TABLE split_exercises ADD COLUMN target TEXT`,
     `UPDATE split_exercises SET exercise_type = 'cardio' WHERE name LIKE '%Cardio%'`,
