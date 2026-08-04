@@ -1,5 +1,5 @@
 import { asc, eq } from 'drizzle-orm'
-import { db, initDb } from '@/lib/db'
+import { db } from '@/lib/db'
 import { nutritionEntries, splitDays, splitExercises, exerciseLogs, dietGoals } from '@/lib/db/schema'
 import type { ExerciseLog } from '@/lib/db/schema'
 import { todayString } from '@/lib/utils'
@@ -8,12 +8,8 @@ import { NutritionLog } from '@/components/gym/nutrition-log'
 import { ProgressionSection } from '@/components/gym/progression-section'
 import { FacialExercises } from '@/components/gym/facial-exercises'
 import { MobilityRoutine } from '@/components/gym/mobility-routine'
-import { PageHeader } from '@/components/ui/page-header'
 
-export const dynamic = 'force-dynamic'
-
-export default async function GymPage() {
-  await initDb()
+export async function TrainingView() {
   const today = todayString()
 
   const [days, exercises, allLogs, nutrition, dietGoalsRows] = await Promise.all([
@@ -40,7 +36,7 @@ export default async function GymPage() {
   }
 
   // Daily macro targets come from diet_goals (single source of truth, shared
-  // with the Diet page). Mapped into the shape the nutrition log expects.
+  // with the Nutrition tab). Mapped into the shape the nutrition log expects.
   const dg = dietGoalsRows[0]
   const goals = {
     id: 1,
@@ -52,7 +48,6 @@ export default async function GymPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Gym" ghost="Training" sub="Today's training and nutrition" />
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
         <SplitSection days={daysWithExercises} prevLogs={prevLogs} />
         <NutritionLog entries={nutrition} goals={goals} />

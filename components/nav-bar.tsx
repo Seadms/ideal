@@ -2,17 +2,12 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import {
-  LayoutDashboard, Dumbbell, Salad,
-  TrendingUp, Gift, CalendarClock, Settings,
-} from 'lucide-react'
+import { LayoutDashboard, Dumbbell, Gift, CalendarClock, Settings } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const LINKS = [
   { href: '/', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/gym', label: 'Gym', icon: Dumbbell },
-  { href: '/diet', label: 'Diet', icon: Salad },
-  { href: '/progress', label: 'Progress', icon: TrendingUp },
+  { href: '/body', label: 'Body', icon: Dumbbell },
   { href: '/rewards', label: 'Rewards', icon: Gift },
   { href: '/history', label: 'History', icon: CalendarClock },
   { href: '/settings', label: 'Settings', icon: Settings },

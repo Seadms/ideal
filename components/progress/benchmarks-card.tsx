@@ -40,7 +40,7 @@ export function BenchmarksCard({ logs }: Props) {
                   <p className="text-[11px] text-zinc-500 mt-0.5">
                     {latest === null ? (
                       <span className="text-zinc-600">not logged yet</span>
-                    ) : def.kind === 'reps' ? (
+                    ) : def.kind !== 'stage' ? (
                       <>
                         <span className="text-zinc-200 font-semibold tabular-nums">{latest.value}</span> {def.unit}
                         {pr !== null && pr > latest.value && <span className="text-amber-500/70 ml-1.5">PR {pr}</span>}
@@ -68,13 +68,13 @@ export function BenchmarksCard({ logs }: Props) {
 
               {/* Control */}
               <div className="flex items-center gap-2">
-                {def.kind === 'reps' ? (
+                {def.kind !== 'stage' ? (
                   <>
                     <Input
-                      type="number" min={0} step={1} inputMode="numeric"
+                      type="number" min={0} step={def.kind === 'weight' ? 5 : 1} inputMode="decimal"
                       value={repForm[def.key] ?? ''}
                       onChange={e => setRepForm(f => ({ ...f, [def.key]: e.target.value }))}
-                      placeholder={`max ${def.short.toLowerCase()}`}
+                      placeholder={def.kind === 'weight' ? `top set ${def.unit}` : `max ${def.short.toLowerCase()}`}
                       className="h-7 text-xs flex-1"
                     />
                     <Button

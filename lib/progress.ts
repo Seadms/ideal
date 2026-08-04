@@ -1,6 +1,7 @@
 // Shared config + helpers for the Progress tracking page.
 
-export type BenchmarkKind = 'reps' | 'stage'
+// 'weight' and 'reps' both log a plain number; only 'stage' uses a dropdown.
+export type BenchmarkKind = 'reps' | 'weight' | 'stage'
 
 export interface BenchmarkDef {
   key: string
@@ -12,18 +13,15 @@ export interface BenchmarkDef {
   stages?: string[]    // ordered, for staged benchmarks
 }
 
-// The four key benchmarks that track "strength rising" toward the V-taper goal.
+// The anchor lifts of the 5-day gym split. Tracking the top working set on
+// each is what proves the V-taper is being built rather than just maintained.
+// (Older calisthenics benchmarks were dropped when training moved to the gym;
+// their logged rows stay in the database, they just no longer render.)
 export const BENCHMARKS: BenchmarkDef[] = [
-  { key: 'pull_ups',  label: 'Max strict pull-ups', short: 'Pull-ups',     kind: 'reps', unit: 'reps', color: '#818cf8' },
-  { key: 'ring_dips', label: 'Max ring dips',       short: 'Ring dips',    kind: 'reps', unit: 'reps', color: '#f59e0b' },
-  {
-    key: 'pistol_squat', label: 'Pistol squat stage', short: 'Pistol squat', kind: 'stage', color: '#34d399',
-    stages: ['Assisted', 'Box / elevated', 'Negatives', 'Partial ROM', 'Full pistol', 'Weighted pistol'],
-  },
-  {
-    key: 'push_up', label: 'Hardest push-up', short: 'Push-up', kind: 'stage', color: '#fb7185',
-    stages: ['Incline', 'Knee', 'Full', 'Diamond', 'Decline', 'Pseudo-planche', 'Archer', 'One-arm'],
-  },
+  { key: 'incline_bench', label: 'Incline bench press', short: 'Incline bench', kind: 'weight', unit: 'lbs', color: '#f59e0b' },
+  { key: 'back_squat',    label: 'Back squat',          short: 'Squat',         kind: 'weight', unit: 'lbs', color: '#34d399' },
+  { key: 'hip_thrust',    label: 'Barbell hip thrust',  short: 'Hip thrust',    kind: 'weight', unit: 'lbs', color: '#fb7185' },
+  { key: 'pull_ups',      label: 'Max strict pull-ups', short: 'Pull-ups',      kind: 'reps',   unit: 'reps', color: '#818cf8' },
 ]
 
 export const BENCHMARK_BY_KEY: Record<string, BenchmarkDef> =

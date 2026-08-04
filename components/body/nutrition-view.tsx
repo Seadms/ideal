@@ -1,5 +1,5 @@
 import { asc, eq } from 'drizzle-orm'
-import { db, initDb } from '@/lib/db'
+import { db } from '@/lib/db'
 import { dietGoals, dietMeals, dietRules, waterLogs } from '@/lib/db/schema'
 import type { DietGoals } from '@/lib/db/schema'
 import { todayString } from '@/lib/utils'
@@ -7,9 +7,6 @@ import { WaterTracker } from '@/components/diet/water-tracker'
 import { MacroGoals } from '@/components/diet/macro-goals'
 import { MealPlan } from '@/components/diet/meal-plan'
 import { DietRules } from '@/components/diet/diet-rules'
-import { PageHeader } from '@/components/ui/page-header'
-
-export const dynamic = 'force-dynamic'
 
 const DEFAULTS: DietGoals = {
   id: 1,
@@ -18,8 +15,7 @@ const DEFAULTS: DietGoals = {
   waterGoalMl: 3500,
 }
 
-export default async function DietPage() {
-  await initDb()
+export async function NutritionView() {
   const today = todayString()
 
   const [goalsRows, meals, rules, water] = await Promise.all([
@@ -33,10 +29,6 @@ export default async function DietPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <PageHeader title="Diet" ghost="Nutrition" sub="Cut + gym training · lean, V-taper aesthetic" />
-      </div>
-
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
         <div className="space-y-6">
           <WaterTracker logs={water} goalMl={goals.waterGoalMl} />
@@ -44,7 +36,6 @@ export default async function DietPage() {
         </div>
         <MealPlan meals={meals} />
       </div>
-
       <DietRules rules={rules} />
     </div>
   )
