@@ -1,24 +1,22 @@
 // ── Assistant: day data + morning briefing ────────────────────────────────────
-// Pulls everything "today" from Canvas, the calendar, and the app's own
-// habits/tasks into one structure, and composes the morning briefing push
-// (Gemini when available, deterministic template otherwise).
+// Pulls everything "today" from the calendar and the app's own habits/tasks
+// into one structure, and composes the morning briefing push (Gemini when
+// available, deterministic template otherwise).
 
 import { GoogleGenerativeAI } from '@google/generative-ai'
-import { and, eq } from 'drizzle-orm'
+import { and, desc, eq, gte } from 'drizzle-orm'
 import { db } from '@/lib/db'
-import { habits, habitCompletions, scheduledTasks, scheduledTaskCompletions, tasks } from '@/lib/db/schema'
+import { habits, habitCompletions, scheduledTasks, scheduledTaskCompletions, tasks, sleepLogs } from '@/lib/db/schema'
 import { getCalendarEvents, calendarConfigured, type CalEvent } from '@/lib/calendar'
-import { getPlannerItems, getMissingSubmissions, canvasConfigured, cleanCourseName, type CanvasItem, type MissingSubmission } from '@/lib/canvas'
-import { todayString, timeInAppTz, dateInAppTz } from '@/lib/utils'
+import { todayString, daysAgoString, timeInAppTz } from '@/lib/utils'
 
 export interface DayData {
   todayEvents: CalEvent[]
-  dueToday: CanvasItem[]
-  dueSoon: CanvasItem[]          // after today, within 7 days
-  missing: MissingSubmission[]
   pendingHabitCount: number
   scheduledToday: string[]       // pending scheduled-task titles
   openTaskCount: number
+  lastSleepHours: number | null  // last night, if logged
+  sleepAvg7: number | null       // 7-day average
 }
 
 export async function getDayData(opts: { fresh?: boolean } = {}): Promise<DayData> {
@@ -27,20 +25,11 @@ export async function getDayData(opts: { fresh?: boolean } = {}): Promise<DayDat
   const today = todayString()
   const todayDow = new Date().getDay()
 
-  const [events, planner, missing] = await Promise.all([
-    calendarConfigured() ? getCalendarEvents(now, endOfWindow, opts) : Promise.resolve([]),
-    canvasConfigured() ? getPlannerItems(7, opts) : Promise.resolve([]),
-    canvasConfigured() ? getMissingSubmissions(opts) : Promise.resolve([]),
-  ])
+  const events = calendarConfigured()
+    ? await getCalendarEvents(now, endOfWindow, opts)
+    : []
 
   const todayEvents = events.filter(e => e.dayKey === today)
-
-  const unsubmitted = planner.filter(i => !i.submitted && i.dueAt)
-  const dueToday = unsubmitted.filter(i => dateInAppTz(new Date(i.dueAt!)) === today)
-  const dueSoon = unsubmitted.filter(i => {
-    const d = dateInAppTz(new Date(i.dueAt!))
-    return d > today
-  })
 
   // Pending daily habits (weekly-quota habits aren't required daily)
   const dailyHabits = await db.select().from(habits)
@@ -65,7 +54,19 @@ export async function getDayData(opts: { fresh?: boolean } = {}): Promise<DayDat
   const openTasks = await db.select().from(tasks)
     .where(and(eq(tasks.isActive, true), eq(tasks.isCompleted, false)))
 
-  return { todayEvents, dueToday, dueSoon, missing, pendingHabitCount, scheduledToday, openTaskCount: openTasks.length }
+  // Sleep: last night's entry plus the 7-day average
+  const recentSleep = await db.select().from(sleepLogs)
+    .where(gte(sleepLogs.date, daysAgoString(6)))
+    .orderBy(desc(sleepLogs.date))
+  const lastSleepHours = recentSleep[0]?.hours ?? null
+  const sleepAvg7 = recentSleep.length > 0
+    ? Math.round((recentSleep.reduce((s, r) => s + r.hours, 0) / recentSleep.length) * 10) / 10
+    : null
+
+  return {
+    todayEvents, pendingHabitCount, scheduledToday,
+    openTaskCount: openTasks.length, lastSleepHours, sleepAvg7,
+  }
 }
 
 function fallbackBriefing(d: DayData): string {
@@ -75,10 +76,9 @@ function fallbackBriefing(d: DayData): string {
     parts.push(`${d.todayEvents.length} event${d.todayEvents.length > 1 ? 's' : ''} today` +
       (first ? `, first at ${timeInAppTz(first.start)}` : ''))
   }
-  if (d.dueToday.length > 0) {
-    parts.push(`${d.dueToday.length} Canvas item${d.dueToday.length > 1 ? 's' : ''} due today`)
+  if (d.lastSleepHours !== null && d.lastSleepHours < 7) {
+    parts.push(`${d.lastSleepHours}h sleep, keep today easy on recovery`)
   }
-  if (d.missing.length > 0) parts.push(`${d.missing.length} missing submission${d.missing.length > 1 ? 's' : ''}`)
   if (d.pendingHabitCount > 0) parts.push(`${d.pendingHabitCount} daily habit${d.pendingHabitCount > 1 ? 's' : ''} to hit`)
   if (d.scheduledToday.length > 0) parts.push(`${d.scheduledToday.length} chores on deck`)
   return parts.length > 0 ? parts.join(' · ') : 'Clear schedule today. Pick something great to build.'
@@ -90,30 +90,21 @@ export async function composeBriefing(d: DayData): Promise<string> {
 
   const eventLines = d.todayEvents.map(e =>
     `- ${e.allDay ? 'all day' : timeInAppTz(e.start)}: ${e.title}${e.location ? ` @ ${e.location}` : ''}`).join('\n')
-  const dueLines = d.dueToday.map(i =>
-    `- ${i.title} (${i.courseName ? cleanCourseName(i.courseName) : 'Canvas'}, due ${timeInAppTz(new Date(i.dueAt!))})`).join('\n')
-  const soonLines = d.dueSoon.slice(0, 5).map(i =>
-    `- ${i.title} (${i.courseName ? cleanCourseName(i.courseName) : 'Canvas'}, ${new Date(i.dueAt!).toLocaleDateString('en-US', { weekday: 'short' })})`).join('\n')
 
   try {
     const genAI = new GoogleGenerativeAI(apiKey)
     const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' })
-    const prompt = `You are a sharp, encouraging personal assistant writing a MORNING BRIEFING push notification for a CS student at UNC Charlotte.
+    const prompt = `You are a sharp, encouraging personal assistant writing a MORNING BRIEFING push notification for a 21-year-old CS student who is cutting, lifting 5 days a week, and building side projects.
 
 TODAY'S CALENDAR:
 ${eventLines || '(nothing scheduled)'}
 
-CANVAS DUE TODAY:
-${dueLines || '(nothing due today)'}
-
-DUE LATER THIS WEEK:
-${soonLines || '(nothing)'}
-
-MISSING SUBMISSIONS: ${d.missing.length}
+LAST NIGHT'S SLEEP: ${d.lastSleepHours !== null ? `${d.lastSleepHours}h (7-day avg ${d.sleepAvg7}h)` : 'not logged'}
 PENDING DAILY HABITS: ${d.pendingHabitCount}
+OPEN TASKS: ${d.openTaskCount}
 CHORES TODAY: ${d.scheduledToday.join(', ') || 'none'}
 
-Write the briefing as 2-4 short sentences, max 320 characters total. Lead with the most time-critical thing. Be concrete with times and course names. No greetings, no emojis, no markdown, no bullet points, no em dashes. If there are missing submissions, mention them firmly.`
+Write the briefing as 2-4 short sentences, max 320 characters total. Lead with the most time-critical thing. Be concrete with times. If sleep was under 7 hours, mention going easier or prioritising rest. No greetings, no emojis, no markdown, no bullet points, no em dashes.`
 
     const result = await model.generateContent(prompt)
     const text = result.response.text().trim()

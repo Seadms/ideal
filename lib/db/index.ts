@@ -239,6 +239,12 @@ async function doInitDb() {
       amount_ml INTEGER NOT NULL,
       created_at TEXT NOT NULL DEFAULT (datetime('now'))
     )`,
+    `CREATE TABLE IF NOT EXISTS sleep_logs (
+      id TEXT PRIMARY KEY,
+      date TEXT NOT NULL,
+      hours REAL NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    )`,
     `CREATE TABLE IF NOT EXISTS bodyweight_logs (
       id TEXT PRIMARY KEY,
       date TEXT NOT NULL,

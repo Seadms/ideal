@@ -250,6 +250,15 @@ export const waterLogs = sqliteTable('water_logs', {
 
 // ── Progress tracking ─────────────────────────────────────────────────────────
 
+// Hours slept, one row per day (the morning you wake). Recovery is the lever
+// under the cut, the training, and the focus, so it gets first-class tracking.
+export const sleepLogs = sqliteTable('sleep_logs', {
+  id: text('id').primaryKey(),
+  date: text('date').notNull(),       // YYYY-MM-DD
+  hours: real('hours').notNull(),
+  createdAt: text('created_at').notNull().default(sql`(datetime('now'))`),
+})
+
 // One entry per day (latest wins). 7-day rolling average is computed in the UI.
 export const bodyweightLogs = sqliteTable('bodyweight_logs', {
   id: text('id').primaryKey(),
@@ -299,6 +308,7 @@ export type DietGoals = typeof dietGoals.$inferSelect
 export type DietMeal = typeof dietMeals.$inferSelect
 export type DietRule = typeof dietRules.$inferSelect
 export type WaterLog = typeof waterLogs.$inferSelect
+export type SleepLog = typeof sleepLogs.$inferSelect
 export type BodyweightLog = typeof bodyweightLogs.$inferSelect
 export type BenchmarkLog = typeof benchmarkLogs.$inferSelect
 export type ProgressPhoto = typeof progressPhotos.$inferSelect

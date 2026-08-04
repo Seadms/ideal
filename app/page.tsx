@@ -2,7 +2,7 @@ import { Suspense } from 'react'
 import { Heart } from 'lucide-react'
 import { asc, eq, gte } from 'drizzle-orm'
 import { db } from '@/lib/db'
-import { habits, habitCompletions, tasks, userStats, scheduledTasks, scheduledTaskCompletions } from '@/lib/db/schema'
+import { habits, habitCompletions, tasks, userStats, scheduledTasks, scheduledTaskCompletions, sleepLogs } from '@/lib/db/schema'
 import { seedDatabase } from '@/lib/db/seed'
 import { checkStreakOnLoad } from '@/lib/actions/habits'
 import { clearStaleWifeTasks } from '@/lib/actions/tasks'
@@ -20,6 +20,7 @@ import { StreakAtRisk } from '@/components/dashboard/streak-at-risk'
 import { ScheduledSection } from '@/components/dashboard/scheduled-section'
 import { TodaySchedule, TodayScheduleSkeleton } from '@/components/dashboard/today-schedule'
 import { WeekStrip } from '@/components/dashboard/week-strip'
+import { SleepCard } from '@/components/dashboard/sleep-card'
 
 export const dynamic = 'force-dynamic'
 
@@ -34,7 +35,7 @@ async function DashboardContent() {
   // All dashboard queries fire in parallel — sequential awaits made every
   // load pay ~6 database round trips back to back (noticeable on Turso).
   const todayDow = new Date().getDay() // 0=Sun … 6=Sat
-  const [allHabits, allCompletions, allTasks, allScheduledTasks, todayScheduledCompletions, statsRows] = await Promise.all([
+  const [allHabits, allCompletions, allTasks, allScheduledTasks, todayScheduledCompletions, statsRows, recentSleep] = await Promise.all([
     // Habits — sorted by user-defined sort order
     db.select().from(habits)
       .where(eq(habits.isActive, true))
@@ -47,8 +48,15 @@ async function DashboardContent() {
     db.select().from(scheduledTaskCompletions)
       .where(eq(scheduledTaskCompletions.completedDate, today)),
     db.select().from(userStats).where(eq(userStats.id, 1)),
+    db.select().from(sleepLogs).where(gte(sleepLogs.date, daysAgoString(6))),
   ])
   const completedScheduledIds = new Set(todayScheduledCompletions.map(c => c.taskId))
+
+  // Sleep: today's entry plus the 7-day average
+  const sleepToday = recentSleep.find(s => s.date === today)?.hours ?? null
+  const sleepAvg7 = recentSleep.length > 0
+    ? Math.round((recentSleep.reduce((s, r) => s + r.hours, 0) / recentSleep.length) * 10) / 10
+    : null
 
   // Which scheduled tasks are visible today
   const visibleScheduled = allScheduledTasks.filter(t => {
@@ -144,6 +152,8 @@ async function DashboardContent() {
       />
 
       <WeekStrip days={last7DaysStatus} />
+
+      <SleepCard hoursToday={sleepToday} avg7={sleepAvg7} />
 
       <StreakAtRisk currentStreak={stats.currentStreak} todayAlreadyActive={todayAlreadyActive} />
 

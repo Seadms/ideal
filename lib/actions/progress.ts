@@ -4,8 +4,25 @@ import { revalidatePath } from 'next/cache'
 import { randomUUID } from 'crypto'
 import { and, eq } from 'drizzle-orm'
 import { db } from '@/lib/db'
-import { bodyweightLogs, benchmarkLogs, progressPhotos } from '@/lib/db/schema'
+import { bodyweightLogs, benchmarkLogs, progressPhotos, sleepLogs } from '@/lib/db/schema'
 import { todayString } from '@/lib/utils'
+
+// ── Sleep ─────────────────────────────────────────────────────────────────────
+
+// Logged the morning you wake, so the row is dated today. Re-logging overwrites.
+export async function logSleep(hours: number) {
+  if (!Number.isFinite(hours) || hours <= 0 || hours > 24) return
+  const date = todayString()
+  const existing = await db.select({ id: sleepLogs.id }).from(sleepLogs)
+    .where(eq(sleepLogs.date, date))
+  if (existing.length > 0) {
+    await db.update(sleepLogs).set({ hours }).where(eq(sleepLogs.id, existing[0].id))
+  } else {
+    await db.insert(sleepLogs).values({ id: randomUUID(), date, hours })
+  }
+  revalidatePath('/')
+  revalidatePath('/progress')
+}
 
 // ── Bodyweight ────────────────────────────────────────────────────────────────
 

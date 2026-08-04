@@ -3,14 +3,13 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
-  LayoutDashboard, GraduationCap, Dumbbell, Salad,
+  LayoutDashboard, Dumbbell, Salad,
   TrendingUp, Gift, CalendarClock, Settings,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const LINKS = [
   { href: '/', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/school', label: 'School', icon: GraduationCap },
   { href: '/gym', label: 'Gym', icon: Dumbbell },
   { href: '/diet', label: 'Diet', icon: Salad },
   { href: '/progress', label: 'Progress', icon: TrendingUp },

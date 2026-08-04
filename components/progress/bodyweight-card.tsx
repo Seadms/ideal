@@ -3,7 +3,7 @@
 import { useState, useTransition } from 'react'
 import { logBodyweight, deleteBodyweightLog } from '@/lib/actions/progress'
 import type { BodyweightLog } from '@/lib/db/schema'
-import { rolling7 } from '@/lib/progress'
+import { rolling7, cutCheck } from '@/lib/progress'
 import { TrendChart } from './trend-chart'
 import { Scale, Check, Trash2, TrendingDown, TrendingUp, Minus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -44,6 +44,7 @@ export function BodyweightCard({ logs }: Props) {
   const weekAgoIdx = Math.max(0, avg.length - 8)
   const weekDelta = currentAvg !== null && avg.length > 1 ? currentAvg - avg[weekAgoIdx] : null
   const totalDelta = values.length > 1 ? values[values.length - 1] - values[0] : null
+  const cut = cutCheck(values)
 
   const handleLog = () => {
     const w = Number(weight)
@@ -81,6 +82,26 @@ export function BodyweightCard({ logs }: Props) {
               {totalDelta !== null && <span className="text-zinc-600">all <Delta value={totalDelta} /></span>}
             </p>
           </div>
+        </div>
+
+        {/* Cut check — reads the smoothed line and says what to do about it */}
+        <div className={cn(
+          'rounded-lg border px-3 py-2.5',
+          cut.status === 'on-pace' ? 'border-emerald-500/20 bg-emerald-500/5'
+            : cut.status === 'stalled' ? 'border-amber-500/25 bg-amber-500/5'
+            : cut.status === 'too-fast' ? 'border-rose-500/20 bg-rose-500/5'
+            : 'border-zinc-800 bg-zinc-900/40',
+        )}>
+          <p className={cn(
+            'text-xs font-semibold',
+            cut.status === 'on-pace' ? 'text-emerald-300'
+              : cut.status === 'stalled' ? 'text-amber-300'
+              : cut.status === 'too-fast' ? 'text-rose-300'
+              : 'text-zinc-400',
+          )}>
+            {cut.headline}
+          </p>
+          <p className="mt-1 text-[11px] leading-relaxed text-zinc-500">{cut.detail}</p>
         </div>
 
         {/* Chart */}

@@ -9,8 +9,7 @@ import { Input } from '@/components/ui/input'
 interface AssistantSettingsProps {
   briefingTime: string | null
   eventLeadMinutes: number
-  assignmentAlertHours: number
-  integrations: { canvas: boolean; calendar: boolean; gemini: boolean; push: boolean }
+  integrations: { calendar: boolean; gemini: boolean; push: boolean }
 }
 
 function IntegrationRow({ label, ok, hint }: { label: string; ok: boolean; hint: string }) {
@@ -26,12 +25,11 @@ function IntegrationRow({ label, ok, hint }: { label: string; ok: boolean; hint:
   )
 }
 
-export function AssistantSettings({ briefingTime, eventLeadMinutes, assignmentAlertHours, integrations }: AssistantSettingsProps) {
+export function AssistantSettings({ briefingTime, eventLeadMinutes, integrations }: AssistantSettingsProps) {
   const [isPending, startTransition] = useTransition()
   const [enabled, setEnabled] = useState(!!briefingTime)
   const [time, setTime] = useState(briefingTime ?? '07:30')
   const [lead, setLead] = useState(eventLeadMinutes)
-  const [alertHours, setAlertHours] = useState(assignmentAlertHours)
   const [testResult, setTestResult] = useState<string | null>(null)
   const [testing, setTesting] = useState(false)
 
@@ -40,7 +38,6 @@ export function AssistantSettings({ briefingTime, eventLeadMinutes, assignmentAl
       await setAssistantPrefs({
         briefingTime: enabled ? time : null,
         eventLeadMinutes: lead,
-        assignmentAlertHours: alertHours,
       })
     })
   }
@@ -87,22 +84,12 @@ export function AssistantSettings({ briefingTime, eventLeadMinutes, assignmentAl
           </div>
         )}
 
-        <div className="border-t border-zinc-800 pt-4 grid grid-cols-2 gap-4">
-          <div>
-            <label className="text-xs text-zinc-500 block mb-1.5">Event reminder lead</label>
-            <div className="flex items-center gap-2">
-              <Input type="number" min={5} max={180} value={lead}
-                onChange={e => setLead(Number(e.target.value))} className="w-20" />
-              <span className="text-xs text-zinc-600">min before</span>
-            </div>
-          </div>
-          <div>
-            <label className="text-xs text-zinc-500 block mb-1.5">Assignment heads-up</label>
-            <div className="flex items-center gap-2">
-              <Input type="number" min={2} max={72} value={alertHours}
-                onChange={e => setAlertHours(Number(e.target.value))} className="w-20" />
-              <span className="text-xs text-zinc-600">hrs before due</span>
-            </div>
+        <div className="border-t border-zinc-800 pt-4">
+          <label className="text-xs text-zinc-500 block mb-1.5">Event reminder lead</label>
+          <div className="flex items-center gap-2">
+            <Input type="number" min={5} max={180} value={lead}
+              onChange={e => setLead(Number(e.target.value))} className="w-20" />
+            <span className="text-xs text-zinc-600">min before</span>
           </div>
         </div>
 
@@ -117,7 +104,6 @@ export function AssistantSettings({ briefingTime, eventLeadMinutes, assignmentAl
         {testResult && <p className="text-xs text-zinc-500 leading-relaxed">{testResult}</p>}
 
         <div className="border-t border-zinc-800 pt-3">
-          <IntegrationRow label="Canvas (UNCC)" ok={integrations.canvas} hint="Add CANVAS_API_TOKEN" />
           <IntegrationRow label="Google Calendar" ok={integrations.calendar} hint="Add GCAL_ICS_URLS" />
           <IntegrationRow label="Gemini (AI briefing)" ok={integrations.gemini} hint="Add GEMINI_API_KEY" />
           <IntegrationRow label="Push notifications" ok={integrations.push} hint="Add VAPID keys" />
