@@ -219,7 +219,7 @@ export const dietGoals = sqliteTable('diet_goals', {
   restProtein: integer('rest_protein').notNull().default(180),
   restCarbs: integer('rest_carbs').notNull().default(235),
   restFat: integer('rest_fat').notNull().default(70),
-  waterGoalMl: integer('water_goal_ml').notNull().default(3500),
+  waterGoalMl: integer('water_goal_ml').notNull().default(4000),
 })
 
 export const dietMeals = sqliteTable('diet_meals', {

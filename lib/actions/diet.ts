@@ -34,7 +34,7 @@ export async function updateDailyMacroTargets(data: {
   if (existing.length > 0) {
     await db.update(dietGoals).set(macros).where(eq(dietGoals.id, 1))
   } else {
-    await db.insert(dietGoals).values({ id: 1, ...macros, waterGoalMl: 3500 })
+    await db.insert(dietGoals).values({ id: 1, ...macros, waterGoalMl: 4000 })
   }
   revalidatePath('/diet')
   revalidatePath('/gym')

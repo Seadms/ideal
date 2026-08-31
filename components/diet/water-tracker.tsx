@@ -4,32 +4,30 @@ import { useState, useTransition } from 'react'
 import { logWater, deleteWaterLog } from '@/lib/actions/diet'
 import type { WaterLog } from '@/lib/db/schema'
 import { Droplets, Trash2 } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { cn, formatOz, ozToMl } from '@/lib/utils'
 
 interface Props {
   logs: WaterLog[]
   goalMl: number
 }
 
-const QUICK = [250, 500, 750, 1000]
+// Real containers, not round metric numbers: a cup, a standard bottle, a big
+// bottle, a quart. Stored as ml because that's the column type.
+const QUICK_OZ = [8, 16, 24, 32]
 
 export function WaterTracker({ logs, goalMl }: Props) {
   const [isPending, startTransition] = useTransition()
   const [custom, setCustom] = useState('')
-  const [customUnit, setCustomUnit] = useState<'L' | 'ml'>('L')
 
   const totalMl = logs.reduce((s, l) => s + l.amountMl, 0)
   const pct = goalMl > 0 ? Math.min(Math.round((totalMl / goalMl) * 100), 100) : 0
-
-  const fmt = (ml: number) => ml >= 1000 ? `${(ml / 1000).toFixed(1)}L` : `${ml}ml`
 
   const add = (ml: number) => startTransition(async () => { await logWater(ml) })
 
   const handleCustom = () => {
     const val = parseFloat(custom)
     if (!val || val <= 0) return
-    const ml = customUnit === 'L' ? Math.round(val * 1000) : Math.round(val)
-    add(ml)
+    add(ozToMl(val))
     setCustom('')
   }
 
@@ -44,8 +42,8 @@ export function WaterTracker({ logs, goalMl }: Props) {
         {/* Progress */}
         <div>
           <div className="flex items-end justify-between mb-2">
-            <span className="text-2xl font-bold text-sky-400 tabular-nums">{fmt(totalMl)}</span>
-            <span className="text-xs text-zinc-600 mb-1">/ {fmt(goalMl)} · {pct}%</span>
+            <span className="text-2xl font-bold text-sky-400 tabular-nums">{formatOz(totalMl)}</span>
+            <span className="text-xs text-zinc-600 mb-1">/ {formatOz(goalMl)} · {pct}%</span>
           </div>
           <div className="h-2.5 w-full rounded-full bg-zinc-800 overflow-hidden">
             <div
@@ -57,33 +55,27 @@ export function WaterTracker({ logs, goalMl }: Props) {
 
         {/* Quick add */}
         <div className="flex flex-wrap gap-1.5">
-          {QUICK.map(ml => (
+          {QUICK_OZ.map(oz => (
             <button
-              key={ml}
-              onClick={() => add(ml)}
+              key={oz}
+              onClick={() => add(ozToMl(oz))}
               disabled={isPending}
               className="px-3 py-1.5 text-xs rounded-lg bg-zinc-800 text-zinc-400 hover:bg-sky-900/40 hover:text-sky-300 transition-colors"
             >
-              +{fmt(ml)}
+              +{oz} oz
             </button>
           ))}
           <div className="flex items-center gap-1">
             <input
-              type="number"
-              step={customUnit === 'L' ? 0.1 : 50}
-              min={customUnit === 'L' ? 0.1 : 1}
-              placeholder={customUnit}
+              type="number" step={1} min={1} inputMode="decimal"
+              placeholder="oz"
               value={custom}
+              onFocus={e => e.target.select()}
               onChange={e => setCustom(e.target.value)}
               onKeyDown={e => { if (e.key === 'Enter') handleCustom() }}
               className="w-16 h-7 px-2 text-xs rounded-lg bg-zinc-800 border border-zinc-700 text-zinc-300 placeholder-zinc-600 focus:outline-none focus:border-sky-700"
             />
-            <button
-              onClick={() => { setCustomUnit(u => u === 'L' ? 'ml' : 'L'); setCustom('') }}
-              className="px-2 h-7 text-xs rounded-lg bg-zinc-800 text-zinc-500 hover:text-sky-300 transition-colors tabular-nums"
-            >
-              {customUnit}
-            </button>
+            <span className="px-1 text-xs text-zinc-600">oz</span>
             <button
               onClick={handleCustom}
               disabled={isPending || !custom}
@@ -107,7 +99,7 @@ export function WaterTracker({ logs, goalMl }: Props) {
               return (
                 <div key={log.id} className="group flex items-center justify-between py-0.5">
                   <span className="text-xs text-zinc-500">
-                    <span className="text-zinc-400 font-medium">{fmt(log.amountMl)}</span>
+                    <span className="text-zinc-400 font-medium">{formatOz(log.amountMl)}</span>
                     {time && <span className="ml-1.5" suppressHydrationWarning>{time}</span>}
                   </span>
                   <button

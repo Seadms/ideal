@@ -184,6 +184,24 @@ export function getLast7DaysStatus(
   })
 }
 
+// ── US customary units ────────────────────────────────────────────────────────
+// Water stays stored in ml (the column type, and what every existing log holds)
+// and is converted at the edges — display and input are always US fluid ounces.
+
+const ML_PER_FL_OZ = 29.5735
+
+export function mlToOz(ml: number): number {
+  return ml / ML_PER_FL_OZ
+}
+
+export function ozToMl(oz: number): number {
+  return Math.round(oz * ML_PER_FL_OZ)
+}
+
+export function formatOz(ml: number): string {
+  return `${Math.round(mlToOz(ml))} oz`
+}
+
 // ── Formatting ────────────────────────────────────────────────────────────────
 
 export function formatPoints(pts: number): string {

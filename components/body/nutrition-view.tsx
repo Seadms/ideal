@@ -12,7 +12,7 @@ const DEFAULTS: DietGoals = {
   id: 1,
   trainingCalories: 2300, trainingProtein: 180, trainingCarbs: 235, trainingFat: 70,
   restCalories: 2300, restProtein: 180, restCarbs: 235, restFat: 70,
-  waterGoalMl: 3500,
+  waterGoalMl: 4000,
 }
 
 export async function NutritionView() {

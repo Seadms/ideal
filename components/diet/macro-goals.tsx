@@ -5,7 +5,7 @@ import { upsertDietGoals } from '@/lib/actions/diet'
 import type { DietGoals } from '@/lib/db/schema'
 import { Target, Pencil, Check, X } from 'lucide-react'
 import { Input } from '@/components/ui/input'
-import { cn } from '@/lib/utils'
+import { cn, mlToOz, ozToMl } from '@/lib/utils'
 
 interface Props {
   goals: DietGoals
@@ -21,7 +21,7 @@ export function MacroGoals({ goals }: Props) {
     protein: String(goals.trainingProtein),
     carbs: String(goals.trainingCarbs),
     fat: String(goals.trainingFat),
-    waterGoalMl: String(goals.waterGoalMl),
+    waterGoalOz: String(Math.round(mlToOz(goals.waterGoalMl))),
   })
 
   const handleSave = () => {
@@ -33,7 +33,7 @@ export function MacroGoals({ goals }: Props) {
       await upsertDietGoals({
         trainingCalories: cal, trainingProtein: p, trainingCarbs: c, trainingFat: f,
         restCalories: cal, restProtein: p, restCarbs: c, restFat: f,
-        waterGoalMl: Number(form.waterGoalMl) || 0,
+        waterGoalMl: ozToMl(Number(form.waterGoalOz) || 0),
       })
       setEditing(false)
     })
@@ -113,17 +113,18 @@ export function MacroGoals({ goals }: Props) {
               <p className="text-[10px] text-zinc-600 uppercase tracking-wider">Water Goal</p>
               <div className="flex items-center gap-2">
                 <div className="flex-1">
-                  <p className="text-[9px] text-zinc-600 mb-1">Daily target (ml)</p>
+                  <p className="text-[9px] text-zinc-600 mb-1">Daily target (oz)</p>
                   <Input
-                    type="number" min={0} step={250}
-                    value={form.waterGoalMl}
-                    onChange={e => setForm(g => ({ ...g, waterGoalMl: e.target.value }))}
+                    type="number" min={0} step={8}
+                    onFocus={e => e.target.select()}
+                    value={form.waterGoalOz}
+                    onChange={e => setForm(g => ({ ...g, waterGoalOz: e.target.value }))}
                     className="h-7 text-xs py-0"
                   />
                 </div>
-                <p className="text-xs text-zinc-600 mt-4">{(Number(form.waterGoalMl) / 1000).toFixed(2)}L</p>
+                <p className="text-xs text-zinc-600 mt-4">{(Number(form.waterGoalOz) / 128).toFixed(2)} gal</p>
               </div>
-              <p className="text-[10px] text-zinc-600">Aim for 4 L on training days.</p>
+              <p className="text-[10px] text-zinc-600">135 oz daily — a gallon plus a cup.</p>
             </div>
             <button
               onClick={handleSave}

@@ -214,7 +214,7 @@ async function doInitDb() {
       rest_protein INTEGER NOT NULL DEFAULT 160,
       rest_carbs INTEGER NOT NULL DEFAULT 100,
       rest_fat INTEGER NOT NULL DEFAULT 55,
-      water_goal_ml INTEGER NOT NULL DEFAULT 2750
+      water_goal_ml INTEGER NOT NULL DEFAULT 4000
     )`,
     `CREATE TABLE IF NOT EXISTS diet_meals (
       id TEXT PRIMARY KEY,
@@ -300,9 +300,14 @@ async function doInitDb() {
     // and a JSON import with an empty userStats array can leave it missing.
     `INSERT OR IGNORE INTO user_stats (id) VALUES (1)`,
     `UPDATE nutrition_goals SET calories_goal = 2300, protein_goal = 180, carbs_goal = 235, fats_goal = 70 WHERE id = 1 AND calories_goal IN (2000, 2500)`,
-    // Diet goals → same fixed targets for training & rest, water 3.5 L. Only
-    // migrate rows still holding the prior recomp defaults.
+    // Diet goals → same fixed targets for training & rest. Only migrate rows
+    // still holding the prior recomp defaults.
     `UPDATE diet_goals SET training_calories = 2300, training_protein = 180, training_carbs = 235, training_fat = 70, rest_calories = 2300, rest_protein = 180, rest_carbs = 235, rest_fat = 70, water_goal_ml = 3500 WHERE id = 1 AND training_calories = 2000 AND rest_calories = 1700`,
+    // Water goal → a flat 4 L (135 oz) every day, training or not. Only nudges
+    // rows still on a seeded default; a hand-picked number is left alone.
+    `UPDATE diet_goals SET water_goal_ml = 4000 WHERE id = 1 AND water_goal_ml IN (2750, 3500)`,
+    `UPDATE diet_rules SET text = '135 oz water daily — a gallon plus a cup' WHERE text LIKE '%L water daily%'`,
+    `UPDATE diet_meals SET notes = REPLACE(notes, '150g ', '5 oz ') WHERE notes LIKE '%150g %'`,
     // Emoji purge: seeded exercise targets used the star emoji (U+2B50, via
     // char(11088)) for priority lifts — swap for the monochrome ★ glyph in
     // already-seeded rows.
@@ -464,7 +469,7 @@ async function seedDietIfEmpty() {
       sql: `INSERT INTO diet_goals
         (id, training_calories, training_protein, training_carbs, training_fat,
          rest_calories, rest_protein, rest_carbs, rest_fat, water_goal_ml)
-        VALUES (1, 2300, 180, 235, 70, 2300, 180, 235, 70, 3500)`,
+        VALUES (1, 2300, 180, 235, 70, 2300, 180, 235, 70, 4000)`,
       args: [],
     })
   }
@@ -480,7 +485,7 @@ async function seedDietIfEmpty() {
       {
         name: 'Lean Midday Refuel', timeWindow: '12 PM',
         calories: 500, protein: 47, carbs: 40, fat: 12, order: 2,
-        notes: '150g grilled chicken breast (45g protein)\n¾ cup jasmine rice cooked (38g carbs)\nLarge salad with lemon + olive oil',
+        notes: '5 oz grilled chicken breast (45g protein)\n¾ cup jasmine rice cooked (38g carbs)\nLarge salad with lemon + olive oil',
       },
       {
         name: 'Performance Primer', timeWindow: '3–4 PM',
@@ -490,7 +495,7 @@ async function seedDietIfEmpty() {
       {
         name: 'Recovery Window', timeWindow: '7–8 PM',
         calories: 500, protein: 42, carbs: 28, fat: 16, order: 4,
-        notes: '150g salmon or lean ground beef (40g protein)\nMedium sweet potato (26g carbs)\nRoasted broccoli or asparagus',
+        notes: '5 oz salmon or lean ground beef (40g protein)\nMedium sweet potato (26g carbs)\nRoasted broccoli or asparagus',
       },
       {
         name: 'Slow-Burn Night Protein', timeWindow: '9–10 PM',
@@ -507,7 +512,7 @@ async function seedDietIfEmpty() {
     }
 
     const rules = [
-      { cat: 'always',     text: '3.5–4 L water daily (4 L on training days)', ord: 1 },
+      { cat: 'always',     text: '135 oz water daily — a gallon plus a cup', ord: 1 },
       { cat: 'always',     text: 'Protein within 45 min post-lift', ord: 2 },
       { cat: 'always',     text: 'Sleep 7–9 hours',                 ord: 3 },
       { cat: 'always',     text: 'Zone 2 every lifting day',        ord: 4 },
