@@ -6,18 +6,21 @@ import { randomUUID } from 'crypto'
 export async function seedDatabase() {
   await initDb()
 
-  // Main data seed — only runs on a fresh DB
-  const existingHabits = await db.select().from(habits)
+  // Main data seed — only runs on a fresh DB. Keyed off the gym habit rather
+  // than "any habit exists": initDb() seeds the mobility/steps habits first, so
+  // a plain count is never zero and this block would never run.
+  const existingHabits = await db.select().from(habits).where(eq(habits.title, 'Hit gym split'))
   if (existingHabits.length > 0) return
 
   await db.insert(habits).values([
     {
       id: randomUUID(),
-      title: 'Hit PPLUL gym split',
-      description: 'Push / Pull / Legs / Upper / Lower — follow the current rotation',
+      title: 'Hit gym split',
+      description: 'Upper A / Lower A / Upper B / Lower B — follow the current rotation',
       points: 100,
       isMinimumViable: false,
       category: 'fitness',
+      frequencyPerWeek: 4,
     },
     {
       id: randomUUID(),

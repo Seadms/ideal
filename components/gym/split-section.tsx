@@ -18,11 +18,22 @@ interface Props {
   prevLogs: Record<string, ExerciseLog>
 }
 
+// A 0 default weight means "never logged with weight". Showing it as a literal
+// 0 put the caret in front of the digit, so backspace did nothing and typing
+// 135 produced "0135". Empty field + placeholder instead; a real previous
+// weight still pre-fills, which is the part worth keeping.
+const exDefaults = (ex: SplitExercise): ExValues => ({
+  sets: ex.defaultSets,
+  reps: ex.defaultReps,
+  weight: ex.defaultWeight || '',
+  unit: ex.defaultUnit,
+})
+
 function initValues(days: DayWithExercises[]): Record<string, ExValues> {
   const out: Record<string, ExValues> = {}
   for (const day of days) {
     for (const ex of day.exercises) {
-      out[ex.id] = { sets: ex.defaultSets, reps: ex.defaultReps, weight: ex.defaultWeight, unit: ex.defaultUnit }
+      out[ex.id] = exDefaults(ex)
     }
   }
   return out
@@ -40,11 +51,15 @@ export function SplitSection({ days, prevLogs }: Props) {
 
   const activeDay = days.find(d => d.id === activeDayId) ?? null
 
-  const getVals = (ex: SplitExercise): ExValues =>
-    exerciseValues[ex.id] ?? { sets: ex.defaultSets, reps: ex.defaultReps, weight: ex.defaultWeight, unit: ex.defaultUnit }
+  const getVals = (ex: SplitExercise): ExValues => exerciseValues[ex.id] ?? exDefaults(ex)
 
   const setVal = (exId: string, patch: Partial<ExValues>) =>
     setExerciseValues(v => ({ ...v, [exId]: { ...getVals({ id: exId } as SplitExercise), ...v[exId], ...patch } }))
+
+  // Tapping a pre-filled number field drops the caret wherever you touched, so
+  // typing 145 over a field showing 135 produced "145135". Selecting on focus
+  // makes typing replace — always what you want when logging a set.
+  const selectOnFocus = (e: React.FocusEvent<HTMLInputElement>) => e.target.select()
 
   const adjustWeight = (ex: SplitExercise, delta: number) => {
     const w = Number(getVals(ex).weight) || 0
@@ -60,7 +75,7 @@ export function SplitSection({ days, prevLogs }: Props) {
           if (r[ex.id]?.length) return r
           const v = getVals(ex)
           const n = Math.min(12, Math.max(1, Number(v.sets) || 1))
-          return { ...r, [ex.id]: Array.from({ length: n }, () => ({ reps: String(v.reps), weight: String(v.weight) })) }
+          return { ...r, [ex.id]: Array.from({ length: n }, () => ({ reps: String(v.reps), weight: v.weight === '' ? '' : String(v.weight) })) }
         })
       }
       return { ...p, [ex.id]: next }
@@ -75,13 +90,13 @@ export function SplitSection({ days, prevLogs }: Props) {
   const addSetRow = (exId: string) =>
     setSetRows(r => {
       const rows = r[exId] ?? []
-      const last = rows[rows.length - 1] ?? { reps: '8', weight: '0' }
+      const last = rows[rows.length - 1] ?? { reps: '8', weight: '' }
       return { ...r, [exId]: [...rows, { ...last }] }
     })
   const removeSetRow = (exId: string, idx: number) =>
     setSetRows(r => {
       const rows = (r[exId] ?? []).filter((_, i) => i !== idx)
-      return { ...r, [exId]: rows.length ? rows : [{ reps: '8', weight: '0' }] }
+      return { ...r, [exId]: rows.length ? rows : [{ reps: '8', weight: '' }] }
     })
 
   const handleDaySelect = (dayId: string) => {
@@ -92,9 +107,7 @@ export function SplitSection({ days, prevLogs }: Props) {
     setExerciseValues(v => {
       const next = { ...v }
       for (const ex of day.exercises) {
-        if (!next[ex.id]) {
-          next[ex.id] = { sets: ex.defaultSets, reps: ex.defaultReps, weight: ex.defaultWeight, unit: ex.defaultUnit }
-        }
+        if (!next[ex.id]) next[ex.id] = exDefaults(ex)
       }
       return next
     })
@@ -247,6 +260,7 @@ export function SplitSection({ days, prevLogs }: Props) {
                                         <p className="text-[9px] text-zinc-600 mb-1">Sets</p>
                                         <Input
                                           type="number" min={1} max={20}
+                                          onFocus={selectOnFocus}
                                           value={vals.sets}
                                           onChange={e => setVal(ex.id, { sets: e.target.value })}
                                           className="w-12 h-7 text-xs text-center py-0 px-1"
@@ -258,6 +272,7 @@ export function SplitSection({ days, prevLogs }: Props) {
                                         <p className="text-[9px] text-zinc-600 mb-1">Reps</p>
                                         <Input
                                           type="number" min={1} max={100}
+                                          onFocus={selectOnFocus}
                                           value={vals.reps}
                                           onChange={e => setVal(ex.id, { reps: e.target.value })}
                                           className="w-12 h-7 text-xs text-center py-0 px-1"
@@ -275,9 +290,11 @@ export function SplitSection({ days, prevLogs }: Props) {
                                             <Minus size={10} />
                                           </button>
                                           <Input
-                                            type="number" min={0} step={2.5}
+                                            type="number" min={0} step={2.5} inputMode="decimal"
+                                            onFocus={selectOnFocus}
                                             value={vals.weight}
                                             onChange={e => setVal(ex.id, { weight: e.target.value })}
+                                            placeholder="0"
                                             className="w-16 h-7 text-xs text-center py-0 px-1"
                                           />
                                           <button
@@ -296,15 +313,18 @@ export function SplitSection({ days, prevLogs }: Props) {
                                           <span className="text-[10px] text-zinc-600 w-9 shrink-0">Set {i + 1}</span>
                                           <Input
                                             type="number" min={0} max={100}
+                                            onFocus={selectOnFocus}
                                             value={row.reps}
                                             onChange={e => setRowVal(ex.id, i, { reps: e.target.value })}
                                             className="w-14 h-7 text-xs text-center py-0 px-1"
                                           />
                                           <span className="text-[10px] text-zinc-700">reps @</span>
                                           <Input
-                                            type="number" min={0} step={2.5}
+                                            type="number" min={0} step={2.5} inputMode="decimal"
+                                            onFocus={selectOnFocus}
                                             value={row.weight}
                                             onChange={e => setRowVal(ex.id, i, { weight: e.target.value })}
+                                            placeholder="0"
                                             className="w-16 h-7 text-xs text-center py-0 px-1"
                                           />
                                           <span className="text-[10px] text-zinc-600">{vals.unit}</span>
@@ -332,6 +352,7 @@ export function SplitSection({ days, prevLogs }: Props) {
                                   <p className="text-[9px] text-zinc-600 mb-1">Duration (min)</p>
                                   <Input
                                     type="number" min={1} max={300}
+                                    onFocus={selectOnFocus}
                                     value={vals.reps}
                                     onChange={e => setVal(ex.id, { reps: e.target.value })}
                                     className="w-20 h-7 text-xs text-center py-0 px-1"
@@ -344,6 +365,7 @@ export function SplitSection({ days, prevLogs }: Props) {
                                   <p className="text-[9px] text-zinc-600 mb-1">Reps</p>
                                   <Input
                                     type="number" min={1} max={50}
+                                    onFocus={selectOnFocus}
                                     value={vals.reps}
                                     onChange={e => setVal(ex.id, { reps: e.target.value })}
                                     className="w-16 h-7 text-xs text-center py-0 px-1"
@@ -357,6 +379,7 @@ export function SplitSection({ days, prevLogs }: Props) {
                                     <p className="text-[9px] text-zinc-600 mb-1">Sets</p>
                                     <Input
                                       type="number" min={1} max={20}
+                                      onFocus={selectOnFocus}
                                       value={vals.sets}
                                       onChange={e => setVal(ex.id, { sets: e.target.value })}
                                       className="w-12 h-7 text-xs text-center py-0 px-1"
@@ -367,6 +390,7 @@ export function SplitSection({ days, prevLogs }: Props) {
                                     <p className="text-[9px] text-zinc-600 mb-1">Duration (sec)</p>
                                     <Input
                                       type="number" min={1} max={600}
+                                      onFocus={selectOnFocus}
                                       value={vals.reps}
                                       onChange={e => setVal(ex.id, { reps: e.target.value })}
                                       className="w-20 h-7 text-xs text-center py-0 px-1"

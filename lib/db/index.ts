@@ -283,10 +283,11 @@ async function doInitDb() {
     `ALTER TABLE rewards ADD COLUMN sold_out_at TEXT`,
     `ALTER TABLE user_stats ADD COLUMN good_boy_points INTEGER NOT NULL DEFAULT 0`,
     `ALTER TABLE push_subscriptions ADD COLUMN owner TEXT NOT NULL DEFAULT 'self'`,
-    // The split is 5 days, so the gym habit can't be a 7-day daily or rest days
+    // The split is 4 days, so the gym habit can't be a 7-day daily or rest days
     // would make a perfect day unreachable. Only nudges the untouched default.
-    `UPDATE habits SET frequency_per_week = 5 WHERE title = 'Hit PPLUL gym split' AND frequency_per_week = 7`,
-    `UPDATE habits SET description = 'Push / Pull / Legs / Upper / Lower — follow the current rotation' WHERE title = 'Hit PPLUL gym split'`,
+    `UPDATE habits SET frequency_per_week = 4 WHERE title IN ('Hit PPLUL gym split', 'Hit gym split') AND frequency_per_week IN (5, 7)`,
+    `UPDATE habits SET description = 'Upper A / Lower A / Upper B / Lower B — follow the current rotation' WHERE title IN ('Hit PPLUL gym split', 'Hit gym split')`,
+    `UPDATE habits SET title = 'Hit gym split' WHERE title = 'Hit PPLUL gym split'`,
     `UPDATE habits SET description = 'About 13 min: ankles, hips, hamstrings, t-spine. Checklist on the Gym page' WHERE title = 'Mobility routine'`,
     `ALTER TABLE split_exercises ADD COLUMN exercise_type TEXT NOT NULL DEFAULT 'strength'`,
     `ALTER TABLE split_exercises ADD COLUMN target TEXT`,
@@ -318,16 +319,30 @@ async function doInitDb() {
   await seedSplitIfNeeded()
   await seedDietIfEmpty()
   await seedHouseholdTasksIfNeeded()
-  await seedMobilityHabitIfNeeded()
+  await seedHabitIfMissing(
+    'Mobility routine',
+    'About 10 min: squat hold, couch stretch, hangs. Checklist on the Gym page',
+    30, 7,
+  )
+  // Four gym days instead of five leaves a weekly deficit gap. Steps close it
+  // without eating into lifting recovery the way more hard cardio would.
+  await seedHabitIfMissing(
+    '10k steps',
+    'Daily walking floor. On the 3 non-gym days this is the whole fat-loss engine',
+    30, 7,
+  )
 }
 
-// ── Seed: Daily mobility habit ────────────────────────────────────────────────
-// One-time insert so the mobility block (Gym page) feeds the streak and points.
+// ── Seed: Daily fitness habits ────────────────────────────────────────────────
+// One-time inserts so the daily blocks feed the streak and the points economy.
 
-async function seedMobilityHabitIfNeeded() {
-  const existing = await client.execute(
-    "SELECT id FROM habits WHERE title = 'Mobility routine' LIMIT 1",
-  )
+async function seedHabitIfMissing(
+  title: string, description: string, points: number, frequencyPerWeek: number,
+) {
+  const existing = await client.execute({
+    sql: 'SELECT id FROM habits WHERE title = ? LIMIT 1',
+    args: [title],
+  })
   if (existing.rows.length > 0) return
   const maxRow = await client.execute(
     'SELECT COALESCE(MAX(sort_order), 0) AS m FROM habits WHERE is_active = 1',
@@ -335,24 +350,28 @@ async function seedMobilityHabitIfNeeded() {
   const sortOrder = Number(maxRow.rows[0]?.m ?? 0) + 1
   await client.execute({
     sql: `INSERT INTO habits (id, title, description, points, category, frequency_per_week, sort_order)
-          VALUES (?, 'Mobility routine', 'About 10 min: squat hold, couch stretch, hangs. Checklist on the Gym page', 30, 'fitness', 7, ?)`,
-    args: [randomUUID(), sortOrder],
+          VALUES (?, ?, ?, ?, 'fitness', ?, ?)`,
+    args: [randomUUID(), title, description, points, frequencyPerWeek, sortOrder],
   })
 }
 
-// ── Seed: Max Aesthetics Split — 5-Day Gym PPLUL ─────────────────────────────
-// Built for the V-taper look: side delts hit 3×/week and lat width 3×/week (the
-// two levers that actually widen the frame), upper chest prioritised over flat
-// pressing, and weighted ab work so the midsection reads defined once lean.
+// ── Seed: Max Aesthetics Split — 4-Day Upper/Lower ───────────────────────
+// Four gym days, every muscle trained twice a week — the highest frequency that
+// fits four sessions, and frequency is what holds muscle while cutting. Built for
+// the V-taper: side delts and lat width each get two dedicated hits, upper chest
+// is prioritised over flat pressing, and abs are trained under load so the
+// midsection reads defined once lean.
 // Hip thrusts and RDLs are non-negotiable: glutes and posterior-chain hip drive
-// carry over directly to bed, and zone-2 covers the cardiovascular side.
+// carry over directly to bed, and zone 2 closes both lower days. With one fewer
+// gym day than before, that cardio plus the daily step habit is what keeps the
+// deficit moving — the lifting protects the muscle, the deficit takes the fat.
 //
 // One-time replacement: bumping SPLIT_MARKER triggers a one-time swap of any older
 // split for this one. Existing exercise_logs (workout history) are preserved.
 // Progression rule for every lift: at the TOP of the rep range with clean form,
 // add weight next session (smallest jump available), then work back up the range.
 
-const SPLIT_MARKER = 'Push — Chest / Delts / Triceps'
+const SPLIT_MARKER = 'Upper A — Chest / Delts / Back Width'
 
 async function seedSplitIfNeeded() {
   const rows = await client.execute('SELECT id, name FROM split_days')
@@ -368,63 +387,56 @@ async function seedSplitIfNeeded() {
   type Ex = { name: string; sets: number; reps: number; weight: number; type?: string; target?: string }
   const days: { name: string; order: number; exercises: Ex[] }[] = [
     {
-      name: 'Push — Chest / Delts / Triceps', order: 1,
+      name: 'Upper A — Chest / Delts / Back Width', order: 1,
       exercises: [
         { name: 'Incline Barbell Bench Press',            sets: 4, reps: 8,  weight: 0, target: '4 × 6–10 · ★ upper chest — the shelf that reads on a lean frame' },
-        { name: 'Flat Dumbbell Press',                    sets: 3, reps: 10, weight: 0, target: '3 × 8–12 · chest thickness' },
-        { name: 'Cable Fly / Pec Deck',                   sets: 3, reps: 14, weight: 0, target: '3 × 12–20 · stretch under load, squeeze at the top' },
+        { name: 'Weighted Pull-ups / Lat Pulldown',       sets: 4, reps: 9,  weight: 0, target: '4 × 6–12 · ★ back width' },
         { name: 'Seated Dumbbell Shoulder Press',         sets: 3, reps: 10, weight: 0, target: '3 × 8–12 · front delts' },
+        { name: 'Chest-Supported Row',                    sets: 3, reps: 10, weight: 0, target: '3 × 8–12 · back thickness, no torso English' },
         { name: 'Cable Lateral Raises',                   sets: 4, reps: 15, weight: 0, target: '4 × 12–20 · ★ shoulder width — go light, no swinging' },
         { name: 'Overhead Cable Triceps Extension',       sets: 3, reps: 12, weight: 0, target: '3 × 10–15 · long head = arm size' },
+        { name: 'Incline Dumbbell Curls',                 sets: 3, reps: 10, weight: 0, target: '3 × 8–12 · biceps peak under stretch' },
+      ],
+    },
+    {
+      name: 'Lower A — Glutes / Hamstrings / Abs', order: 2,
+      exercises: [
+        { name: 'Barbell Hip Thrust',                     sets: 4, reps: 10, weight: 0, target: '4 × 8–12 · ★ glutes + hip drive · full lockout, pause at top' },
+        { name: 'Romanian Deadlift',                      sets: 4, reps: 10, weight: 0, target: '4 × 8–12 · ★ hamstrings + glutes · hinge, feel the stretch' },
+        { name: 'Bulgarian Split Squat',                  sets: 3, reps: 10, weight: 0, target: '3 × 8–12 per leg · glutes + single-leg balance' },
+        { name: 'Seated Leg Curl',                        sets: 3, reps: 12, weight: 0, target: '3 × 10–15 · hamstrings' },
+        { name: 'Standing Calf Raise',                    sets: 4, reps: 12, weight: 0, target: '4 × 10–15 · pause at the bottom' },
+        { name: 'Cable Crunch',                           sets: 4, reps: 13, weight: 0, target: '4 × 12–15 · ★ weighted abs — thickness is what shows at low body fat' },
+        { name: 'Zone 2 Cardio',                          sets: 1, reps: 25, weight: 0, type: 'cardio', target: '25 min · conversational pace · heart health + stamina' },
+      ],
+    },
+    {
+      name: 'Upper B — Back / Chest / Arms', order: 3,
+      exercises: [
+        { name: 'Wide-Grip Lat Pulldown',                 sets: 4, reps: 11, weight: 0, target: '4 × 10–12 · ★ width, drive elbows down' },
+        { name: 'Flat Dumbbell Press',                    sets: 4, reps: 10, weight: 0, target: '4 × 8–12 · chest thickness' },
+        { name: 'Seated Cable Row',                       sets: 3, reps: 10, weight: 0, target: '3 × 8–12 · back thickness (2nd weekly hit)' },
+        { name: 'Cable Lateral Raises',                   sets: 4, reps: 15, weight: 0, target: '4 × 12–20 · ★ shoulder width (2nd weekly hit)' },
+        { name: 'Cable Fly / Pec Deck',                   sets: 3, reps: 14, weight: 0, target: '3 × 12–20 · stretch under load, squeeze at the top' },
+        { name: 'Reverse Pec Deck / Face Pulls',          sets: 3, reps: 18, weight: 0, target: '3 × 15–20 · rear delts + posture' },
+        { name: 'Cable Hammer Curls',                     sets: 3, reps: 12, weight: 0, target: '3 × 10–15 · arm thickness' },
         { name: 'Rope Pushdown',                          sets: 3, reps: 13, weight: 0, target: '3 × 12–15' },
       ],
     },
     {
-      name: 'Pull — Back / Rear Delts / Biceps', order: 2,
-      exercises: [
-        { name: 'Weighted Pull-ups / Lat Pulldown',       sets: 4, reps: 9,  weight: 0, target: '4 × 6–12 · ★ back width' },
-        { name: 'Chest-Supported Row',                    sets: 4, reps: 10, weight: 0, target: '4 × 8–12 · back thickness, no torso English' },
-        { name: 'Straight-Arm Pulldown',                  sets: 3, reps: 13, weight: 0, target: '3 × 12–15 · lats without the biceps' },
-        { name: 'Cable Face Pulls',                       sets: 3, reps: 18, weight: 0, target: '3 × 15–20 · rear delts + posture' },
-        { name: 'Incline Dumbbell Curls',                 sets: 3, reps: 10, weight: 0, target: '3 × 8–12 · biceps peak under stretch' },
-        { name: 'Cable Hammer Curls',                     sets: 3, reps: 12, weight: 0, target: '3 × 10–15 · arm thickness' },
-      ],
-    },
-    {
-      name: 'Legs — Quads / Glutes / Hamstrings', order: 3,
+      name: 'Lower B — Quads / Core / Conditioning', order: 4,
       exercises: [
         { name: 'Barbell Back Squat',                     sets: 4, reps: 6,  weight: 0, target: '4 × 5–8 · whole-body driver, keep it heavy and clean' },
-        { name: 'Romanian Deadlift',                      sets: 3, reps: 10, weight: 0, target: '3 × 8–12 · ★ hamstrings + glutes · hinge, feel the stretch' },
-        { name: 'Leg Press',                              sets: 3, reps: 12, weight: 0, target: '3 × 10–15 · quad volume without spinal load' },
-        { name: 'Bulgarian Split Squat',                  sets: 3, reps: 10, weight: 0, target: '3 × 8–12 per leg · glutes + single-leg balance' },
-        { name: 'Seated Leg Curl',                        sets: 3, reps: 12, weight: 0, target: '3 × 10–15 · hamstrings' },
-        { name: 'Standing Calf Raise',                    sets: 4, reps: 12, weight: 0, target: '4 × 10–15 · pause at the bottom' },
-      ],
-    },
-    {
-      name: 'Upper — Delts / Back Width / Arms', order: 4,
-      exercises: [
-        { name: 'Cable Lateral Raises',                   sets: 4, reps: 15, weight: 0, target: '4 × 12–20 · ★ shoulder width (2nd weekly hit)' },
-        { name: 'Wide-Grip Lat Pulldown',                 sets: 4, reps: 11, weight: 0, target: '4 × 10–12 · ★ width, drive elbows down' },
-        { name: 'Incline Dumbbell Press',                 sets: 3, reps: 10, weight: 0, target: '3 × 8–12 · upper chest again' },
-        { name: 'Reverse Pec Deck',                       sets: 3, reps: 18, weight: 0, target: '3 × 15–20 · rear delts round out the shoulder' },
-        { name: 'EZ-Bar Curl',                            sets: 3, reps: 10, weight: 0, target: '3 × 8–12' },
-        { name: 'Skull Crushers',                         sets: 3, reps: 11, weight: 0, target: '3 × 10–12' },
-      ],
-    },
-    {
-      name: 'Lower + Core — Glutes / Abs / Conditioning', order: 5,
-      exercises: [
-        { name: 'Barbell Hip Thrust',                     sets: 4, reps: 10, weight: 0, target: '4 × 8–12 · ★ glutes + hip drive · full lockout, pause at top' },
-        { name: 'Hack Squat / Leg Press',                 sets: 3, reps: 12, weight: 0, target: '3 × 10–15 · quads' },
-        { name: 'Lying Leg Curl',                         sets: 3, reps: 12, weight: 0, target: '3 × 10–15 · hamstrings' },
-        { name: 'Cable Crunch',                           sets: 4, reps: 13, weight: 0, target: '4 × 12–15 · ★ weighted abs — thickness is what shows at low body fat' },
-        { name: 'Hanging Leg Raise',                      sets: 3, reps: 14, weight: 0, target: '3 × 10–20 · lower abs, no swinging' },
+        { name: 'Hack Squat / Leg Press',                 sets: 3, reps: 12, weight: 0, target: '3 × 10–15 · quad volume without spinal load' },
+        { name: 'Lying Leg Curl',                         sets: 3, reps: 12, weight: 0, target: '3 × 10–15 · hamstrings (2nd weekly hit)' },
+        { name: 'Seated Calf Raise',                      sets: 3, reps: 15, weight: 0, target: '3 × 12–20 · soleus, slow negatives' },
+        { name: 'Hanging Leg Raise',                      sets: 4, reps: 14, weight: 0, target: '4 × 10–20 · ★ lower abs — the pouch area, no swinging' },
         { name: 'Zone 2 Cardio',                          sets: 1, reps: 25, weight: 0, type: 'cardio', target: '25 min · conversational pace · heart health + stamina' },
       ],
     },
   ]
 
+  
   for (const day of days) {
     const dayId = randomUUID()
     await client.execute({
