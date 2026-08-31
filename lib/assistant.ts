@@ -8,7 +8,7 @@ import { and, desc, eq, gte } from 'drizzle-orm'
 import { db } from '@/lib/db'
 import { habits, habitCompletions, scheduledTasks, scheduledTaskCompletions, tasks, sleepLogs } from '@/lib/db/schema'
 import { getCalendarEvents, calendarConfigured, type CalEvent } from '@/lib/calendar'
-import { todayString, daysAgoString, timeInAppTz } from '@/lib/utils'
+import { todayString, daysAgoString, timeInAppTz, todayDow as appTodayDow } from '@/lib/utils'
 
 export interface DayData {
   todayEvents: CalEvent[]
@@ -23,7 +23,7 @@ export async function getDayData(opts: { fresh?: boolean } = {}): Promise<DayDat
   const now = new Date()
   const endOfWindow = new Date(now.getTime() + 24 * 3600_000)
   const today = todayString()
-  const todayDow = new Date().getDay()
+  const todayDow = appTodayDow()
 
   const events = calendarConfigured()
     ? await getCalendarEvents(now, endOfWindow, opts)

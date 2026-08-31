@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { todayString } from '@/lib/utils'
 import {
   habits, tasks, rewards, rewardRedemptions, userStats, habitCompletions,
   bonusTaskSessions, bonusTaskPool, scheduledTasks, scheduledTaskCompletions,
@@ -17,7 +18,7 @@ export async function GET() {
       const dbPath = path.join(process.cwd(), 'data', 'life.db')
       if (fs.existsSync(dbPath)) {
         const buffer = fs.readFileSync(dbPath)
-        const date = new Date().toISOString().split('T')[0]
+        const date = todayString()
         return new NextResponse(buffer, {
           headers: {
             'Content-Type': 'application/octet-stream',
@@ -90,7 +91,7 @@ export async function GET() {
     progressPhotos: progressPhotosData,
   }
 
-  const date = new Date().toISOString().split('T')[0]
+  const date = todayString()
   return new NextResponse(JSON.stringify(backup, null, 2), {
     headers: {
       'Content-Type': 'application/json',

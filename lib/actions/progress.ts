@@ -21,7 +21,7 @@ export async function logSleep(hours: number) {
     await db.insert(sleepLogs).values({ id: randomUUID(), date, hours })
   }
   revalidatePath('/')
-  revalidatePath('/progress')
+  revalidatePath('/body')
 }
 
 // ── Bodyweight ────────────────────────────────────────────────────────────────
@@ -37,12 +37,12 @@ export async function logBodyweight(weight: number, unit: string = 'lbs') {
   } else {
     await db.insert(bodyweightLogs).values({ id: randomUUID(), date, weight, unit })
   }
-  revalidatePath('/progress')
+  revalidatePath('/body')
 }
 
 export async function deleteBodyweightLog(id: string) {
   await db.delete(bodyweightLogs).where(eq(bodyweightLogs.id, id))
-  revalidatePath('/progress')
+  revalidatePath('/body')
 }
 
 // ── Benchmarks ────────────────────────────────────────────────────────────────
@@ -59,12 +59,12 @@ export async function logBenchmark(key: string, value: number, label?: string | 
   } else {
     await db.insert(benchmarkLogs).values({ id: randomUUID(), date, key, value, label: label ?? null })
   }
-  revalidatePath('/progress')
+  revalidatePath('/body')
 }
 
 export async function deleteBenchmarkLog(id: string) {
   await db.delete(benchmarkLogs).where(eq(benchmarkLogs.id, id))
-  revalidatePath('/progress')
+  revalidatePath('/body')
 }
 
 // ── Progress photos ───────────────────────────────────────────────────────────
@@ -81,10 +81,10 @@ export async function addProgressPhoto(pose: string, imageData: string, date?: s
   } else {
     await db.insert(progressPhotos).values({ id: randomUUID(), date: d, pose, imageData })
   }
-  revalidatePath('/progress')
+  revalidatePath('/body')
 }
 
 export async function deleteProgressPhoto(id: string) {
   await db.delete(progressPhotos).where(eq(progressPhotos.id, id))
-  revalidatePath('/progress')
+  revalidatePath('/body')
 }

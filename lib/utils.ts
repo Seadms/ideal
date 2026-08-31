@@ -55,6 +55,15 @@ export function nowString(): string {
   return `${localDateString(d)}T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
 }
 
+// Day of week (0=Sun … 6=Sat) for the app's "today". Derived from
+// todayString() so it follows NEXT_PUBLIC_APP_TZ: `new Date().getDay()` reads
+// the server clock, which is UTC on Vercel, and would flip to tomorrow's
+// weekly chores at 8 PM Eastern while the rest of the app still says today.
+export function todayDow(): number {
+  const [y, m, d] = todayString().split('-').map(Number)
+  return new Date(y, m - 1, d, 12).getDay()
+}
+
 export function yesterdayString(): string {
   return shiftDays(todayString(), -1)
 }

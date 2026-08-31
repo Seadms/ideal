@@ -1,6 +1,6 @@
 import { and, eq, gte, sql } from 'drizzle-orm'
 import { db, initDb } from '@/lib/db'
-import { habits, habitCompletions, tasks, rewards, rewardRedemptions, bonusTaskSessions, bonusTaskPool } from '@/lib/db/schema'
+import { habits, habitCompletions, tasks, rewards, rewardRedemptions, bonusTaskSessions, bonusTaskPool, scheduledTasks, scheduledTaskCompletions } from '@/lib/db/schema'
 import { todayString, daysAgoString, formatPoints, cn } from '@/lib/utils'
 import { CategoryIcon } from '@/components/ui/category-icon'
 import { PageHeader } from '@/components/ui/page-header'
@@ -32,7 +32,7 @@ export default async function HistoryPage() {
   const since60 = daysAgoString(60)
   const since34 = daysAgoString(34)
 
-  const [completions, allHabits, completedTasks, allRedemptions, allRewards, bonusSessions, bonusPool] = await Promise.all([
+  const [completions, allHabits, completedTasks, allRedemptions, allRewards, bonusSessions, bonusPool, schedCompletions, allScheduled] = await Promise.all([
     db.select().from(habitCompletions).where(gte(habitCompletions.completedDate, since60)),
     db.select().from(habits),
     db.select().from(tasks).where(
@@ -44,9 +44,14 @@ export default async function HistoryPage() {
       and(eq(bonusTaskSessions.state, 'completed'), gte(bonusTaskSessions.date, since60)),
     ),
     db.select().from(bonusTaskPool),
+    // Recurring chores are a large share of daily points — without these the
+    // heatmap, the feed and the totals all under-report a normal day.
+    db.select().from(scheduledTaskCompletions).where(gte(scheduledTaskCompletions.completedDate, since60)),
+    db.select().from(scheduledTasks),
   ])
 
   const bonusPoolMap = new Map(bonusPool.map(t => [t.id, t]))
+  const schedMap = new Map(allScheduled.map(t => [t.id, t]))
   const habitMap = new Map(allHabits.map(h => [h.id, h]))
   const rewardMap = new Map(allRewards.map(r => [r.id, r]))
 
@@ -65,6 +70,9 @@ export default async function HistoryPage() {
   bonusSessions
     .filter(s => s.date >= since34)
     .forEach(s => addPts(s.date, s.pointsEarned ?? 0))
+  schedCompletions
+    .filter(c => c.completedDate >= since34)
+    .forEach(c => addPts(c.completedDate, c.pointsEarned))
 
   // Day-of-week column labels aligned to the grid start day
   const startDow = new Date(since34 + 'T12:00:00').getDay()
@@ -107,6 +115,14 @@ export default async function HistoryPage() {
       pts: s.pointsEarned ?? 0,
       sortKey: s.createdAt,
     })),
+    ...schedCompletions.map(c => ({
+      kind: 'task' as const,
+      title: schedMap.get(c.taskId)?.title ?? 'Scheduled task',
+      category: schedMap.get(c.taskId)?.category ?? 'home',
+      date: c.completedDate,
+      pts: c.pointsEarned,
+      sortKey: c.createdAt,
+    })),
     ...allRedemptions
       .filter(r => r.redeemedAt.slice(0, 10) >= since60)
       .map(r => ({
@@ -142,11 +158,12 @@ export default async function HistoryPage() {
 
   // ── Totals ─────────────────────────────────────────────────────────────────
   const totalHabitCompletions = completions.length
-  const totalTaskCompletions = completedTasks.length
+  const totalTaskCompletions = completedTasks.length + schedCompletions.length
   const habitPtsEarned = completions.reduce((s, c) => s + c.pointsEarned, 0)
   const taskPtsEarned = completedTasks.reduce((s, t) => s + t.points, 0)
   const bonusPtsEarned = bonusSessions.reduce((s, b) => s + (b.pointsEarned ?? 0), 0)
-  const totalPtsEarned = habitPtsEarned + taskPtsEarned + bonusPtsEarned
+  const schedPtsEarned = schedCompletions.reduce((s, c) => s + c.pointsEarned, 0)
+  const totalPtsEarned = habitPtsEarned + taskPtsEarned + bonusPtsEarned + schedPtsEarned
   const totalPtsSpent = allRedemptions.reduce((s, r) => s + r.pointsSpent, 0)
 
   return (

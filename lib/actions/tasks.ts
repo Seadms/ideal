@@ -55,8 +55,10 @@ export async function uncompleteTask(taskId: string) {
 
   // Exact atomic reversal of the award, from whichever wallet it credited.
   if (task.source === 'wife') {
+    // Clamped: the points may already be reserved against a pending claim, and
+    // a negative balance would silently block every later redemption.
     await db.update(userStats)
-      .set({ goodBoyPoints: sql`${userStats.goodBoyPoints} - ${task.points}` })
+      .set({ goodBoyPoints: sql`MAX(0, ${userStats.goodBoyPoints} - ${task.points})` })
       .where(eq(userStats.id, 1))
   } else {
     await db.update(userStats).set({

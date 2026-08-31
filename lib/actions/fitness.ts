@@ -15,12 +15,12 @@ export async function logNutritionEntry(data: {
   fats: number
 }) {
   await db.insert(nutritionEntries).values({ id: randomUUID(), date: todayString(), ...data })
-  revalidatePath('/gym')
+  revalidatePath('/body')
 }
 
 export async function deleteNutritionEntry(id: string) {
   await db.delete(nutritionEntries).where(eq(nutritionEntries.id, id))
-  revalidatePath('/gym')
+  revalidatePath('/body')
 }
 
 /**
@@ -40,5 +40,5 @@ export async function updateNutritionGoals(data: {
   } else {
     await db.insert(nutritionGoals).values({ id: 1, ...data })
   }
-  revalidatePath('/gym')
+  revalidatePath('/body')
 }

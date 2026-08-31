@@ -8,7 +8,7 @@ import { checkStreakOnLoad } from '@/lib/actions/habits'
 import { clearStaleWifeTasks } from '@/lib/actions/tasks'
 import {
   todayString, daysAgoString, getLast7Days, getLast7DaysStatus,
-  calculateHabitStreak, getWeekStart,
+  calculateHabitStreak, getWeekStart, todayDow as appTodayDow,
 } from '@/lib/utils'
 import { StatsHeader } from '@/components/dashboard/stats-header'
 import { WeekSummary } from '@/components/dashboard/week-summary'
@@ -34,7 +34,7 @@ async function DashboardContent() {
 
   // All dashboard queries fire in parallel — sequential awaits made every
   // load pay ~6 database round trips back to back (noticeable on Turso).
-  const todayDow = new Date().getDay() // 0=Sun … 6=Sat
+  const todayDow = appTodayDow() // 0=Sun … 6=Sat, in the app's timezone
   const [allHabits, allCompletions, allTasks, allScheduledTasks, todayScheduledCompletions, statsRows, recentSleep] = await Promise.all([
     // Habits — sorted by user-defined sort order
     db.select().from(habits)

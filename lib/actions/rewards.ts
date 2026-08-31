@@ -5,7 +5,7 @@ import { randomUUID } from 'crypto'
 import { and, eq, isNotNull, sql } from 'drizzle-orm'
 import { db } from '@/lib/db'
 import { rewardClaims, rewardRedemptions, rewards, userStats } from '@/lib/db/schema'
-import { todayString } from '@/lib/utils'
+import { nowString, todayString } from '@/lib/utils'
 
 export async function redeemReward(rewardId: string): Promise<{ success: boolean; error?: string }> {
   const rewardRows = await db.select().from(rewards).where(eq(rewards.id, rewardId))
@@ -49,7 +49,7 @@ export async function redeemReward(rewardId: string): Promise<{ success: boolean
   await db.insert(rewardRedemptions).values({ id: randomUUID(), rewardId, pointsSpent: reward.cost })
   const filled = !!reward.maxRedemptions && reward.timesRedeemed + 1 >= reward.maxRedemptions
   await db.update(rewards)
-    .set({ timesRedeemed: reward.timesRedeemed + 1, ...(filled && !reward.soldOutAt ? { soldOutAt: new Date().toISOString() } : {}) })
+    .set({ timesRedeemed: reward.timesRedeemed + 1, ...(filled && !reward.soldOutAt ? { soldOutAt: nowString() } : {}) })
     .where(eq(rewards.id, rewardId))
   await db.update(userStats).set({
     totalPointsSpent: sql`${userStats.totalPointsSpent} + ${reward.cost}`,
@@ -68,7 +68,7 @@ export async function resolveClaim(claimId: string, decision: 'accept' | 'declin
   if (!claim || claim.status !== 'pending') return { ok: false }
 
   await db.update(rewardClaims)
-    .set({ status: decision === 'accept' ? 'accepted' : 'declined', resolvedAt: new Date().toISOString() })
+    .set({ status: decision === 'accept' ? 'accepted' : 'declined', resolvedAt: nowString() })
     .where(eq(rewardClaims.id, claimId))
 
   const { sendPushToAll } = await import('@/lib/push-server')
@@ -79,7 +79,7 @@ export async function resolveClaim(claimId: string, decision: 'accept' | 'declin
         const newCount = rw.timesRedeemed + 1
         const filled = !!rw.maxRedemptions && newCount >= rw.maxRedemptions
         await db.update(rewards)
-          .set({ timesRedeemed: newCount, ...(filled && !rw.soldOutAt ? { soldOutAt: new Date().toISOString() } : {}) })
+          .set({ timesRedeemed: newCount, ...(filled && !rw.soldOutAt ? { soldOutAt: nowString() } : {}) })
           .where(eq(rewards.id, claim.rewardId))
       }
     }

@@ -288,7 +288,7 @@ async function doInitDb() {
     `UPDATE habits SET frequency_per_week = 4 WHERE title IN ('Hit PPLUL gym split', 'Hit gym split') AND frequency_per_week IN (5, 7)`,
     `UPDATE habits SET description = 'Upper A / Lower A / Upper B / Lower B — follow the current rotation' WHERE title IN ('Hit PPLUL gym split', 'Hit gym split')`,
     `UPDATE habits SET title = 'Hit gym split' WHERE title = 'Hit PPLUL gym split'`,
-    `UPDATE habits SET description = 'About 13 min: ankles, hips, hamstrings, t-spine. Checklist on the Gym page' WHERE title = 'Mobility routine'`,
+    `UPDATE habits SET description = 'About 13 min: ankles, hips, hamstrings, t-spine. Checklist on the Body page' WHERE title = 'Mobility routine'`,
     `ALTER TABLE split_exercises ADD COLUMN exercise_type TEXT NOT NULL DEFAULT 'strength'`,
     `ALTER TABLE split_exercises ADD COLUMN target TEXT`,
     `UPDATE split_exercises SET exercise_type = 'cardio' WHERE name LIKE '%Cardio%'`,
@@ -308,6 +308,7 @@ async function doInitDb() {
     `UPDATE diet_goals SET water_goal_ml = 4000 WHERE id = 1 AND water_goal_ml IN (2750, 3500)`,
     `UPDATE diet_rules SET text = '135 oz water daily — a gallon plus a cup' WHERE text LIKE '%L water daily%'`,
     `UPDATE diet_meals SET notes = REPLACE(notes, '150g ', '5 oz ') WHERE notes LIKE '%150g %'`,
+    `UPDATE habits SET description = REPLACE(description, 'on the Gym page', 'on the Body page') WHERE description LIKE '%on the Gym page%'`,
     // Emoji purge: seeded exercise targets used the star emoji (U+2B50, via
     // char(11088)) for priority lifts — swap for the monochrome ★ glyph in
     // already-seeded rows.
@@ -326,7 +327,7 @@ async function doInitDb() {
   await seedHouseholdTasksIfNeeded()
   await seedHabitIfMissing(
     'Mobility routine',
-    'About 10 min: squat hold, couch stretch, hangs. Checklist on the Gym page',
+    'About 10 min: squat hold, couch stretch, hangs. Checklist on the Body page',
     30, 7,
   )
   // Four gym days instead of five leaves a weekly deficit gap. Steps close it

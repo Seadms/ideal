@@ -18,7 +18,7 @@ export async function upsertDietGoals(data: {
   } else {
     await db.insert(dietGoals).values({ id: 1, ...data })
   }
-  revalidatePath('/diet')
+  revalidatePath('/body')
 }
 
 // Single source of truth for daily macro targets. Both the diet page and the
@@ -36,8 +36,7 @@ export async function updateDailyMacroTargets(data: {
   } else {
     await db.insert(dietGoals).values({ id: 1, ...macros, waterGoalMl: 4000 })
   }
-  revalidatePath('/diet')
-  revalidatePath('/gym')
+  revalidatePath('/body')
 }
 
 export async function updateDietMeal(id: string, data: {
@@ -50,7 +49,7 @@ export async function updateDietMeal(id: string, data: {
   notes?: string | null
 }) {
   await db.update(dietMeals).set(data).where(eq(dietMeals.id, id))
-  revalidatePath('/diet')
+  revalidatePath('/body')
 }
 
 export async function addDietRule(category: string, text: string) {
@@ -59,27 +58,27 @@ export async function addDietRule(category: string, text: string) {
     .where(eq(dietRules.category, category))
   const order = (rows[0]?.m ?? 0) + 1
   await db.insert(dietRules).values({ id: randomUUID(), category, text: text.trim(), ruleOrder: order })
-  revalidatePath('/diet')
+  revalidatePath('/body')
 }
 
 export async function updateDietRule(id: string, text: string) {
   if (!text.trim()) return
   await db.update(dietRules).set({ text: text.trim() }).where(eq(dietRules.id, id))
-  revalidatePath('/diet')
+  revalidatePath('/body')
 }
 
 export async function deleteDietRule(id: string) {
   await db.delete(dietRules).where(eq(dietRules.id, id))
-  revalidatePath('/diet')
+  revalidatePath('/body')
 }
 
 export async function logWater(amountMl: number) {
   if (amountMl <= 0) return
   await db.insert(waterLogs).values({ id: randomUUID(), date: todayString(), amountMl })
-  revalidatePath('/diet')
+  revalidatePath('/body')
 }
 
 export async function deleteWaterLog(id: string) {
   await db.delete(waterLogs).where(eq(waterLogs.id, id))
-  revalidatePath('/diet')
+  revalidatePath('/body')
 }
