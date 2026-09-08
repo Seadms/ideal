@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { isUnlocked } from '@/lib/auth'
 import { todayString } from '@/lib/utils'
 import {
   habits, tasks, rewards, rewardRedemptions, userStats, habitCompletions,
@@ -10,6 +11,9 @@ import {
 } from '@/lib/db/schema'
 
 export async function GET() {
+  // This hands over the entire database — never without a session.
+  if (!await isUnlocked()) return new NextResponse('Unauthorized', { status: 401 })
+
   // Local mode: serve the raw SQLite file
   if (!process.env.TURSO_DATABASE_URL) {
     try {

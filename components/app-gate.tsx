@@ -1,17 +1,18 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useTransition } from 'react'
 import { usePathname } from 'next/navigation'
 import { Lock } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
+import { unlockApp } from '@/lib/auth'
 
-// ponytail: soft client-side lock — keeps Kayd (and casual snoopers) out of
-// Daniel's app, not a real auth boundary (the password ships in the bundle and
-// the data is reachable via the API). Upgrade to a server-verified session if
-// this ever needs to resist someone technical.
-const PASSWORD = '27312004'
-const KEY = 'app-unlocked'
+// The password is checked on the server (lib/auth.ts), which sets an httpOnly
+// cookie — that cookie is what actually guards the backup routes. This flag is
+// only so an unlocked device skips the screen; it grants nothing on its own.
+// Bumped: devices unlocked under the old client-only check have no cookie, so
+// they re-enter the password once to get a real session.
+const KEY = 'app-unlocked-v2'
 
 export function AppGate({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
@@ -19,6 +20,7 @@ export function AppGate({ children }: { children: React.ReactNode }) {
   const [unlocked, setUnlocked] = useState(false)
   const [entry, setEntry] = useState('')
   const [wrong, setWrong] = useState(false)
+  const [checking, startCheck] = useTransition()
 
   useEffect(() => {
     // Reading localStorage is client-only, so it happens after mount. A plain
@@ -32,13 +34,15 @@ export function AppGate({ children }: { children: React.ReactNode }) {
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (entry === PASSWORD) {
-      localStorage.setItem(KEY, '1')
-      setUnlocked(true)
-    } else {
-      setWrong(true)
-      setEntry('')
-    }
+    startCheck(async () => {
+      if (await unlockApp(entry)) {
+        localStorage.setItem(KEY, '1')
+        setUnlocked(true)
+      } else {
+        setWrong(true)
+        setEntry('')
+      }
+    })
   }
 
   if (!mounted) return null
@@ -62,7 +66,9 @@ export function AppGate({ children }: { children: React.ReactNode }) {
           onChange={e => { setEntry(e.target.value); setWrong(false) }}
           placeholder="••••••••"
         />
-        <Button type="submit" className="w-full" disabled={!entry}>Unlock</Button>
+        <Button type="submit" className="w-full" disabled={!entry || checking}>
+          {checking ? 'Checking...' : 'Unlock'}
+        </Button>
         {wrong && <p className="text-center text-xs text-rose-400">Wrong password.</p>}
       </form>
     </div>

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { isUnlocked } from '@/lib/auth'
 import {
   habits, tasks, rewards, rewardRedemptions, userStats, habitCompletions,
   bonusTaskSessions, bonusTaskPool, scheduledTasks, scheduledTaskCompletions,
@@ -9,6 +10,9 @@ import {
 } from '@/lib/db/schema'
 
 export async function POST(request: NextRequest) {
+  // This replaces the entire database — never without a session.
+  if (!await isUnlocked()) return new NextResponse('Unauthorized', { status: 401 })
+
   try {
     const formData = await request.formData()
     const file = formData.get('file') as File | null
