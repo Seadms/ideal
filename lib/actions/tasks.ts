@@ -4,7 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { randomUUID } from 'crypto'
 import { and, eq, sql } from 'drizzle-orm'
 import { db } from '@/lib/db'
-import { tasks, userStats } from '@/lib/db/schema'
+import { tasks, userStats, SELF_TASK_POINTS } from '@/lib/db/schema'
 import { levelFromPoints, nowString, todayString } from '@/lib/utils'
 import type { CompletionResult } from './habits'
 
@@ -85,9 +85,9 @@ export async function clearCompletedTasks() {
 }
 
 export async function createTask(data: {
-  title: string; description?: string; points: number; isMinimumViable: boolean; category: string; dueDate?: string
+  title: string; description?: string; isMinimumViable: boolean; category: string; dueDate?: string
 }) {
-  await db.insert(tasks).values({ id: randomUUID(), ...data })
+  await db.insert(tasks).values({ id: randomUUID(), ...data, points: SELF_TASK_POINTS })
   revalidatePath('/')
 }
 
@@ -142,7 +142,7 @@ export async function createWifeTask(title: string, points: number): Promise<{ o
 }
 
 export async function updateTask(id: string, data: Partial<{
-  title: string; description: string; points: number; isMinimumViable: boolean; category: string; dueDate: string; isActive: boolean
+  title: string; description: string; isMinimumViable: boolean; category: string; dueDate: string; isActive: boolean
 }>) {
   await db.update(tasks).set(data).where(eq(tasks.id, id))
   revalidatePath('/')

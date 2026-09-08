@@ -1,6 +1,10 @@
 import { sql } from 'drizzle-orm'
 import { integer, real, sqliteTable, text } from 'drizzle-orm/sqlite-core'
 
+// Every self task is worth the same flat amount — no per-task pricing.
+// Wife tasks keep their own variable good-boy price (createWifeTask).
+export const SELF_TASK_POINTS = 10
+
 export const habits = sqliteTable('habits', {
   id: text('id').primaryKey(),
   title: text('title').notNull(),
@@ -18,7 +22,7 @@ export const tasks = sqliteTable('tasks', {
   id: text('id').primaryKey(),
   title: text('title').notNull(),
   description: text('description'),
-  points: integer('points').notNull().default(100),
+  points: integer('points').notNull().default(SELF_TASK_POINTS),
   isMinimumViable: integer('is_minimum_viable', { mode: 'boolean' }).notNull().default(false),
   category: text('category').notNull().default('general'),
   isCompleted: integer('is_completed', { mode: 'boolean' }).notNull().default(false),

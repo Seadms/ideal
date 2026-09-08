@@ -20,7 +20,6 @@ export function EditTaskDialog({ task, open, onClose }: EditTaskDialogProps) {
   const [form, setForm] = useState({
     title: task.title,
     description: task.description ?? '',
-    points: String(task.points),
     category: task.category,
     dueDate: task.dueDate ?? '',
   })
@@ -29,7 +28,7 @@ export function EditTaskDialog({ task, open, onClose }: EditTaskDialogProps) {
     e.preventDefault()
     if (!form.title.trim()) return
     startTransition(async () => {
-      await updateTask(task.id, { ...form, points: Number(form.points) || 1, dueDate: form.dueDate || undefined })
+      await updateTask(task.id, { ...form, dueDate: form.dueDate || undefined })
       onClose()
     })
   }
@@ -52,17 +51,11 @@ export function EditTaskDialog({ task, open, onClose }: EditTaskDialogProps) {
           <label className="block text-xs text-zinc-500 mb-1.5">Description</label>
           <Textarea rows={2} value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} />
         </div>
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="block text-xs text-zinc-500 mb-1.5">Points</label>
-            <Input type="number" min={1} max={2000} value={form.points} onChange={e => setForm(f => ({ ...f, points: e.target.value }))} />
-          </div>
-          <div>
-            <label className="block text-xs text-zinc-500 mb-1.5">Category</label>
-            <Select value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value }))}>
-              {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
-            </Select>
-          </div>
+        <div>
+          <label className="block text-xs text-zinc-500 mb-1.5">Category</label>
+          <Select value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value }))}>
+            {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+          </Select>
         </div>
         <div>
           <label className="block text-xs text-zinc-500 mb-1.5">Due date</label>

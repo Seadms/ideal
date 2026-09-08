@@ -18,7 +18,6 @@ export function AddTaskDialog({ open, onClose }: AddTaskDialogProps) {
   const [form, setForm] = useState({
     title: '',
     description: '',
-    points: '100',
     category: 'general',
     dueDate: '',
   })
@@ -27,8 +26,8 @@ export function AddTaskDialog({ open, onClose }: AddTaskDialogProps) {
     e.preventDefault()
     if (!form.title.trim()) return
     startTransition(async () => {
-      await createTask({ ...form, points: Number(form.points) || 1, isMinimumViable: false, dueDate: form.dueDate || undefined })
-      setForm({ title: '', description: '', points: '100', category: 'general', dueDate: '' })
+      await createTask({ ...form, isMinimumViable: false, dueDate: form.dueDate || undefined })
+      setForm({ title: '', description: '', category: 'general', dueDate: '' })
       onClose()
     })
   }
@@ -54,26 +53,14 @@ export function AddTaskDialog({ open, onClose }: AddTaskDialogProps) {
             onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
           />
         </div>
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="block text-xs text-zinc-500 mb-1.5">Points</label>
-            <Input
-              type="number"
-              min={1}
-              max={2000}
-              value={form.points}
-              onChange={e => setForm(f => ({ ...f, points: e.target.value }))}
-            />
-          </div>
-          <div>
-            <label className="block text-xs text-zinc-500 mb-1.5">Category</label>
-            <Select
-              value={form.category}
-              onChange={e => setForm(f => ({ ...f, category: e.target.value }))}
-            >
-              {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
-            </Select>
-          </div>
+        <div>
+          <label className="block text-xs text-zinc-500 mb-1.5">Category</label>
+          <Select
+            value={form.category}
+            onChange={e => setForm(f => ({ ...f, category: e.target.value }))}
+          >
+            {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+          </Select>
         </div>
         <div>
           <label className="block text-xs text-zinc-500 mb-1.5">Due date (optional)</label>
