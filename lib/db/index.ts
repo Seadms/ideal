@@ -337,6 +337,13 @@ async function doInitDb() {
     'Daily walking floor. On the 3 non-gym days this is the whole fat-loss engine',
     30, 7,
   )
+  // Ten minutes is where the research shows attention and mood gains in
+  // beginners; consistency beats duration, so the bar is low on purpose.
+  await seedHabitIfMissing(
+    'Meditate 10 min',
+    'Same time every day. Timer on, eyes closed, follow the breath. Mind wanders, come back — that IS the rep',
+    30, 7, 'self-care',
+  )
 }
 
 // ── Seed: Daily fitness habits ────────────────────────────────────────────────
@@ -344,6 +351,7 @@ async function doInitDb() {
 
 async function seedHabitIfMissing(
   title: string, description: string, points: number, frequencyPerWeek: number,
+  category = 'fitness',
 ) {
   const existing = await client.execute({
     sql: 'SELECT id FROM habits WHERE title = ? LIMIT 1',
@@ -356,8 +364,8 @@ async function seedHabitIfMissing(
   const sortOrder = Number(maxRow.rows[0]?.m ?? 0) + 1
   await client.execute({
     sql: `INSERT INTO habits (id, title, description, points, category, frequency_per_week, sort_order)
-          VALUES (?, ?, ?, ?, 'fitness', ?, ?)`,
-    args: [randomUUID(), title, description, points, frequencyPerWeek, sortOrder],
+          VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    args: [randomUUID(), title, description, points, category, frequencyPerWeek, sortOrder],
   })
 }
 
