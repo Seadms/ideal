@@ -361,23 +361,27 @@ async function seedHabitIfMissing(
   })
 }
 
-// ── Seed: Max Aesthetics Split — 4-Day Upper/Lower ───────────────────────
+// ── Seed: Max Aesthetics Split — 4-Day Upper/Lower, machine-first legs ────
 // Four gym days, every muscle trained twice a week — the highest frequency that
 // fits four sessions, and frequency is what holds muscle while cutting. Built for
 // the V-taper: side delts and lat width each get two dedicated hits, upper chest
 // is prioritised over flat pressing, and abs are trained under load so the
 // midsection reads defined once lean.
-// Hip thrusts and RDLs are non-negotiable: glutes and posterior-chain hip drive
-// carry over directly to bed, and zone 2 closes both lower days. With one fewer
-// gym day than before, that cardio plus the daily step habit is what keeps the
-// deficit moving — the lifting protects the muscle, the deficit takes the fat.
+//
+// Equipment rules (Daniel, 2026-09-11): the bench is for chest and back only —
+// leg days are all machines (leg press, hack squat, extensions, curls), and
+// shoulder pressing is on the machine, never dumbbells. Glute and hip-hinge work
+// stays non-negotiable (it carries over directly to bed), so the hip thrust and
+// RDL survive as their machine versions rather than being dropped. Zone 2 closes
+// both lower days; that plus the daily step habit is what keeps the deficit
+// moving — the lifting protects the muscle, the deficit takes the fat.
 //
 // One-time replacement: bumping SPLIT_MARKER triggers a one-time swap of any older
 // split for this one. Existing exercise_logs (workout history) are preserved.
 // Progression rule for every lift: at the TOP of the rep range with clean form,
 // add weight next session (smallest jump available), then work back up the range.
 
-const SPLIT_MARKER = 'Upper A — Chest / Delts / Back Width'
+const SPLIT_MARKER = 'Lower A — Glutes / Hams / Abs'
 
 async function seedSplitIfNeeded() {
   const rows = await client.execute('SELECT id, name FROM split_days')
@@ -397,21 +401,21 @@ async function seedSplitIfNeeded() {
       exercises: [
         { name: 'Incline Barbell Bench Press',            sets: 4, reps: 8,  weight: 0, target: '4 × 6–10 · ★ upper chest — the shelf that reads on a lean frame' },
         { name: 'Weighted Pull-ups / Lat Pulldown',       sets: 4, reps: 9,  weight: 0, target: '4 × 6–12 · ★ back width' },
-        { name: 'Seated Dumbbell Shoulder Press',         sets: 3, reps: 10, weight: 0, target: '3 × 8–12 · front delts' },
+        { name: 'Machine Shoulder Press',                 sets: 3, reps: 10, weight: 0, target: '3 × 8–12 · front delts · set the seat so the handles start at chin height' },
         { name: 'Chest-Supported Row',                    sets: 3, reps: 10, weight: 0, target: '3 × 8–12 · back thickness, no torso English' },
         { name: 'Cable Lateral Raises',                   sets: 4, reps: 15, weight: 0, target: '4 × 12–20 · ★ shoulder width — go light, no swinging' },
         { name: 'Overhead Cable Triceps Extension',       sets: 3, reps: 12, weight: 0, target: '3 × 10–15 · long head = arm size' },
-        { name: 'Incline Dumbbell Curls',                 sets: 3, reps: 10, weight: 0, target: '3 × 8–12 · biceps peak under stretch' },
+        { name: 'Machine Preacher Curl',                  sets: 3, reps: 10, weight: 0, target: '3 × 8–12 · biceps under stretch, full extension at the bottom' },
       ],
     },
     {
-      name: 'Lower A — Glutes / Hamstrings / Abs', order: 2,
+      name: 'Lower A — Glutes / Hams / Abs', order: 2,
       exercises: [
-        { name: 'Barbell Hip Thrust',                     sets: 4, reps: 10, weight: 0, target: '4 × 8–12 · ★ glutes + hip drive · full lockout, pause at top' },
-        { name: 'Romanian Deadlift',                      sets: 4, reps: 10, weight: 0, target: '4 × 8–12 · ★ hamstrings + glutes · hinge, feel the stretch' },
-        { name: 'Bulgarian Split Squat',                  sets: 3, reps: 10, weight: 0, target: '3 × 8–12 per leg · glutes + single-leg balance' },
+        { name: 'Machine Hip Thrust / Glute Drive',       sets: 4, reps: 10, weight: 0, target: '4 × 8–12 · ★ glutes + hip drive · full lockout, pause at top · no machine? cable pull-through' },
+        { name: 'Smith Machine RDL',                      sets: 4, reps: 10, weight: 0, target: '4 × 8–12 · ★ hamstrings + glutes · hinge, feel the stretch, bar stays on the legs' },
+        { name: 'Leg Press — feet high & wide',           sets: 3, reps: 12, weight: 0, target: '3 × 10–15 · glute/ham bias · sink deep, drive through the heels' },
         { name: 'Seated Leg Curl',                        sets: 3, reps: 12, weight: 0, target: '3 × 10–15 · hamstrings' },
-        { name: 'Standing Calf Raise',                    sets: 4, reps: 12, weight: 0, target: '4 × 10–15 · pause at the bottom' },
+        { name: 'Standing Calf Raise Machine',            sets: 4, reps: 12, weight: 0, target: '4 × 10–15 · pause at the bottom' },
         { name: 'Cable Crunch',                           sets: 4, reps: 13, weight: 0, target: '4 × 12–15 · ★ weighted abs — thickness is what shows at low body fat' },
         { name: 'Zone 2 Cardio',                          sets: 1, reps: 25, weight: 0, type: 'cardio', target: '25 min · conversational pace · heart health + stamina' },
       ],
@@ -432,8 +436,9 @@ async function seedSplitIfNeeded() {
     {
       name: 'Lower B — Quads / Core / Conditioning', order: 4,
       exercises: [
-        { name: 'Barbell Back Squat',                     sets: 4, reps: 6,  weight: 0, target: '4 × 5–8 · whole-body driver, keep it heavy and clean' },
-        { name: 'Hack Squat / Leg Press',                 sets: 3, reps: 12, weight: 0, target: '3 × 10–15 · quad volume without spinal load' },
+        { name: 'Leg Press',                              sets: 4, reps: 8,  weight: 0, target: '4 × 6–10 · ★ the heavy driver · feet mid-platform, full depth, keep it clean' },
+        { name: 'Hack Squat',                             sets: 3, reps: 12, weight: 0, target: '3 × 10–15 · quad volume without spinal load' },
+        { name: 'Leg Extension',                          sets: 3, reps: 13, weight: 0, target: '3 × 12–15 · ★ quad sweep · squeeze hard at the top, slow on the way down' },
         { name: 'Lying Leg Curl',                         sets: 3, reps: 12, weight: 0, target: '3 × 10–15 · hamstrings (2nd weekly hit)' },
         { name: 'Seated Calf Raise',                      sets: 3, reps: 15, weight: 0, target: '3 × 12–20 · soleus, slow negatives' },
         { name: 'Hanging Leg Raise',                      sets: 4, reps: 14, weight: 0, target: '4 × 10–20 · ★ lower abs — the pouch area, no swinging' },
@@ -442,7 +447,6 @@ async function seedSplitIfNeeded() {
     },
   ]
 
-  
   for (const day of days) {
     const dayId = randomUUID()
     await client.execute({
