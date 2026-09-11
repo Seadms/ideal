@@ -1,4 +1,4 @@
-import { calculateLevel, formatPoints, cn } from '@/lib/utils'
+import { cn } from '@/lib/utils'
 import type { UserStats } from '@/lib/db/schema'
 import { Flame } from 'lucide-react'
 import { FreezeStreakButton } from './freeze-streak-button'
@@ -15,7 +15,6 @@ interface StatsHeaderProps {
 
 const RING = {
   habit: { color: '#fa2d6e', track: 'rgba(250, 45, 110, 0.14)' },
-  xp: { color: '#c8f542', track: 'rgba(200, 245, 66, 0.13)' },
   chore: { color: '#2de8d8', track: 'rgba(45, 232, 216, 0.13)' },
 }
 
@@ -33,8 +32,6 @@ export function StatsHeader({
   stats, todayAlreadyActive,
   habitsDone, habitsTotal, choresDone, choresTotal,
 }: StatsHeaderProps) {
-  const { level, progress, pointsIntoLevel, pointsNeeded } = calculateLevel(stats.totalPointsEarned)
-
   const frac = (done: number, total: number) => (total > 0 ? done / total : 0)
 
   return (
@@ -46,7 +43,6 @@ export function StatsHeader({
             size={150}
             rings={[
               { fraction: frac(habitsDone, habitsTotal), ...RING.habit },
-              { fraction: progress / 100, ...RING.xp },
               { fraction: frac(choresDone, choresTotal), ...RING.chore },
             ]}
           />
@@ -67,22 +63,11 @@ export function StatsHeader({
         {/* Ring legend with live values */}
         <div className="w-full flex-1 min-w-0 space-y-3">
           <StatRow color={RING.habit.color} label="Habits" value={`${habitsDone}/${habitsTotal}`} />
-          <StatRow color={RING.xp.color} label={`Level ${level}`} value={`${formatPoints(pointsIntoLevel)}/${formatPoints(pointsNeeded)} xp`} />
           <StatRow color={RING.chore.color} label="Chores" value={choresTotal > 0 ? `${choresDone}/${choresTotal}` : '—'} />
+          <div className="pt-1">
+            <FreezeStreakButton todayAlreadyActive={todayAlreadyActive} />
+          </div>
         </div>
-      </div>
-
-      {/* Points balance */}
-      <div className="mt-4 flex items-center justify-between border-t border-zinc-800/70 pt-4">
-        <div>
-          <p className="font-display text-2xl font-bold tabular-nums text-slate-300 leading-none">
-            {formatPoints(stats.currentPoints)}
-          </p>
-          <p className="text-xs text-zinc-600 mt-1">
-            points · {formatPoints(stats.totalPointsEarned)} lifetime
-          </p>
-        </div>
-        <FreezeStreakButton todayAlreadyActive={todayAlreadyActive} />
       </div>
     </section>
   )

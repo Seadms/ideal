@@ -1,14 +1,13 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import { useLevelUp } from './use-level-up'
 import { completeTask, uncompleteTask } from '@/lib/actions/tasks'
 import type { Task } from '@/lib/db/schema'
 import { cn } from '@/lib/utils'
 import { CategoryIcon } from '@/components/ui/category-icon'
 import { useToday } from '@/lib/use-today'
 import { Badge } from '@/components/ui/badge'
-import { Pencil, Star } from 'lucide-react'
+import { Pencil } from 'lucide-react'
 import { EditTaskDialog } from './edit-task-dialog'
 
 interface TaskItemProps {
@@ -18,7 +17,6 @@ interface TaskItemProps {
 export function TaskItem({ task }: TaskItemProps) {
   const [isPending, startTransition] = useTransition()
   const [editOpen, setEditOpen] = useState(false)
-  const { levelUpLevel, triggerLevelUp } = useLevelUp()
 
   // null during SSR/hydration, so overdue/due-today styling only applies once
   // the client's local day is known — the server's UTC day can differ.
@@ -31,8 +29,7 @@ export function TaskItem({ task }: TaskItemProps) {
       if (task.isCompleted) {
         await uncompleteTask(task.id)
       } else {
-        const result = await completeTask(task.id)
-        if (result.leveledUp) triggerLevelUp(result.newLevel)
+        await completeTask(task.id)
       }
     })
   }
@@ -92,8 +89,8 @@ export function TaskItem({ task }: TaskItemProps) {
           )}
         </div>
 
-        {/* Right side: controls first, badge pinned to the right edge.
-            Wife tasks are hers to edit — he can only complete them. */}
+        {/* Right side: controls, then the good-boy badge on wife tasks only —
+            his own tasks carry no points. Wife tasks are hers to edit. */}
         <div className="flex items-center gap-1.5 shrink-0">
           {task.source !== 'wife' && (
             <button
@@ -104,20 +101,12 @@ export function TaskItem({ task }: TaskItemProps) {
               <Pencil size={12} />
             </button>
           )}
-          <Badge variant={task.isCompleted ? 'muted' : task.source === 'wife' ? 'wife' : isOverdue ? 'rose' : 'gold'} className="min-w-[52px] justify-center">
-            +{task.points}
-          </Badge>
+          {task.source === 'wife' && (
+            <Badge variant={task.isCompleted ? 'muted' : 'wife'} className="min-w-[52px] justify-center">
+              +{task.points}
+            </Badge>
+          )}
         </div>
-
-        {/* Level-up overlay */}
-        {levelUpLevel && (
-          <div className="absolute inset-0 flex items-center justify-center rounded-xl bg-violet-950/90 border border-violet-500/40 pointer-events-none animate-fade-in">
-            <p className="flex items-center gap-1.5 text-violet-200 font-semibold text-sm tracking-wide">
-              <Star size={14} className="shrink-0 fill-current" />
-              Level {levelUpLevel} unlocked
-            </p>
-          </div>
-        )}
       </div>
 
       <EditTaskDialog task={task} open={editOpen} onClose={() => setEditOpen(false)} />

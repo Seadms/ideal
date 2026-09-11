@@ -97,14 +97,6 @@ async function DashboardContent() {
   const selfActive = activeTasks.filter(t => t.source !== 'wife')
   const selfCompleted = completedTasks.filter(t => t.source !== 'wife')
 
-  // Points earned today (habits + tasks)
-  const habitPtsToday = todayCompletions.reduce((s, c) => s + c.pointsEarned, 0)
-  const taskPtsToday = completedTasks
-    .filter(t => t.completedAt?.startsWith(today))
-    .reduce((s, t) => s + t.points, 0)
-  const scheduledPtsToday = todayScheduledCompletions.reduce((s, c) => s + c.pointsEarned, 0)
-  const pointsToday = habitPtsToday + taskPtsToday + scheduledPtsToday
-
   // Whether today is already credited (freeze or every daily habit complete)
   const todayAlreadyActive = stats.lastActiveDate === today
 
@@ -129,16 +121,10 @@ async function DashboardContent() {
 
   // Weekly summary (last 7 days)
   const weekStart = getLast7Days()[0]
-  const weekHabitPts = allCompletions
-    .filter(c => c.completedDate >= weekStart)
-    .reduce((s, c) => s + c.pointsEarned, 0)
   const weekHabitCount = allCompletions.filter(c => c.completedDate >= weekStart).length
   const weekTasksDone = allTasks.filter(t =>
     t.isCompleted && t.completedAt && t.completedAt.slice(0, 10) >= weekStart
   ).length
-  const weekTaskPts = allTasks
-    .filter(t => t.isCompleted && t.completedAt && t.completedAt.slice(0, 10) >= weekStart)
-    .reduce((s, t) => s + t.points, 0)
 
   return (
     <div className="space-y-6">
@@ -159,18 +145,12 @@ async function DashboardContent() {
 
       <WeekSummary
         habitsCompleted={weekHabitCount}
-        ptsEarned={weekHabitPts + weekTaskPts}
         tasksCompleted={weekTasksDone}
       />
 
-      {pointsToday > 0 && (
-        <div className="flex items-center gap-3 rounded-xl border border-slate-400/15 bg-slate-400/5 px-4 py-3">
-          <p className="text-sm text-slate-300">
-            <span className="font-semibold">+{pointsToday} points</span> today
-            {perfectDay && (
-              <span className="ml-2 text-emerald-400 font-medium">· perfect day ✓</span>
-            )}
-          </p>
+      {perfectDay && (
+        <div className="flex items-center gap-3 rounded-xl border border-emerald-500/15 bg-emerald-500/5 px-4 py-3">
+          <p className="text-sm font-medium text-emerald-400">Perfect day ✓ — every daily habit done</p>
         </div>
       )}
 

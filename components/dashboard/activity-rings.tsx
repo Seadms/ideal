@@ -6,9 +6,10 @@ import { useEffect, useState } from 'react'
 // fill on mount via a stroke-dashoffset transition (skipped under
 // prefers-reduced-motion through the CSS in globals.css).
 //
-//   outer  (rose #fa2d6e) — habits completed today
-//   middle (lime #c8f542) — points into the current level
-//   inner  (cyan #2de8d8) — minimum-viable-day habits
+//   outer (rose #fa2d6e) — habits completed today
+//   inner (cyan #2de8d8) — chores completed today
+//
+// Takes any number of rings; each sits one stroke-width inside the last.
 
 export interface RingValue {
   fraction: number   // 0..1
@@ -17,7 +18,7 @@ export interface RingValue {
 }
 
 interface ActivityRingsProps {
-  rings: [RingValue, RingValue, RingValue]
+  rings: RingValue[]
   size?: number
 }
 

@@ -20,7 +20,6 @@ export function EditHabitDialog({ habit, open, onClose }: EditHabitDialogProps) 
   const [form, setForm] = useState({
     title: habit.title,
     description: habit.description ?? '',
-    points: String(habit.points),
     isMinimumViable: habit.isMinimumViable,
     category: habit.category,
     frequencyPerWeek: habit.frequencyPerWeek,
@@ -30,7 +29,7 @@ export function EditHabitDialog({ habit, open, onClose }: EditHabitDialogProps) 
     e.preventDefault()
     if (!form.title.trim()) return
     startTransition(async () => {
-      await updateHabit(habit.id, { ...form, points: Number(form.points) || 1 })
+      await updateHabit(habit.id, form)
       onClose()
     })
   }
@@ -53,11 +52,7 @@ export function EditHabitDialog({ habit, open, onClose }: EditHabitDialogProps) 
           <label className="block text-xs text-zinc-500 mb-1.5">Description</label>
           <Textarea rows={2} value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} />
         </div>
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="block text-xs text-zinc-500 mb-1.5">Points</label>
-            <Input type="number" min={1} max={1000} value={form.points} onChange={e => setForm(f => ({ ...f, points: e.target.value }))} />
-          </div>
+        <div>
           <div>
             <label className="block text-xs text-zinc-500 mb-1.5">Category</label>
             <Select value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value }))}>

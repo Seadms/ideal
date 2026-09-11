@@ -1,13 +1,11 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import { useLevelUp } from './use-level-up'
 import { completeScheduledTask, uncompleteScheduledTask } from '@/lib/actions/scheduled-tasks'
 import type { ScheduledTask } from '@/lib/db/schema'
 import { cn } from '@/lib/utils'
 import { CategoryIcon } from '@/components/ui/category-icon'
-import { Badge } from '@/components/ui/badge'
-import { Pencil, Repeat2, CalendarDays, Star } from 'lucide-react'
+import { Pencil, Repeat2, CalendarDays } from 'lucide-react'
 import { EditScheduledTaskDialog } from './edit-scheduled-task-dialog'
 
 const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
@@ -30,15 +28,13 @@ interface ScheduledTaskItemProps {
 export function ScheduledTaskItem({ task, completedToday }: ScheduledTaskItemProps) {
   const [isPending, startTransition] = useTransition()
   const [editOpen, setEditOpen] = useState(false)
-  const { levelUpLevel, triggerLevelUp } = useLevelUp()
 
   const toggle = () => {
     startTransition(async () => {
       if (completedToday) {
         await uncompleteScheduledTask(task.id)
       } else {
-        const result = await completeScheduledTask(task.id)
-        if (result.leveledUp) triggerLevelUp(result.newLevel)
+        await completeScheduledTask(task.id)
       }
     })
   }
@@ -95,7 +91,7 @@ export function ScheduledTaskItem({ task, completedToday }: ScheduledTaskItemPro
           </p>
         </div>
 
-        {/* Right side: controls first, badge pinned to the right edge */}
+        {/* Right side: controls */}
         <div className="flex items-center gap-1.5 shrink-0">
           <button
             onClick={() => setEditOpen(true)}
@@ -104,20 +100,7 @@ export function ScheduledTaskItem({ task, completedToday }: ScheduledTaskItemPro
           >
             <Pencil size={12} />
           </button>
-          <Badge variant={completedToday ? 'emerald' : 'gold'} className="min-w-[52px] justify-center">
-            +{task.points}
-          </Badge>
         </div>
-
-        {/* Level-up overlay */}
-        {levelUpLevel && (
-          <div className="absolute inset-0 flex items-center justify-center rounded-xl bg-violet-950/90 border border-violet-500/40 pointer-events-none animate-fade-in">
-            <p className="flex items-center gap-1.5 text-violet-200 font-semibold text-sm tracking-wide">
-              <Star size={14} className="shrink-0 fill-current" />
-              Level {levelUpLevel} unlocked
-            </p>
-          </div>
-        )}
       </div>
 
       <EditScheduledTaskDialog task={task} open={editOpen} onClose={() => setEditOpen(false)} />

@@ -1,32 +1,28 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import { redeemReward, deleteReward, updateReward } from '@/lib/actions/rewards'
+import { redeemReward } from '@/lib/actions/rewards'
 import type { Reward } from '@/lib/db/schema'
 import { cn, formatPoints } from '@/lib/utils'
 import { CategoryIcon } from '@/components/ui/category-icon'
 import { Button } from '@/components/ui/button'
-import { Eye, EyeOff, Pencil, Trash2 } from 'lucide-react'
-import { EditRewardDialog } from './edit-reward-dialog'
 
+// Kayd's store. She stocks and edits it from /wife; here Daniel can only
+// request, and she approves.
 interface RewardCardProps {
   reward: Reward
-  currentPoints: number
-  unit?: string
-  readonly?: boolean // hide edit/delete (wife-store rewards — she manages them)
+  goodBoyPoints: number
 }
 
-export function RewardCard({ reward, currentPoints, unit = 'pts', readonly = false }: RewardCardProps) {
+export function RewardCard({ reward, goodBoyPoints }: RewardCardProps) {
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
   const [requested, setRequested] = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
-  const [editOpen, setEditOpen] = useState(false)
-  const canAfford = currentPoints >= reward.cost
+  const canAfford = goodBoyPoints >= reward.cost
   const soldOut = !!reward.maxRedemptions && reward.timesRedeemed >= reward.maxRedemptions
   const remaining = reward.maxRedemptions ? reward.maxRedemptions - reward.timesRedeemed : null
   const available = reward.isAvailable && !soldOut
-  const needsApproval = reward.source === 'wife' // request → she approves
 
   const handleRedeem = () => {
     if (!showConfirm) { setShowConfirm(true); return }
@@ -34,26 +30,12 @@ export function RewardCard({ reward, currentPoints, unit = 'pts', readonly = fal
     startTransition(async () => {
       const result = await redeemReward(reward.id)
       if (!result.success) setError(result.error ?? 'Failed')
-      else if (needsApproval) setRequested(true)
+      else setRequested(true)
       setShowConfirm(false)
     })
   }
 
-  const handleDelete = () => {
-    startTransition(async () => {
-      await deleteReward(reward.id)
-    })
-  }
-
-  const handleToggleAvailable = () => {
-    startTransition(async () => {
-      await updateReward(reward.id, { isAvailable: !available })
-    })
-  }
-
   return (
-    <>
-    <EditRewardDialog reward={reward} open={editOpen} onClose={() => setEditOpen(false)} />
     <div className={cn(
       'group relative flex flex-col rounded-2xl border p-5 transition-all duration-200',
       !available
@@ -62,36 +44,6 @@ export function RewardCard({ reward, currentPoints, unit = 'pts', readonly = fal
           ? 'border-zinc-800 bg-zinc-900/60 hover:border-zinc-700'
           : 'border-zinc-800/50 bg-zinc-900/30 opacity-60',
     )}>
-      {/* Actions (edit / toggle / delete) */}
-      <div className={cn('absolute top-3 right-3 flex gap-1 hover-reveal transition-opacity', readonly && 'hidden')}>
-        <button
-          onClick={() => setEditOpen(true)}
-          title="Edit reward"
-          className="h-7 w-7 flex items-center justify-center rounded hover:bg-zinc-800 transition-colors"
-        >
-          <Pencil size={13} className="text-zinc-500" />
-        </button>
-        <button
-          onClick={handleToggleAvailable}
-          disabled={isPending}
-          title={available ? 'Hide reward' : 'Show reward'}
-          className="h-7 w-7 flex items-center justify-center rounded hover:bg-zinc-800 transition-colors"
-        >
-          {available
-            ? <EyeOff size={13} className="text-zinc-500" />
-            : <Eye size={13} className="text-zinc-400" />}
-        </button>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-7 w-7"
-          onClick={handleDelete}
-          disabled={isPending}
-        >
-          <Trash2 size={13} className="text-rose-400" />
-        </Button>
-      </div>
-
       {/* Category marker */}
       <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-lg border border-zinc-800 bg-zinc-900">
         <CategoryIcon category={reward.category} size={16} className="text-zinc-400" />
@@ -108,7 +60,7 @@ export function RewardCard({ reward, currentPoints, unit = 'pts', readonly = fal
       <div className="mt-auto space-y-2.5 pt-3 border-t border-zinc-800">
         {/* Cost */}
         <div className="flex items-center justify-between">
-          <span className="text-sm font-semibold text-zinc-200">{formatPoints(reward.cost)} {unit}</span>
+          <span className="text-sm font-semibold text-zinc-200">{formatPoints(reward.cost)} good boy pts</span>
           {remaining !== null ? (
             <span className="text-xs text-zinc-600">{remaining > 0 ? `${remaining} left` : 'none left'}</span>
           ) : reward.timesRedeemed > 0 ? (
@@ -136,10 +88,10 @@ export function RewardCard({ reward, currentPoints, unit = 'pts', readonly = fal
               : !available
               ? 'Unavailable'
               : showConfirm
-                ? (needsApproval ? 'Send request?' : 'Confirm redeem?')
+                ? 'Send request?'
                 : canAfford
-                  ? (needsApproval ? 'Request' : 'Redeem')
-                  : `${formatPoints(reward.cost - currentPoints)} ${unit} short`}
+                  ? 'Request'
+                  : `${formatPoints(reward.cost - goodBoyPoints)} good boy pts short`}
         </Button>
         )}
 
@@ -153,6 +105,5 @@ export function RewardCard({ reward, currentPoints, unit = 'pts', readonly = fal
         )}
       </div>
     </div>
-    </>
   )
 }

@@ -4,24 +4,20 @@ import { revalidatePath } from 'next/cache'
 import { randomUUID } from 'crypto'
 import { and, eq, sql } from 'drizzle-orm'
 import { db } from '@/lib/db'
-import { tasks, userStats, SELF_TASK_POINTS } from '@/lib/db/schema'
-import { levelFromPoints, nowString, todayString } from '@/lib/utils'
-import type { CompletionResult } from './habits'
+import { tasks, userStats } from '@/lib/db/schema'
+import { nowString, todayString } from '@/lib/utils'
 
-export async function completeTask(taskId: string): Promise<CompletionResult> {
+export async function completeTask(taskId: string) {
   const rows = await db.select().from(tasks).where(eq(tasks.id, taskId))
   const task = rows[0]
-  if (!task || !task.isActive || task.isCompleted) return { leveledUp: false, newLevel: 1, pointsEarned: 0 }
-
-  const statsRows = await db.select().from(userStats).where(eq(userStats.id, 1))
-  const stats = statsRows[0]
-  if (!stats) return { leveledUp: false, newLevel: 1, pointsEarned: 0 }
+  if (!task || !task.isActive || task.isCompleted) return
 
   await db.update(tasks)
     .set({ isCompleted: true, completedAt: nowString() })
     .where(eq(tasks.id, taskId))
 
-  // Wife tasks pay good-boy points (separate currency, no XP/level).
+  // Wife tasks are the only ones that pay anything: good-boy points. His own
+  // tasks just get checked off.
   if (task.source === 'wife') {
     await db.update(userStats)
       .set({ goodBoyPoints: sql`${userStats.goodBoyPoints} + ${task.points}` })
@@ -31,19 +27,9 @@ export async function completeTask(taskId: string): Promise<CompletionResult> {
       { title: 'Daniel finished your task', body: `${task.title} (+${task.points} good boy points)`, url: '/wife' },
       'wife',
     )
-    revalidatePath('/')
-    return { leveledUp: false, newLevel: levelFromPoints(stats.totalPointsEarned), pointsEarned: task.points }
   }
 
-  const oldLevel = levelFromPoints(stats.totalPointsEarned)
-  await db.update(userStats).set({
-    totalPointsEarned: sql`${userStats.totalPointsEarned} + ${task.points}`,
-    currentPoints: sql`${userStats.currentPoints} + ${task.points}`,
-  }).where(eq(userStats.id, 1))
-
-  const newLevel = levelFromPoints(stats.totalPointsEarned + task.points)
   revalidatePath('/')
-  return { leveledUp: newLevel > oldLevel, newLevel, pointsEarned: task.points }
 }
 
 export async function uncompleteTask(taskId: string) {
@@ -53,18 +39,13 @@ export async function uncompleteTask(taskId: string) {
 
   await db.update(tasks).set({ isCompleted: false, completedAt: null }).where(eq(tasks.id, taskId))
 
-  // Exact atomic reversal of the award, from whichever wallet it credited.
+  // Wife tasks are the only award to reverse. Clamped: the points may already
+  // be reserved against a pending claim, and a negative balance would silently
+  // block every later redemption.
   if (task.source === 'wife') {
-    // Clamped: the points may already be reserved against a pending claim, and
-    // a negative balance would silently block every later redemption.
     await db.update(userStats)
       .set({ goodBoyPoints: sql`MAX(0, ${userStats.goodBoyPoints} - ${task.points})` })
       .where(eq(userStats.id, 1))
-  } else {
-    await db.update(userStats).set({
-      totalPointsEarned: sql`${userStats.totalPointsEarned} - ${task.points}`,
-      currentPoints: sql`${userStats.currentPoints} - ${task.points}`,
-    }).where(eq(userStats.id, 1))
   }
   revalidatePath('/')
 }
@@ -87,7 +68,7 @@ export async function clearCompletedTasks() {
 export async function createTask(data: {
   title: string; description?: string; isMinimumViable: boolean; category: string; dueDate?: string
 }) {
-  await db.insert(tasks).values({ id: randomUUID(), ...data, points: SELF_TASK_POINTS })
+  await db.insert(tasks).values({ id: randomUUID(), ...data })
   revalidatePath('/')
 }
 

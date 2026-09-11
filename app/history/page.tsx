@@ -1,17 +1,18 @@
 import { and, eq, gte, sql } from 'drizzle-orm'
 import { db, initDb } from '@/lib/db'
-import { habits, habitCompletions, tasks, rewards, rewardRedemptions, bonusTaskSessions, bonusTaskPool, scheduledTasks, scheduledTaskCompletions } from '@/lib/db/schema'
-import { todayString, daysAgoString, formatPoints, cn } from '@/lib/utils'
+import { habits, habitCompletions, tasks, bonusTaskSessions, bonusTaskPool, scheduledTasks, scheduledTaskCompletions } from '@/lib/db/schema'
+import { todayString, daysAgoString, cn } from '@/lib/utils'
 import { CategoryIcon } from '@/components/ui/category-icon'
 import { PageHeader } from '@/components/ui/page-header'
 
 export const dynamic = 'force-dynamic'
 
-function heatColor(pts: number): string {
-  if (pts === 0) return 'bg-zinc-800/80'
-  if (pts < 50) return 'bg-emerald-900'
-  if (pts < 150) return 'bg-emerald-700/80'
-  if (pts < 300) return 'bg-emerald-600'
+// Shade by how much got done that day (habits, chores, tasks, bonus — one each).
+function heatColor(count: number): string {
+  if (count === 0) return 'bg-zinc-800/80'
+  if (count < 3) return 'bg-emerald-900'
+  if (count < 6) return 'bg-emerald-700/80'
+  if (count < 10) return 'bg-emerald-600'
   return 'bg-emerald-500'
 }
 
@@ -32,20 +33,18 @@ export default async function HistoryPage() {
   const since60 = daysAgoString(60)
   const since34 = daysAgoString(34)
 
-  const [completions, allHabits, completedTasks, allRedemptions, allRewards, bonusSessions, bonusPool, schedCompletions, allScheduled] = await Promise.all([
+  const [completions, allHabits, completedTasks, bonusSessions, bonusPool, schedCompletions, allScheduled] = await Promise.all([
     db.select().from(habitCompletions).where(gte(habitCompletions.completedDate, since60)),
     db.select().from(habits),
     db.select().from(tasks).where(
       and(eq(tasks.isCompleted, true), sql`${tasks.completedAt} >= ${since60}`),
     ),
-    db.select().from(rewardRedemptions),
-    db.select({ id: rewards.id, title: rewards.title, category: rewards.category }).from(rewards),
     db.select().from(bonusTaskSessions).where(
       and(eq(bonusTaskSessions.state, 'completed'), gte(bonusTaskSessions.date, since60)),
     ),
     db.select().from(bonusTaskPool),
-    // Recurring chores are a large share of daily points — without these the
-    // heatmap, the feed and the totals all under-report a normal day.
+    // Recurring chores are a large share of a normal day — without these the
+    // heatmap, the feed and the totals all under-report it.
     db.select().from(scheduledTaskCompletions).where(gte(scheduledTaskCompletions.completedDate, since60)),
     db.select().from(scheduledTasks),
   ])
@@ -53,26 +52,25 @@ export default async function HistoryPage() {
   const bonusPoolMap = new Map(bonusPool.map(t => [t.id, t]))
   const schedMap = new Map(allScheduled.map(t => [t.id, t]))
   const habitMap = new Map(allHabits.map(h => [h.id, h]))
-  const rewardMap = new Map(allRewards.map(r => [r.id, r]))
 
   // ── Heatmap ────────────────────────────────────────────────────────────────
   const heatDays = Array.from({ length: 35 }, (_, i) => daysAgoString(34 - i))
-  const dailyPts = new Map<string, number>()
-  const addPts = (date: string, pts: number) =>
-    dailyPts.set(date, (dailyPts.get(date) ?? 0) + pts)
+  const dailyCount = new Map<string, number>()
+  const bump = (date: string) =>
+    dailyCount.set(date, (dailyCount.get(date) ?? 0) + 1)
 
   completions
     .filter(c => c.completedDate >= since34)
-    .forEach(c => addPts(c.completedDate, c.pointsEarned))
+    .forEach(c => bump(c.completedDate))
   completedTasks
     .filter(t => t.completedAt && t.completedAt.slice(0, 10) >= since34)
-    .forEach(t => addPts(t.completedAt!.slice(0, 10), t.points))
+    .forEach(t => bump(t.completedAt!.slice(0, 10)))
   bonusSessions
     .filter(s => s.date >= since34)
-    .forEach(s => addPts(s.date, s.pointsEarned ?? 0))
+    .forEach(s => bump(s.date))
   schedCompletions
     .filter(c => c.completedDate >= since34)
-    .forEach(c => addPts(c.completedDate, c.pointsEarned))
+    .forEach(c => bump(c.completedDate))
 
   // Day-of-week column labels aligned to the grid start day
   const startDow = new Date(since34 + 'T12:00:00').getDay()
@@ -80,11 +78,10 @@ export default async function HistoryPage() {
 
   // ── Activity grouped by date ───────────────────────────────────────────────
   type Entry = {
-    kind: 'habit' | 'task' | 'bonus' | 'reward'
+    kind: 'habit' | 'task' | 'bonus'
     title: string
     category: string
     date: string
-    pts: number
     sortKey: string
   }
 
@@ -94,7 +91,6 @@ export default async function HistoryPage() {
       title: habitMap.get(c.habitId)?.title ?? 'Unknown habit',
       category: habitMap.get(c.habitId)?.category ?? 'general',
       date: c.completedDate,
-      pts: c.pointsEarned,
       sortKey: c.completedDate,
     })),
     ...completedTasks
@@ -104,7 +100,6 @@ export default async function HistoryPage() {
         title: t.title,
         category: t.category,
         date: t.completedAt!.slice(0, 10),
-        pts: t.points,
         sortKey: t.completedAt!,
       })),
     ...bonusSessions.map(s => ({
@@ -112,7 +107,6 @@ export default async function HistoryPage() {
       title: bonusPoolMap.get(s.taskId)?.title ?? 'Bonus task',
       category: bonusPoolMap.get(s.taskId)?.category ?? 'general',
       date: s.date,
-      pts: s.pointsEarned ?? 0,
       sortKey: s.createdAt,
     })),
     ...schedCompletions.map(c => ({
@@ -120,19 +114,8 @@ export default async function HistoryPage() {
       title: schedMap.get(c.taskId)?.title ?? 'Scheduled task',
       category: schedMap.get(c.taskId)?.category ?? 'home',
       date: c.completedDate,
-      pts: c.pointsEarned,
       sortKey: c.createdAt,
     })),
-    ...allRedemptions
-      .filter(r => r.redeemedAt.slice(0, 10) >= since60)
-      .map(r => ({
-        kind: 'reward' as const,
-        title: rewardMap.get(r.rewardId)?.title ?? 'Unknown reward',
-        category: rewardMap.get(r.rewardId)?.category ?? 'general',
-        date: r.redeemedAt.slice(0, 10),
-        pts: r.pointsSpent,
-        sortKey: r.redeemedAt,
-      })),
   ].sort((a, b) => b.sortKey.localeCompare(a.sortKey))
 
   // Group by date
@@ -159,12 +142,7 @@ export default async function HistoryPage() {
   // ── Totals ─────────────────────────────────────────────────────────────────
   const totalHabitCompletions = completions.length
   const totalTaskCompletions = completedTasks.length + schedCompletions.length
-  const habitPtsEarned = completions.reduce((s, c) => s + c.pointsEarned, 0)
-  const taskPtsEarned = completedTasks.reduce((s, t) => s + t.points, 0)
-  const bonusPtsEarned = bonusSessions.reduce((s, b) => s + (b.pointsEarned ?? 0), 0)
-  const schedPtsEarned = schedCompletions.reduce((s, c) => s + c.pointsEarned, 0)
-  const totalPtsEarned = habitPtsEarned + taskPtsEarned + bonusPtsEarned + schedPtsEarned
-  const totalPtsSpent = allRedemptions.reduce((s, r) => s + r.pointsSpent, 0)
+  const totalBonus = bonusSessions.length
 
   return (
     <div className="space-y-6">
@@ -173,12 +151,11 @@ export default async function HistoryPage() {
       </div>
 
       {/* Summary strip */}
-      <div className="grid grid-cols-4 gap-2">
+      <div className="grid grid-cols-3 gap-2">
         {[
           { label: 'Habits done', value: totalHabitCompletions },
           { label: 'Tasks done', value: totalTaskCompletions },
-          { label: 'Pts earned', value: formatPoints(totalPtsEarned) },
-          { label: 'Pts spent', value: formatPoints(totalPtsSpent) },
+          { label: 'Bonus done', value: totalBonus },
         ].map(({ label, value }) => (
           <div key={label} className="rounded-xl border border-zinc-800 bg-zinc-900/60 px-3 py-2.5 text-center">
             <p className="text-base font-semibold text-zinc-200 tabular-nums">{value}</p>
@@ -198,17 +175,17 @@ export default async function HistoryPage() {
         </div>
         <div className="grid grid-cols-7 gap-1.5">
           {heatDays.map(date => {
-            const pts = dailyPts.get(date) ?? 0
+            const count = dailyCount.get(date) ?? 0
             const isToday = date === today
             const d = new Date(date + 'T12:00:00')
             const label = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
             return (
               <div
                 key={date}
-                title={`${label}${pts ? ` · ${pts} pts` : ''}`}
+                title={`${label}${count ? ` · ${count} done` : ''}`}
                 className={cn(
                   'aspect-square rounded-sm transition-colors',
-                  heatColor(pts),
+                  heatColor(count),
                   isToday && 'ring-1 ring-white/30',
                 )}
               />
@@ -267,7 +244,6 @@ export default async function HistoryPage() {
           <div className="space-y-4">
             {groupedDates.map(date => {
               const dayEntries = grouped.get(date)!
-              const dayPts = dayEntries.reduce((s, e) => s + (e.kind === 'reward' ? -e.pts : e.pts), 0)
               return (
                 <div key={date}>
                   {/* Date header */}
@@ -275,11 +251,8 @@ export default async function HistoryPage() {
                     <p className="text-xs font-semibold text-zinc-400">
                       {friendlyDate(date, today, yesterday)}
                     </p>
-                    <p className={cn(
-                      'text-xs tabular-nums font-medium',
-                      dayPts >= 0 ? 'text-emerald-500/70' : 'text-rose-500/70',
-                    )}>
-                      {dayPts >= 0 ? '+' : ''}{formatPoints(dayPts)}
+                    <p className="text-xs tabular-nums text-zinc-600">
+                      {dayEntries.length} done
                     </p>
                   </div>
                   {/* Entries for this day */}
@@ -293,14 +266,7 @@ export default async function HistoryPage() {
                         <p className="flex-1 min-w-0 text-sm text-zinc-300 truncate flex items-center gap-1.5">
                           {e.title}
                           {e.kind === 'bonus' && <span className="text-[10px] text-violet-500/70 shrink-0">✦ bonus</span>}
-                          {e.kind === 'reward' && <span className="text-[10px] text-rose-500/70 shrink-0">reward</span>}
                         </p>
-                        <span className={cn(
-                          'text-sm font-semibold tabular-nums shrink-0',
-                          e.kind === 'reward' ? 'text-rose-400' : 'text-emerald-400',
-                        )}>
-                          {e.kind === 'reward' ? '−' : '+'}{formatPoints(e.pts)}
-                        </span>
                       </div>
                     ))}
                   </div>

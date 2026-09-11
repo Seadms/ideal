@@ -107,33 +107,6 @@ export function dateInAppTz(d: Date): string {
   return localDateString(d) // YYYY-MM-DD
 }
 
-// ── Level formula ─────────────────────────────────────────────────────────────
-// level = floor(sqrt(totalEarned / 100)) + 1
-// L1=0pts, L2=100pts, L3=400pts, L5=1600pts, L10=8100pts
-
-export interface LevelInfo {
-  level: number
-  progress: number
-  currentLevelPts: number
-  nextLevelPts: number
-  pointsIntoLevel: number
-  pointsNeeded: number
-}
-
-export function levelFromPoints(pts: number): number {
-  return Math.floor(Math.sqrt(pts / 100)) + 1
-}
-
-export function calculateLevel(totalPointsEarned: number): LevelInfo {
-  const level = levelFromPoints(totalPointsEarned)
-  const currentLevelPts = (level - 1) * (level - 1) * 100
-  const nextLevelPts = level * level * 100
-  const pointsIntoLevel = totalPointsEarned - currentLevelPts
-  const pointsNeeded = nextLevelPts - currentLevelPts
-  const progress = Math.min((pointsIntoLevel / pointsNeeded) * 100, 100)
-  return { level, progress, currentLevelPts, nextLevelPts, pointsIntoLevel, pointsNeeded }
-}
-
 // ── Streak helpers ────────────────────────────────────────────────────────────
 
 export function calculateHabitStreak(

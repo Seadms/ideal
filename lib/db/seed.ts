@@ -1,5 +1,5 @@
 import { db, initDb } from './index'
-import { habits, tasks, rewards, userStats } from './schema'
+import { habits, tasks, userStats } from './schema'
 import { eq } from 'drizzle-orm'
 import { randomUUID } from 'crypto'
 
@@ -70,37 +70,6 @@ export async function seedDatabase() {
       description: 'Profile slow queries and add indexes or caching layer',
       isMinimumViable: false,
       category: 'project',
-    },
-  ])
-
-  await db.insert(rewards).values([
-    {
-      id: randomUUID(),
-      title: 'Guilt-free rotting / zero-productivity day',
-      description: 'A full day of games, TV, and doing absolutely nothing — no guilt allowed',
-      cost: 500,
-      category: 'rest',
-    },
-    {
-      id: randomUUID(),
-      title: 'Order 6 pc Crispy Tender Meal (well done, extra seasoning)',
-      description: 'You earned it. Extra seasoning, well done, no compromises',
-      cost: 150,
-      category: 'food',
-    },
-    {
-      id: randomUUID(),
-      title: 'Buy a new LEGO set',
-      description: "Pick any set you've been eyeing — building counts as a reward activity",
-      cost: 1500,
-      category: 'hobby',
-    },
-    {
-      id: randomUUID(),
-      title: 'Purchase a new Vivienne Westwood ring',
-      description: 'The big one. You deserve something beautiful for the long grind',
-      cost: 5000,
-      category: 'luxury',
     },
   ])
 

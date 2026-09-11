@@ -2,16 +2,10 @@
 
 import { revalidatePath } from 'next/cache'
 import { randomUUID } from 'crypto'
-import { and, asc, eq, max, sql } from 'drizzle-orm'
+import { and, asc, eq, max } from 'drizzle-orm'
 import { db } from '@/lib/db'
 import { habitCompletions, habits, userStats } from '@/lib/db/schema'
-import { todayString, yesterdayString, levelFromPoints } from '@/lib/utils'
-
-export interface CompletionResult {
-  leveledUp: boolean
-  newLevel: number
-  pointsEarned: number
-}
+import { todayString, yesterdayString } from '@/lib/utils'
 
 async function refreshStreak() {
   const rows = await db.select().from(userStats).where(eq(userStats.id, 1))
@@ -50,35 +44,24 @@ async function checkAndUpdateStreakForToday() {
     .where(eq(userStats.id, 1))
 }
 
-export async function completeHabit(habitId: string): Promise<CompletionResult> {
+// Completing a habit feeds the streak, nothing else — there is no points
+// economy for Daniel's own habits any more (good-boy points are wife tasks only).
+export async function completeHabit(habitId: string) {
   const today = todayString()
   const existing = await db.select()
     .from(habitCompletions)
     .where(and(eq(habitCompletions.habitId, habitId), eq(habitCompletions.completedDate, today)))
-  if (existing.length > 0) return { leveledUp: false, newLevel: 1, pointsEarned: 0 }
+  if (existing.length > 0) return
 
   const habitRows = await db.select().from(habits).where(eq(habits.id, habitId))
   const habit = habitRows[0]
-  if (!habit || !habit.isActive) return { leveledUp: false, newLevel: 1, pointsEarned: 0 }
-
-  const statsRows = await db.select().from(userStats).where(eq(userStats.id, 1))
-  const stats = statsRows[0]
-  if (!stats) return { leveledUp: false, newLevel: 1, pointsEarned: 0 }
-
-  const oldLevel = levelFromPoints(stats.totalPointsEarned)
+  if (!habit || !habit.isActive) return
 
   await db.insert(habitCompletions).values({
-    id: randomUUID(), habitId, completedDate: today, pointsEarned: habit.points,
+    id: randomUUID(), habitId, completedDate: today, pointsEarned: 0,
   })
-  await db.update(userStats).set({
-    totalPointsEarned: sql`${userStats.totalPointsEarned} + ${habit.points}`,
-    currentPoints: sql`${userStats.currentPoints} + ${habit.points}`,
-  }).where(eq(userStats.id, 1))
-
-  const newLevel = levelFromPoints(stats.totalPointsEarned + habit.points)
   await checkAndUpdateStreakForToday()
   revalidatePath('/')
-  return { leveledUp: newLevel > oldLevel, newLevel, pointsEarned: habit.points }
 }
 
 export async function uncompleteHabit(habitId: string) {
@@ -86,16 +69,10 @@ export async function uncompleteHabit(habitId: string) {
   const existing = await db.select()
     .from(habitCompletions)
     .where(and(eq(habitCompletions.habitId, habitId), eq(habitCompletions.completedDate, today)))
-  const completion = existing[0]
-  if (!completion) return
+  if (existing.length === 0) return
 
   await db.delete(habitCompletions)
     .where(and(eq(habitCompletions.habitId, habitId), eq(habitCompletions.completedDate, today)))
-
-  await db.update(userStats).set({
-    totalPointsEarned: sql`${userStats.totalPointsEarned} - ${completion.pointsEarned}`,
-    currentPoints: sql`${userStats.currentPoints} - ${completion.pointsEarned}`,
-  }).where(eq(userStats.id, 1))
   revalidatePath('/')
 }
 
@@ -118,7 +95,7 @@ export async function freezeStreak() {
 }
 
 export async function createHabit(data: {
-  title: string; description?: string; points: number; isMinimumViable: boolean; category: string; frequencyPerWeek?: number
+  title: string; description?: string; isMinimumViable: boolean; category: string; frequencyPerWeek?: number
 }) {
   const maxRows = await db.select({ m: max(habits.sortOrder) }).from(habits).where(eq(habits.isActive, true))
   const sortOrder = (maxRows[0]?.m ?? 0) + 1
@@ -127,7 +104,7 @@ export async function createHabit(data: {
 }
 
 export async function updateHabit(id: string, data: Partial<{
-  title: string; description: string; points: number; isMinimumViable: boolean; category: string; isActive: boolean; frequencyPerWeek: number
+  title: string; description: string; isMinimumViable: boolean; category: string; isActive: boolean; frequencyPerWeek: number
 }>) {
   await db.update(habits).set(data).where(eq(habits.id, id))
   revalidatePath('/')

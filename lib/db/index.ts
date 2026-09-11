@@ -313,6 +313,10 @@ async function doInitDb() {
     // char(11088)) for priority lifts — swap for the monochrome ★ glyph in
     // already-seeded rows.
     `UPDATE split_exercises SET target = REPLACE(target, char(11088), '★') WHERE target LIKE '%' || char(11088) || '%'`,
+    // 2026-09-11: Daniel's own rewards store is gone; only Kayd's remains.
+    // Redemptions first — they reference the reward.
+    `DELETE FROM reward_redemptions WHERE reward_id IN (SELECT id FROM rewards WHERE source != 'wife')`,
+    `DELETE FROM rewards WHERE source != 'wife'`,
   ]
   for (const stmt of migrations) {
     try { await client.execute(stmt) } catch { /* column already exists */ }
@@ -328,21 +332,21 @@ async function doInitDb() {
   await seedHabitIfMissing(
     'Mobility routine',
     'About 10 min: squat hold, couch stretch, hangs. Checklist on the Body page',
-    30, 7,
+    7,
   )
   // Four gym days instead of five leaves a weekly deficit gap. Steps close it
   // without eating into lifting recovery the way more hard cardio would.
   await seedHabitIfMissing(
     '10k steps',
     'Daily walking floor. On the 3 non-gym days this is the whole fat-loss engine',
-    30, 7,
+    7,
   )
   // Ten minutes is where the research shows attention and mood gains in
   // beginners; consistency beats duration, so the bar is low on purpose.
   await seedHabitIfMissing(
     'Meditate 10 min',
     'Same time every day. Timer on, eyes closed, follow the breath. Mind wanders, come back — that IS the rep',
-    30, 7, 'self-care',
+    7, 'self-care',
   )
 }
 
@@ -350,7 +354,7 @@ async function doInitDb() {
 // One-time inserts so the daily blocks feed the streak and the points economy.
 
 async function seedHabitIfMissing(
-  title: string, description: string, points: number, frequencyPerWeek: number,
+  title: string, description: string, frequencyPerWeek: number,
   category = 'fitness',
 ) {
   const existing = await client.execute({
@@ -363,9 +367,9 @@ async function seedHabitIfMissing(
   )
   const sortOrder = Number(maxRow.rows[0]?.m ?? 0) + 1
   await client.execute({
-    sql: `INSERT INTO habits (id, title, description, points, category, frequency_per_week, sort_order)
-          VALUES (?, ?, ?, ?, ?, ?, ?)`,
-    args: [randomUUID(), title, description, points, category, frequencyPerWeek, sortOrder],
+    sql: `INSERT INTO habits (id, title, description, category, frequency_per_week, sort_order)
+          VALUES (?, ?, ?, ?, ?, ?)`,
+    args: [randomUUID(), title, description, category, frequencyPerWeek, sortOrder],
   })
 }
 

@@ -1,13 +1,11 @@
-import { formatPoints } from '@/lib/utils'
 import { TrendingUp } from 'lucide-react'
 
 interface WeekSummaryProps {
   habitsCompleted: number
-  ptsEarned: number
   tasksCompleted: number
 }
 
-export function WeekSummary({ habitsCompleted, ptsEarned, tasksCompleted }: WeekSummaryProps) {
+export function WeekSummary({ habitsCompleted, tasksCompleted }: WeekSummaryProps) {
   if (habitsCompleted === 0 && tasksCompleted === 0) return null
 
   return (
@@ -18,11 +16,6 @@ export function WeekSummary({ habitsCompleted, ptsEarned, tasksCompleted }: Week
         {habitsCompleted > 0 && (
           <span className="ml-2">
             <span className="text-zinc-200">{habitsCompleted}</span> habit check{habitsCompleted !== 1 ? 's' : ''}
-          </span>
-        )}
-        {ptsEarned > 0 && (
-          <span className="ml-2">
-            · <span className="text-slate-300">+{formatPoints(ptsEarned)}</span> pts
           </span>
         )}
         {tasksCompleted > 0 && (

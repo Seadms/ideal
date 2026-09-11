@@ -16,48 +16,31 @@ export async function redeemReward(rewardId: string): Promise<{ success: boolean
   const stats = statsRows[0]
   if (!stats) return { success: false, error: 'Stats not found' }
 
-  const isWife = reward.source === 'wife'
+  // The only store left is Kayd's. Anything else is a stale row.
+  if (reward.source !== 'wife') return { success: false, error: 'Reward not found' }
   if (reward.maxRedemptions && reward.timesRedeemed >= reward.maxRedemptions) {
     return { success: false, error: 'All used up' }
   }
-  const balance = isWife ? stats.goodBoyPoints : stats.currentPoints
-  if (balance < reward.cost) {
-    return { success: false, error: `Need ${reward.cost - balance} more ${isWife ? 'good boy points' : 'points'}` }
+  if (stats.goodBoyPoints < reward.cost) {
+    return { success: false, error: `Need ${reward.cost - stats.goodBoyPoints} more good boy points` }
   }
 
   // Wife rewards need her approval: reserve the points and file a pending
-  // claim. Points are refunded if she declines (see declineClaim).
-  if (isWife) {
-    await db.update(userStats)
-      .set({ goodBoyPoints: sql`${userStats.goodBoyPoints} - ${reward.cost}` })
-      .where(eq(userStats.id, 1))
-    await db.insert(rewardClaims).values({
-      id: randomUUID(), rewardId, title: reward.title, cost: reward.cost,
-    })
-    const { sendPushToAll } = await import('@/lib/push-server')
-    await sendPushToAll(
-      { title: 'Daniel wants a reward', body: `${reward.title} — accept or decline`, url: '/wife' },
-      'wife',
-    )
-    revalidatePath('/')
-    revalidatePath('/rewards')
-    revalidatePath('/wife')
-    return { success: true }
-  }
-
-  // His own rewards redeem instantly.
-  await db.insert(rewardRedemptions).values({ id: randomUUID(), rewardId, pointsSpent: reward.cost })
-  const filled = !!reward.maxRedemptions && reward.timesRedeemed + 1 >= reward.maxRedemptions
-  await db.update(rewards)
-    .set({ timesRedeemed: reward.timesRedeemed + 1, ...(filled && !reward.soldOutAt ? { soldOutAt: nowString() } : {}) })
-    .where(eq(rewards.id, rewardId))
-  await db.update(userStats).set({
-    totalPointsSpent: sql`${userStats.totalPointsSpent} + ${reward.cost}`,
-    currentPoints: sql`${userStats.currentPoints} - ${reward.cost}`,
-  }).where(eq(userStats.id, 1))
-
+  // claim. Points are refunded if she declines (see resolveClaim).
+  await db.update(userStats)
+    .set({ goodBoyPoints: sql`${userStats.goodBoyPoints} - ${reward.cost}` })
+    .where(eq(userStats.id, 1))
+  await db.insert(rewardClaims).values({
+    id: randomUUID(), rewardId, title: reward.title, cost: reward.cost,
+  })
+  const { sendPushToAll } = await import('@/lib/push-server')
+  await sendPushToAll(
+    { title: 'Daniel wants a reward', body: `${reward.title} — accept or decline`, url: '/wife' },
+    'wife',
+  )
   revalidatePath('/')
   revalidatePath('/rewards')
+  revalidatePath('/wife')
   return { success: true }
 }
 
@@ -107,16 +90,6 @@ export async function createWifeReward(title: string, cost: number, maxRedemptio
   revalidatePath('/rewards')
   revalidatePath('/wife')
   return { ok: true }
-}
-
-export async function createReward(data: {
-  title: string
-  description?: string
-  cost: number
-  category: string
-}) {
-  await db.insert(rewards).values({ id: randomUUID(), ...data })
-  revalidatePath('/rewards')
 }
 
 export async function updateReward(id: string, data: Partial<{
