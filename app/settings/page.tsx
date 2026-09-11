@@ -30,7 +30,6 @@ export default async function SettingsPage() {
         eventLeadMinutes={stats?.eventLeadMinutes ?? 30}
         integrations={{
           calendar: calendarConfigured(),
-          gemini: !!process.env.GEMINI_API_KEY,
           push: !!process.env.VAPID_PUBLIC_KEY && !!process.env.VAPID_PRIVATE_KEY,
         }}
       />

@@ -1,9 +1,9 @@
 // ── Assistant: day data + morning briefing ────────────────────────────────────
 // Pulls everything "today" from the calendar and the app's own habits/tasks
-// into one structure, and composes the morning briefing push (Gemini when
-// available, deterministic template otherwise).
+// into one structure, and composes the morning briefing push from a plain
+// template. (There used to be a Gemini path; it never said anything the
+// template didn't, so it went.)
 
-import { GoogleGenerativeAI } from '@google/generative-ai'
 import { and, desc, eq, gte } from 'drizzle-orm'
 import { db } from '@/lib/db'
 import { habits, habitCompletions, scheduledTasks, scheduledTaskCompletions, tasks, sleepLogs } from '@/lib/db/schema'
@@ -69,7 +69,7 @@ export async function getDayData(opts: { fresh?: boolean } = {}): Promise<DayDat
   }
 }
 
-function fallbackBriefing(d: DayData): string {
+export async function composeBriefing(d: DayData): Promise<string> {
   const parts: string[] = []
   if (d.todayEvents.length > 0) {
     const first = d.todayEvents.find(e => !e.allDay)
@@ -82,34 +82,4 @@ function fallbackBriefing(d: DayData): string {
   if (d.pendingHabitCount > 0) parts.push(`${d.pendingHabitCount} daily habit${d.pendingHabitCount > 1 ? 's' : ''} to hit`)
   if (d.scheduledToday.length > 0) parts.push(`${d.scheduledToday.length} chores on deck`)
   return parts.length > 0 ? parts.join(' · ') : 'Clear schedule today. Pick something great to build.'
-}
-
-export async function composeBriefing(d: DayData): Promise<string> {
-  const apiKey = process.env.GEMINI_API_KEY
-  if (!apiKey) return fallbackBriefing(d)
-
-  const eventLines = d.todayEvents.map(e =>
-    `- ${e.allDay ? 'all day' : timeInAppTz(e.start)}: ${e.title}${e.location ? ` @ ${e.location}` : ''}`).join('\n')
-
-  try {
-    const genAI = new GoogleGenerativeAI(apiKey)
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' })
-    const prompt = `You are a sharp, encouraging personal assistant writing a MORNING BRIEFING push notification for a 21-year-old CS student who is cutting, lifting 5 days a week, and building side projects.
-
-TODAY'S CALENDAR:
-${eventLines || '(nothing scheduled)'}
-
-LAST NIGHT'S SLEEP: ${d.lastSleepHours !== null ? `${d.lastSleepHours}h (7-day avg ${d.sleepAvg7}h)` : 'not logged'}
-PENDING DAILY HABITS: ${d.pendingHabitCount}
-OPEN TASKS: ${d.openTaskCount}
-CHORES TODAY: ${d.scheduledToday.join(', ') || 'none'}
-
-Write the briefing as 2-4 short sentences, max 320 characters total. Lead with the most time-critical thing. Be concrete with times. If sleep was under 7 hours, mention going easier or prioritising rest. No greetings, no emojis, no markdown, no bullet points, no em dashes.`
-
-    const result = await model.generateContent(prompt)
-    const text = result.response.text().trim()
-    return text.length > 5 && text.length < 500 ? text : fallbackBriefing(d)
-  } catch {
-    return fallbackBriefing(d)
-  }
 }

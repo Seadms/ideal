@@ -23,7 +23,7 @@ export async function setAssistantPrefs(prefs: {
 }
 
 // Sends the morning briefing right now — lets you sanity-check the whole
-// pipeline (calendar + Gemini + push) from the Settings page.
+// pipeline (calendar + push) from the Settings page.
 export async function sendTestBriefing(): Promise<{ sent: number; body: string }> {
   const { getDayData, composeBriefing } = await import('@/lib/assistant')
   const { sendPushToAll } = await import('@/lib/push-server')

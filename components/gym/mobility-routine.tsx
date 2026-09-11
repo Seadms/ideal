@@ -4,14 +4,54 @@ import { useEffect, useState } from 'react'
 import { PersonStanding, ExternalLink } from 'lucide-react'
 import { cn, todayString } from '@/lib/utils'
 
-// Daily mobility block targeting the three goals that converge on the same
-// tissue: full range of motion, posture, and bedroom athleticism. All of it
-// comes down to hips, thoracic spine, and the front line shortened by desk
-// sitting. Doable in ~10 minutes with a pull-up bar and a doorway.
+// Daily mobility block. Everything converges on the same tissue: hips, ankles,
+// thoracic spine, and the front line shortened by desk sitting. Foam roller
+// first — rolling drops muscle tone for a few minutes, so every stretch after
+// it goes further. Floor work is on the mat. ~15 minutes.
 const EXERCISES = [
   {
+    name: 'Foam Roll: Calves',
+    dose: '45s / side',
+    why: 'Tight calves are the usual reason the knee-to-wall drill stalls. Roll them first and the ankle test moves.',
+    steps: [
+      'Calf on the roller, other leg crossed on top for weight, hands behind you.',
+      'Roll slowly from ankle to below the knee. Pause on anything tender and point/flex the foot there.',
+      'Turn the leg in and out to cover both heads.',
+    ],
+  },
+  {
+    name: 'Foam Roll: Quads + Hip Flexors',
+    dose: '60s / side',
+    why: 'Sitting locks these short. Rolling before the couch stretch is the difference between a stretch and a fight.',
+    steps: [
+      'Face down, roller under one thigh, other leg off to the side.',
+      'Roll from just above the knee to the crease of the hip. Slow. Breathe.',
+      'At the hip crease, sit still on the spot for 10–15 seconds — that is the hip flexor.',
+    ],
+  },
+  {
+    name: 'Foam Roll: Glutes',
+    dose: '45s / side',
+    why: 'Glute med and piriformis get gritty from lifting and sitting; both limit hip rotation for the 90/90s.',
+    steps: [
+      'Sit on the roller, cross one ankle over the opposite knee, lean toward the crossed side.',
+      'Small rolls around the outside of the hip. Find the sore spot, hold it, breathe it down.',
+      'Don\'t bounce. Slow pressure is what changes tone.',
+    ],
+  },
+  {
+    name: 'Foam Roll: Upper Back',
+    dose: '8 slow extensions',
+    why: 'Thoracic extension is where upright posture lives, and the roller is the best tool there is for it.',
+    steps: [
+      'Roller across the mid-back, knees bent, hands behind your head to support the neck.',
+      'Extend backward over the roller, ribs down, then come up. That is one rep.',
+      'Shift the roller an inch and repeat, from the bottom of the shoulder blades up to the top. Never the low back.',
+    ],
+  },
+  {
     name: 'Knee-to-Wall Ankle',
-    dose: '2 min / side',
+    dose: '60s / side',
     why: 'The most likely thing capping your squat depth. Tight ankles force the heels up or the back to round.',
     steps: [
       'Half-kneel facing a wall, front foot about a fist-width back from it.',
@@ -21,32 +61,22 @@ const EXERCISES = [
   },
   {
     name: 'Deep Squat Hold',
-    dose: '2–3 min total',
+    dose: '2 min total',
     why: 'The single best ROM investment: ankles, knees, hips, and low back all at once.',
     steps: [
       'Squat as deep as you can, heels down, chest tall. Hold onto a doorframe if needed.',
-      'Accumulate 2–3 minutes across as many sets as it takes.',
+      'Accumulate 2 minutes across as many sets as it takes.',
       'Breathe slowly and let the hips sink a little deeper on each exhale.',
     ],
   },
   {
     name: 'Couch Stretch',
-    dose: '2 min / side',
+    dose: '90s / side',
     why: 'Desk sitting shortens the hip flexors, tilting the pelvis and killing hip drive. This is the antidote.',
     steps: [
-      'Kneel with one shin vertical against a wall or couch, other foot planted in front.',
+      'Kneel on the mat with one shin vertical against a wall or couch, other foot planted in front.',
       'Squeeze the glute of the back leg and stand the torso up tall.',
       'Stay tall and breathe. No arching the low back to fake depth.',
-    ],
-  },
-  {
-    name: 'Cossack Squats',
-    dose: '2 × 8 / side',
-    why: 'Side-to-side hip strength and adductor length. Directly buys range for deep positions.',
-    steps: [
-      'Stand wide, shift all your weight over one leg and squat onto it, other leg straight.',
-      'Keep both heels down; hold a counterweight in front if balance is hard.',
-      'Slow down on the way in, drive up through the whole foot.',
     ],
   },
   {
@@ -61,7 +91,7 @@ const EXERCISES = [
   },
   {
     name: 'Seated Hamstring Stretch',
-    dose: '90s / side',
+    dose: '60s / side',
     why: 'The one big range nothing else here trains. Toe-touch depth and deep hip positions both gate on it.',
     steps: [
       'Sit with one leg straight, the other bent with that foot against your inner thigh.',
@@ -71,38 +101,28 @@ const EXERCISES = [
   },
   {
     name: 'Dead Hang',
-    dose: '60–90s total',
+    dose: '60s total',
     why: 'Decompresses the spine and opens the shoulders and lats. Free posture from the bar you already own.',
     steps: [
       'Grip the pull-up bar, relax everything below the hands.',
       'Let the shoulder blades rise toward your ears; breathe into the stretch.',
-      'Accumulate 60–90 seconds in as many sets as needed.',
-    ],
-  },
-  {
-    name: 'Doorway Pec Stretch',
-    dose: '60s / side',
-    why: 'Screen time shortens the chest and pulls the shoulders forward. Open the front so the back can hold you upright.',
-    steps: [
-      'Forearm on a doorframe, elbow at shoulder height.',
-      'Step the same-side foot through the doorway until the chest stretches.',
-      'Keep the ribs down; adjust elbow height to move the stretch around.',
+      'Accumulate 60 seconds in as many sets as needed.',
     ],
   },
   {
     name: 'Open Book',
-    dose: '10 / side',
-    why: 'Wall slides train extension; this trains rotation, the range that keeps pressing and overhead work healthy.',
+    dose: '8 / side',
+    why: 'The roller trained extension; this trains rotation, the range that keeps pressing and overhead work healthy.',
     steps: [
-      'Lie on your side, knees stacked and bent 90°, both arms straight out in front.',
+      'Lie on your side on the mat, knees stacked and bent 90°, both arms straight out in front.',
       'Keep the knees pinned down and sweep the top arm across your body toward the floor behind you.',
       'Follow the hand with your eyes and exhale at end range. Do not let the knees lift to cheat depth.',
     ],
   },
   {
     name: 'Wall Slides',
-    dose: '2 × 10',
-    why: 'Trains thoracic extension and upper-back control, where upright posture actually lives.',
+    dose: '10',
+    why: 'Turns the range the roller just opened into control — upper-back strength you can hold all day.',
     steps: [
       'Back against a wall, arms in a goalpost, wrists and elbows touching the wall.',
       'Slide the arms up as high as they go without anything leaving the wall.',
@@ -160,7 +180,7 @@ export function MobilityRoutine() {
         <div className="flex items-center gap-2">
           <PersonStanding size={15} className="text-ring-chore" />
           <h2 className="text-sm font-semibold text-zinc-200">Mobility</h2>
-          <span className="text-[10px] text-zinc-600">~13 min daily</span>
+          <span className="text-[10px] text-zinc-600">~15 min daily</span>
         </div>
         {allDone && (
           <span className="text-[11px] text-emerald-400 font-medium">All done</span>
@@ -215,18 +235,19 @@ export function MobilityRoutine() {
       <div className="rounded-xl border border-teal-500/20 bg-teal-500/5 px-4 py-3">
         <p className="text-[11px] leading-relaxed text-zinc-400">
           <span className="font-medium text-teal-300">When to do it:</span> after lifting, or on
-          rest days. Long holds before heavy squats and presses temporarily blunt strength, so keep
-          pre-lift work dynamic (leg swings, the 90/90s, empty-bar sets).
+          rest days. Roller first, always — the stretches go further for a few minutes after it.
+          Long holds before heavy pressing blunt strength, so keep pre-lift work dynamic (leg
+          swings, the 90/90s, empty-bar sets). Rolling before a lift is fine.
         </p>
       </div>
 
       <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/40 px-4 py-3 space-y-1.5">
         <p className="text-[11px] font-medium text-zinc-400">How this pays off</p>
         <p className="text-[11px] text-zinc-500 leading-relaxed">
-          Consistency beats intensity: 13 mediocre minutes daily outperforms one heroic hour a
-          week. Posture = this plus your face pulls, rows, and chin tucks. Bedroom performance =
-          open hip flexors + strong glutes (take the hip thrusts seriously) + zone-2 cardio for
-          endurance. Same inputs, three payoffs.
+          Consistency beats intensity: 15 mediocre minutes daily outperforms one heroic hour a
+          week. Posture = this plus your face pulls, rows, and chin tucks. Open hips and strong
+          glutes come from this plus the hip thrusts and RDLs in the split — same inputs, every
+          payoff.
         </p>
         <a
           href="https://www.youtube.com/watch?v=g_tea8ZNk5A"

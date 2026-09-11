@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input'
 interface AssistantSettingsProps {
   briefingTime: string | null
   eventLeadMinutes: number
-  integrations: { calendar: boolean; gemini: boolean; push: boolean }
+  integrations: { calendar: boolean; push: boolean }
 }
 
 function IntegrationRow({ label, ok, hint }: { label: string; ok: boolean; hint: string }) {
@@ -105,7 +105,6 @@ export function AssistantSettings({ briefingTime, eventLeadMinutes, integrations
 
         <div className="border-t border-zinc-800 pt-3">
           <IntegrationRow label="Google Calendar" ok={integrations.calendar} hint="Add GCAL_ICS_URLS" />
-          <IntegrationRow label="Gemini (AI briefing)" ok={integrations.gemini} hint="Add GEMINI_API_KEY" />
           <IntegrationRow label="Push notifications" ok={integrations.push} hint="Add VAPID keys" />
         </div>
 

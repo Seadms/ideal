@@ -317,6 +317,13 @@ async function doInitDb() {
     // Redemptions first — they reference the reward.
     `DELETE FROM reward_redemptions WHERE reward_id IN (SELECT id FROM rewards WHERE source != 'wife')`,
     `DELETE FROM rewards WHERE source != 'wife'`,
+    // 2026-09-11: the standalone "sex optimization" habit was added by hand in
+    // the live DB. Its work (hip thrusts, RDLs, loaded core, zone 2) already
+    // lives in the split, so the habit was double-counting. Retire, don't delete —
+    // completion history stays.
+    `UPDATE habits SET is_active = 0 WHERE is_active = 1 AND LOWER(title) LIKE '%sex%'`,
+    // Roller + mat arrived; the routine now opens with a roller pass.
+    `UPDATE habits SET description = 'About 15 min: roller pass, then ankles, hips, hamstrings, t-spine. Checklist on the Body page' WHERE title = 'Mobility routine'`,
   ]
   for (const stmt of migrations) {
     try { await client.execute(stmt) } catch { /* column already exists */ }
@@ -331,7 +338,7 @@ async function doInitDb() {
   await seedHouseholdTasksIfNeeded()
   await seedHabitIfMissing(
     'Mobility routine',
-    'About 10 min: squat hold, couch stretch, hangs. Checklist on the Body page',
+    'About 15 min: roller pass, then ankles, hips, hamstrings, t-spine. Checklist on the Body page',
     7,
   )
   // Four gym days instead of five leaves a weekly deficit gap. Steps close it
