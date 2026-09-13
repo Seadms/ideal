@@ -334,7 +334,7 @@ async function doInitDb() {
   )
 
   await seedSplitIfNeeded()
-  await seedDietIfEmpty()
+  await seedDietIfNeeded()
   await seedHouseholdTasksIfNeeded()
   await seedHabitIfMissing(
     'Mobility routine',
@@ -485,8 +485,18 @@ async function seedSplitIfNeeded() {
 }
 
 // ── Seed: Diet ────────────────────────────────────────────────────────────────
+// 2,300 kcal / 180 g protein cut, unchanged. What changed on 2026-09-13 is the
+// content: Daniel asked for the daily food anchors and the supplement stack,
+// not recipes. Meals are "what goes in every day at this time"; rules carry
+// the non-negotiables; supplements carry dose + timing, which is the part that
+// actually decides whether a stack works.
+//
+// One-time replacement: bumping DIET_MARKER swaps any older meals/rules for
+// these. Goals, water logs and nutrition entries are untouched.
 
-async function seedDietIfEmpty() {
+const DIET_MARKER = 'Wake — Protein + Fruit'
+
+async function seedDietIfNeeded() {
   const goalRows = await client.execute('SELECT id FROM diet_goals LIMIT 1')
   if (goalRows.rows.length === 0) {
     await client.execute({
@@ -498,61 +508,107 @@ async function seedDietIfEmpty() {
     })
   }
 
-  const mealRows = await client.execute('SELECT id FROM diet_meals LIMIT 1')
-  if (mealRows.rows.length === 0) {
-    const meals = [
-      {
-        name: 'Morning Protein Anchor', timeWindow: '7–8 AM',
-        calories: 450, protein: 35, carbs: 32, fat: 14, order: 1,
-        notes: '5 egg whites + 2 whole eggs scrambled\n½ cup oats with cinnamon\nBlack coffee',
-      },
-      {
-        name: 'Lean Midday Refuel', timeWindow: '12 PM',
-        calories: 500, protein: 47, carbs: 40, fat: 12, order: 2,
-        notes: '5 oz grilled chicken breast (45g protein)\n¾ cup jasmine rice cooked (38g carbs)\nLarge salad with lemon + olive oil',
-      },
-      {
-        name: 'Performance Primer', timeWindow: '3–4 PM',
-        calories: 300, protein: 18, carbs: 38, fat: 8, order: 3,
-        notes: '1 cup non-fat Greek yogurt (17g protein)\n1 banana + handful blueberries (35g carbs)',
-      },
-      {
-        name: 'Recovery Window', timeWindow: '7–8 PM',
-        calories: 500, protein: 42, carbs: 28, fat: 16, order: 4,
-        notes: '5 oz salmon or lean ground beef (40g protein)\nMedium sweet potato (26g carbs)\nRoasted broccoli or asparagus',
-      },
-      {
-        name: 'Slow-Burn Night Protein', timeWindow: '9–10 PM',
-        calories: 250, protein: 26, carbs: 8, fat: 14, order: 5,
-        notes: '1 cup cottage cheese or casein shake (25g protein)\nHandful of almonds',
-      },
-    ]
-    for (const m of meals) {
-      await client.execute({
-        sql: `INSERT INTO diet_meals (id, name, time_window, calories, protein, carbs, fat, notes, meal_order)
-              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        args: [randomUUID(), m.name, m.timeWindow, m.calories, m.protein, m.carbs, m.fat, m.notes, m.order],
-      })
-    }
+  const current = await client.execute({ sql: 'SELECT id FROM diet_meals WHERE name = ? LIMIT 1', args: [DIET_MARKER] })
+  if (current.rows.length > 0) return
+  await client.execute('DELETE FROM diet_meals')
+  await client.execute('DELETE FROM diet_rules')
 
-    const rules = [
-      { cat: 'always',     text: '135 oz water daily — a gallon plus a cup', ord: 1 },
-      { cat: 'always',     text: 'Protein within 45 min post-lift', ord: 2 },
-      { cat: 'always',     text: 'Sleep 7–9 hours',                 ord: 3 },
-      { cat: 'always',     text: 'Zone 2 every lifting day',        ord: 4 },
-      { cat: 'always',     text: 'Keep sodium under 1,500mg',       ord: 5 },
-      { cat: 'never',      text: 'Dirty bulk',                      ord: 1 },
-      { cat: 'never',      text: 'Alcohol',                         ord: 2 },
-      { cat: 'never',      text: 'Eat under 1,500 kcal',            ord: 3 },
-      { cat: 'never',      text: 'Skip sodium control',             ord: 4 },
-      { cat: 'supplement', text: '5g creatine monohydrate daily',   ord: 1 },
-    ]
-    for (const r of rules) {
-      await client.execute({
-        sql: 'INSERT INTO diet_rules (id, category, text, rule_order) VALUES (?, ?, ?, ?)',
-        args: [randomUUID(), r.cat, r.text, r.ord],
-      })
-    }
+  const meals = [
+    {
+      name: 'Wake — Protein + Fruit', timeWindow: '7–8 AM',
+      calories: 450, protein: 40, carbs: 40, fat: 12, order: 1,
+      notes: [
+        '2 whole eggs + 4 whites, or 200 g Greek yogurt',
+        'Berries, 1 cup — every single day',
+        '½ cup oats or 1 slice sourdough',
+        'Black coffee — that is your pre-workout, nothing else needed',
+        'Supps with the food: D3 + K2, fish oil, multivitamin (fat-soluble, needs a meal)',
+      ].join('\n'),
+    },
+    {
+      name: 'Midday — Lean Protein + Greens', timeWindow: '12 PM',
+      calories: 550, protein: 50, carbs: 45, fat: 14, order: 2,
+      notes: [
+        '6 oz chicken, turkey, lean beef, or white fish',
+        '¾ cup rice, or a potato / sweet potato',
+        'Big leafy salad (spinach, arugula, kale) + olive oil + lemon',
+        'Something cruciferous: broccoli, Brussels sprouts, cabbage',
+        'One piece of fruit — apple, orange, or kiwi',
+      ].join('\n'),
+    },
+    {
+      name: 'Pre-Train — Carbs + Fast Protein', timeWindow: '3–4 PM',
+      calories: 320, protein: 25, carbs: 50, fat: 5, order: 3,
+      notes: [
+        'Banana + Greek yogurt, or a whey shake',
+        'Rice cakes or 2–3 dates on a leg day',
+        'Beetroot 30–60 min before lifting',
+        'Creatine 5 g — timing does not matter, this is just the hook so it never gets missed',
+      ].join('\n'),
+    },
+    {
+      name: 'Dinner — Fatty Fish or Red Meat + Colour', timeWindow: '7–8 PM',
+      calories: 660, protein: 45, carbs: 65, fat: 22, order: 4,
+      notes: [
+        'Salmon, sardines, or mackerel 3× a week; lean beef or chicken the other nights',
+        'Potato, rice, or beans / lentils',
+        'Two colours of vegetables: peppers, carrots, tomatoes, zucchini',
+        '½ avocado or a drizzle of olive oil',
+        'One fermented food: kimchi, sauerkraut, or kefir',
+      ].join('\n'),
+    },
+    {
+      name: 'Night — Slow Protein + Sleep Fruit', timeWindow: '9–10 PM',
+      calories: 320, protein: 30, carbs: 25, fat: 12, order: 5,
+      notes: [
+        '1 cup cottage cheese or a casein shake',
+        '2 kiwis or a bowl of tart cherries — both have real sleep evidence, and you love fruit',
+        'A handful of almonds or walnuts',
+        'Magnesium glycinate now. Ashwagandha now if you are keeping it',
+      ].join('\n'),
+    },
+  ]
+  for (const m of meals) {
+    await client.execute({
+      sql: `INSERT INTO diet_meals (id, name, time_window, calories, protein, carbs, fat, notes, meal_order)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      args: [randomUUID(), m.name, m.timeWindow, m.calories, m.protein, m.carbs, m.fat, m.notes, m.order],
+    })
+  }
+
+  const rules = [
+    { cat: 'always', ord: 1,  text: '135 oz water daily — a gallon plus a cup' },
+    { cat: 'always', ord: 2,  text: '180 g protein, spread over 5 feedings of 30–50 g' },
+    { cat: 'always', ord: 3,  text: 'Fruit 3× a day — berries once, something with vitamin C once' },
+    { cat: 'always', ord: 4,  text: 'Vegetables at every main meal: one leafy green, one cruciferous, two colours' },
+    { cat: 'always', ord: 5,  text: 'Fatty fish 3× a week — salmon, sardines, mackerel' },
+    { cat: 'always', ord: 6,  text: 'One fermented food a day — Greek yogurt, kefir, kimchi, sauerkraut' },
+    { cat: 'always', ord: 7,  text: 'Protein within 45 min post-lift' },
+    { cat: 'always', ord: 8,  text: 'Zone 2 every lifting day' },
+    { cat: 'always', ord: 9,  text: 'Keep sodium under 1,500mg' },
+    { cat: 'always', ord: 10, text: 'Sleep 7–9 hours' },
+    { cat: 'never', ord: 1, text: 'Alcohol' },
+    { cat: 'never', ord: 2, text: 'Eat under 1,500 kcal' },
+    { cat: 'never', ord: 3, text: 'Dirty bulk' },
+    { cat: 'never', ord: 4, text: 'Skip sodium control' },
+    { cat: 'never', ord: 5, text: 'Juice or sugary drinks — eat the fruit, do not drink it' },
+    { cat: 'never', ord: 6, text: 'Ultra-processed food as a staple — a treat is fine, a habit is not' },
+    { cat: 'never', ord: 7, text: 'Fat burners, test boosters, BCAAs, proprietary pre-workouts — money for nothing' },
+    { cat: 'supplement', ord: 1, text: 'Creatine monohydrate 5 g daily, any time' },
+    { cat: 'supplement', ord: 2, text: 'Vitamin D3 2,000–4,000 IU + K2 (MK-7) 100 µg with breakfast — the one you were missing. Get a 25-OH-D blood test to set the dose' },
+    { cat: 'supplement', ord: 3, text: 'Fish oil: enough to hit 2 g EPA+DHA combined — read the label, most capsules need 2–3. Skip on salmon days' },
+    { cat: 'supplement', ord: 4, text: 'Magnesium glycinate 300–400 mg at night' },
+    { cat: 'supplement', ord: 5, text: 'Men\'s multivitamin with breakfast — insurance, not a strategy' },
+    { cat: 'supplement', ord: 6, text: 'Beetroot 30–60 min pre-lift — nitrates; helps zone 2 more than the lifts. Optional' },
+    { cat: 'supplement', ord: 7, text: 'Ashwagandha (KSM-66) 300–600 mg at night — 8 weeks on, 4 off. Stop if you feel flat. Not essential' },
+    { cat: 'supplement', ord: 8, text: 'Caffeine 100–200 mg pre-lift = black coffee. None after 2 PM' },
+    { cat: 'supplement', ord: 9, text: 'Whey / casein — a tool for hitting 180 g when food falls short, not a supplement' },
+  ]
+  for (const r of rules) {
+    await client.execute({
+      sql: 'INSERT INTO diet_rules (id, category, text, rule_order) VALUES (?, ?, ?, ?)',
+      args: [randomUUID(), r.cat, r.text, r.ord],
+    })
   }
 }
 
