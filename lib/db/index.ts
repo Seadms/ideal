@@ -317,13 +317,12 @@ async function doInitDb() {
     // Redemptions first — they reference the reward.
     `DELETE FROM reward_redemptions WHERE reward_id IN (SELECT id FROM rewards WHERE source != 'wife')`,
     `DELETE FROM rewards WHERE source != 'wife'`,
-    // 2026-09-11: the standalone "sex optimization" habit was added by hand in
-    // the live DB. Its work (hip thrusts, RDLs, loaded core, zone 2) already
-    // lives in the split, so the habit was double-counting. Retire, don't delete —
-    // completion history stays.
-    `UPDATE habits SET is_active = 0 WHERE is_active = 1 AND LOWER(title) LIKE '%sex%'`,
-    // Roller + mat arrived; the routine now opens with a roller pass.
-    `UPDATE habits SET description = 'About 15 min: roller pass, then ankles, hips, hamstrings, t-spine. Checklist on the Body page' WHERE title = 'Mobility routine'`,
+    // 2026-09-23: Split changed to 4-day Body-Part split (Chest / Back / Arms / Legs).
+    `UPDATE habits SET description = 'Chest / Back / Arms / Legs — follow the current rotation' WHERE title IN ('Hit PPLUL gym split', 'Hit gym split')`,
+    // Hip thrusts & pelvic floor moved to home mobility routine.
+    `UPDATE habits SET description = 'About 15–18 min: roller pass, mobility, home hip thrusts & pelvic floor. Checklist on the Body page' WHERE title = 'Mobility routine'`,
+    // Sex optimization active as a daily home habit alongside the split.
+    `UPDATE habits SET is_active = 1 WHERE LOWER(title) LIKE '%sex%'`,
   ]
   for (const stmt of migrations) {
     try { await client.execute(stmt) } catch { /* column already exists */ }
@@ -338,8 +337,13 @@ async function doInitDb() {
   await seedHouseholdTasksIfNeeded()
   await seedHabitIfMissing(
     'Mobility routine',
-    'About 15 min: roller pass, then ankles, hips, hamstrings, t-spine. Checklist on the Body page',
+    'About 15–18 min: roller pass, mobility, home hip thrusts & pelvic floor. Checklist on the Body page',
     7,
+  )
+  await seedHabitIfMissing(
+    'Sex optimization',
+    'Daily home hip thrusts, pelvic floor pulses, and hip mobility — carries directly over to bed',
+    7, 'fitness',
   )
   // Four gym days instead of five leaves a weekly deficit gap. Steps close it
   // without eating into lifting recovery the way more hard cardio would.
@@ -380,27 +384,23 @@ async function seedHabitIfMissing(
   })
 }
 
-// ── Seed: Max Aesthetics Split — 4-Day Upper/Lower, machine-first legs ────
-// Four gym days, every muscle trained twice a week — the highest frequency that
-// fits four sessions, and frequency is what holds muscle while cutting. Built for
-// the V-taper: side delts and lat width each get two dedicated hits, upper chest
-// is prioritised over flat pressing, and abs are trained under load so the
-// midsection reads defined once lean.
+// ── Seed: Aesthetics & Sex Optimization Split — 4-Day Body-Part ────
+// Four dedicated training days: Chest Day, Back Day, Arm Day, Leg Day.
+// Machine-first lower body; bench reserved for chest/back; machine shoulder press.
+// Glute drive & pelvic floor work anchored daily at home via mobility routine.
 //
-// Equipment rules (Daniel, 2026-09-11): the bench is for chest and back only —
-// leg days are all machines (leg press, hack squat, extensions, curls), and
-// shoulder pressing is on the machine, never dumbbells. Glute and hip-hinge work
-// stays non-negotiable (it carries over directly to bed), so the hip thrust and
-// RDL survive as their machine versions rather than being dropped. Zone 2 closes
-// both lower days; that plus the daily step habit is what keeps the deficit
-// moving — the lifting protects the muscle, the deficit takes the fat.
+// Equipment & Optimization rules (Daniel): bench is for chest and back only;
+// leg days are all machines (leg press, hack squat, extensions, curls);
+// shoulder pressing is on machine, never dumbbells. Smith RDL handles posterior
+// chain hamstring and glute drive on leg day (non-negotiable carryover to bed).
+// Zone 2 cardio closes the leg session for vascular health and stamina.
 //
 // One-time replacement: bumping SPLIT_MARKER triggers a one-time swap of any older
 // split for this one. Existing exercise_logs (workout history) are preserved.
 // Progression rule for every lift: at the TOP of the rep range with clean form,
 // add weight next session (smallest jump available), then work back up the range.
 
-const SPLIT_MARKER = 'Lower A — Glutes / Hams / Abs'
+const SPLIT_MARKER = 'Leg Day — Quads / Hams / Hip Drive'
 
 async function seedSplitIfNeeded() {
   const rows = await client.execute('SELECT id, name FROM split_days')
@@ -416,52 +416,47 @@ async function seedSplitIfNeeded() {
   type Ex = { name: string; sets: number; reps: number; weight: number; type?: string; target?: string }
   const days: { name: string; order: number; exercises: Ex[] }[] = [
     {
-      name: 'Upper A — Chest / Delts / Back Width', order: 1,
+      name: 'Chest Day — Upper Chest & Delts', order: 1,
       exercises: [
-        { name: 'Incline Barbell Bench Press',            sets: 4, reps: 8,  weight: 0, target: '4 × 6–10 · ★ upper chest — the shelf that reads on a lean frame' },
-        { name: 'Weighted Pull-ups / Lat Pulldown',       sets: 4, reps: 9,  weight: 0, target: '4 × 6–12 · ★ back width' },
-        { name: 'Machine Shoulder Press',                 sets: 3, reps: 10, weight: 0, target: '3 × 8–12 · front delts · set the seat so the handles start at chin height' },
-        { name: 'Chest-Supported Row',                    sets: 3, reps: 10, weight: 0, target: '3 × 8–12 · back thickness, no torso English' },
-        { name: 'Cable Lateral Raises',                   sets: 4, reps: 15, weight: 0, target: '4 × 12–20 · ★ shoulder width — go light, no swinging' },
-        { name: 'Overhead Cable Triceps Extension',       sets: 3, reps: 12, weight: 0, target: '3 × 10–15 · long head = arm size' },
-        { name: 'Machine Preacher Curl',                  sets: 3, reps: 10, weight: 0, target: '3 × 8–12 · biceps under stretch, full extension at the bottom' },
+        { name: 'Incline Barbell Bench Press',            sets: 4, reps: 8,  weight: 0, target: '4 × 6–10 · ★ upper chest shelf — the visual anchor of a lean torso' },
+        { name: 'Flat Dumbbell Press',                    sets: 4, reps: 10, weight: 0, target: '4 × 8–12 · chest thickness · full stretch at bottom, press without clashing bells' },
+        { name: 'Machine Shoulder Press',                 sets: 3, reps: 10, weight: 0, target: '3 × 8–12 · front delts · seat set so handles start at chin height · machine only' },
+        { name: 'Cable Fly / Pec Deck',                   sets: 3, reps: 12, weight: 0, target: '3 × 12–15 · chest isolation · constant tension, hard squeeze at peak contraction' },
+        { name: 'Cable Lateral Raises',                   sets: 4, reps: 15, weight: 0, target: '4 × 12–20 · ★ shoulder width — go light, lead with elbows, no torso swing' },
       ],
     },
     {
-      name: 'Lower A — Glutes / Hams / Abs', order: 2,
+      name: 'Back Day — Lat Width & Thickness', order: 2,
       exercises: [
-        { name: 'Machine Hip Thrust / Glute Drive',       sets: 4, reps: 10, weight: 0, target: '4 × 8–12 · ★ glutes + hip drive · full lockout, pause at top · no machine? cable pull-through' },
-        { name: 'Smith Machine RDL',                      sets: 4, reps: 10, weight: 0, target: '4 × 8–12 · ★ hamstrings + glutes · hinge, feel the stretch, bar stays on the legs' },
-        { name: 'Leg Press — feet high & wide',           sets: 3, reps: 12, weight: 0, target: '3 × 10–15 · glute/ham bias · sink deep, drive through the heels' },
-        { name: 'Seated Leg Curl',                        sets: 3, reps: 12, weight: 0, target: '3 × 10–15 · hamstrings' },
-        { name: 'Standing Calf Raise Machine',            sets: 4, reps: 12, weight: 0, target: '4 × 10–15 · pause at the bottom' },
-        { name: 'Cable Crunch',                           sets: 4, reps: 13, weight: 0, target: '4 × 12–15 · ★ weighted abs — thickness is what shows at low body fat' },
-        { name: 'Zone 2 Cardio',                          sets: 1, reps: 25, weight: 0, type: 'cardio', target: '25 min · conversational pace · heart health + stamina' },
+        { name: 'Weighted Pull-ups / Lat Pulldown',       sets: 4, reps: 8,  weight: 0, target: '4 × 6–10 · ★ V-taper width anchor · drive elbows straight down into back pockets' },
+        { name: 'Chest-Supported Row',                    sets: 4, reps: 10, weight: 0, target: '4 × 8–12 · ★ upper back thickness · mid-traps and rhomboids, zero lower back fatigue' },
+        { name: 'Wide-Grip Lat Pulldown',                 sets: 3, reps: 10, weight: 0, target: '3 × 8–12 · lat flare · full stretch at top, pull smoothly to collarbone' },
+        { name: 'Seated Cable Row',                       sets: 3, reps: 10, weight: 0, target: '3 × 8–12 · mid-back density · 1s squeeze on shoulder blades at peak contraction' },
+        { name: 'Reverse Pec Deck / Face Pulls',          sets: 4, reps: 16, weight: 0, target: '4 × 15–20 · rear delts + posture · pull apart, high elbows, external rotation' },
       ],
     },
     {
-      name: 'Upper B — Back / Chest / Arms', order: 3,
+      name: 'Arm Day — Biceps, Triceps & Shoulders', order: 3,
       exercises: [
-        { name: 'Wide-Grip Lat Pulldown',                 sets: 4, reps: 11, weight: 0, target: '4 × 10–12 · ★ width, drive elbows down' },
-        { name: 'Flat Dumbbell Press',                    sets: 4, reps: 10, weight: 0, target: '4 × 8–12 · chest thickness' },
-        { name: 'Seated Cable Row',                       sets: 3, reps: 10, weight: 0, target: '3 × 8–12 · back thickness (2nd weekly hit)' },
-        { name: 'Cable Lateral Raises',                   sets: 4, reps: 15, weight: 0, target: '4 × 12–20 · ★ shoulder width (2nd weekly hit)' },
-        { name: 'Cable Fly / Pec Deck',                   sets: 3, reps: 14, weight: 0, target: '3 × 12–20 · stretch under load, squeeze at the top' },
-        { name: 'Reverse Pec Deck / Face Pulls',          sets: 3, reps: 18, weight: 0, target: '3 × 15–20 · rear delts + posture' },
-        { name: 'Cable Hammer Curls',                     sets: 3, reps: 12, weight: 0, target: '3 × 10–15 · arm thickness' },
-        { name: 'Rope Pushdown',                          sets: 3, reps: 13, weight: 0, target: '3 × 12–15' },
+        { name: 'Overhead Cable Triceps Extension',       sets: 4, reps: 12, weight: 0, target: '4 × 10–15 · ★ triceps long head — provides 2/3 of upper arm mass and side profile' },
+        { name: 'Machine Preacher Curl',                  sets: 4, reps: 10, weight: 0, target: '4 × 8–12 · ★ biceps under stretch · full extension at bottom, strict curl without lifting off pad' },
+        { name: 'Cable Hammer Curls',                     sets: 4, reps: 12, weight: 0, target: '4 × 10–15 · ★ brachialis & forearms · pushes biceps upward, adds width from front' },
+        { name: 'Rope Pushdown',                          sets: 3, reps: 12, weight: 0, target: '3 × 10–15 · lateral triceps head · lock out and flare rope outward at the bottom' },
+        { name: 'Incline Dumbbell Curl / Cable Bicep Curl', sets: 3, reps: 10, weight: 0, target: '3 × 8–12 · supinated peak contraction · rotate pinky up for maximum peak contraction' },
+        { name: 'Cable Lateral Raises',                   sets: 4, reps: 15, weight: 0, target: '4 × 12–20 · ★ 2nd weekly hit for side delts · high frequency builds capped 3D shoulders' },
       ],
     },
     {
-      name: 'Lower B — Quads / Core / Conditioning', order: 4,
+      name: 'Leg Day — Quads / Hams / Hip Drive', order: 4,
       exercises: [
-        { name: 'Leg Press',                              sets: 4, reps: 8,  weight: 0, target: '4 × 6–10 · ★ the heavy driver · feet mid-platform, full depth, keep it clean' },
-        { name: 'Hack Squat',                             sets: 3, reps: 12, weight: 0, target: '3 × 10–15 · quad volume without spinal load' },
-        { name: 'Leg Extension',                          sets: 3, reps: 13, weight: 0, target: '3 × 12–15 · ★ quad sweep · squeeze hard at the top, slow on the way down' },
-        { name: 'Lying Leg Curl',                         sets: 3, reps: 12, weight: 0, target: '3 × 10–15 · hamstrings (2nd weekly hit)' },
-        { name: 'Seated Calf Raise',                      sets: 3, reps: 15, weight: 0, target: '3 × 12–20 · soleus, slow negatives' },
-        { name: 'Hanging Leg Raise',                      sets: 4, reps: 14, weight: 0, target: '4 × 10–20 · ★ lower abs — the pouch area, no swinging' },
-        { name: 'Zone 2 Cardio',                          sets: 1, reps: 25, weight: 0, type: 'cardio', target: '25 min · conversational pace · heart health + stamina' },
+        { name: 'Leg Press',                              sets: 4, reps: 10, weight: 0, target: '4 × 8–12 · ★ heavy compound driver · feet mid-platform, deep knee bend, control descent' },
+        { name: 'Hack Squat',                             sets: 3, reps: 10, weight: 0, target: '3 × 8–12 · quad sweep builder · deep knee flexion without spinal compression' },
+        { name: 'Smith Machine RDL',                      sets: 4, reps: 10, weight: 0, target: '4 × 8–12 · ★ glutes & hip drive · non-negotiable for posterior chain power & bedroom stamina · deep hinge, bar skims shins' },
+        { name: 'Leg Extension',                          sets: 3, reps: 12, weight: 0, target: '3 × 12–15 · ★ quad teardrop detail · 1s pause at lockout, controlled 3s negative' },
+        { name: 'Lying / Seated Leg Curl',                sets: 3, reps: 12, weight: 0, target: '3 × 10–15 · hamstring knee flexion · hips glued to pad, squeeze heels to glutes' },
+        { name: 'Standing Calf Raise Machine',            sets: 4, reps: 15, weight: 0, target: '4 × 12–20 · calves · deep heel drop, 1s pause at bottom, rise onto big toes' },
+        { name: 'Cable Crunch',                           sets: 4, reps: 12, weight: 0, target: '4 × 10–15 · ★ loaded core & pelvic control · intra-abdominal pressure & pelvic tilt stability' },
+        { name: 'Zone 2 Cardio',                          sets: 1, reps: 25, weight: 0, type: 'cardio', target: '25 min · conversational pace · vascular health, nitric oxide & bedroom stamina' },
       ],
     },
   ]

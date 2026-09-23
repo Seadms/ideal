@@ -90,6 +90,26 @@ const EXERCISES = [
     ],
   },
   {
+    name: 'Home Hip Thrusts / Glute Bridges',
+    dose: '3 × 15 (2s hold)',
+    why: 'The core driver for hip extension power, glute endurance, and bedroom stamina. Unlocks powerful hip drive and pelvic alignment at home.',
+    steps: [
+      'Upper back braced against the couch or bench (or flat on the mat for floor glute bridges), feet planted shoulder-width.',
+      'Drive through the heels to elevate hips until thighs and torso form a straight bridge.',
+      'Lock out at the top with a hard 2-second glute squeeze and posterior pelvic tilt. Ribs stay down, chin tucked. Lower with control.',
+    ],
+  },
+  {
+    name: 'Pelvic Floor: Kegels & Reverse Kegels',
+    dose: '2 × 10 pulses + 5s hold',
+    why: 'Direct pelvic floor strength and control — the muscle group governing stamina, pelvic blood flow, and erection quality.',
+    steps: [
+      'Lie flat on the mat or sit tall. Contract the pelvic floor (the exact muscle used to stop urination mid-stream).',
+      'Execute 10 quick rhythmic pulses, then hold the contraction strong at the top for 5 seconds.',
+      'Fully relax and breathe deep into the lower abdomen on the release (reverse kegel to prevent pelvic hypertension).',
+    ],
+  },
+  {
     name: 'Seated Hamstring Stretch',
     dose: '60s / side',
     why: 'The one big range nothing else here trains. Toe-touch depth and deep hip positions both gate on it.',
@@ -245,9 +265,9 @@ export function MobilityRoutine() {
         <p className="text-[11px] font-medium text-zinc-400">How this pays off</p>
         <p className="text-[11px] text-zinc-500 leading-relaxed">
           Consistency beats intensity: 15 mediocre minutes daily outperforms one heroic hour a
-          week. Posture = this plus your face pulls, rows, and chin tucks. Open hips and strong
-          glutes come from this plus the hip thrusts and RDLs in the split — same inputs, every
-          payoff.
+          week. Posture = this plus your face pulls, rows, and chin tucks. Sex optimization, pelvic
+          floor control, and powerful glute drive come from this (daily home hip thrusts, pelvic floor pulses,
+          deep squat holds) plus RDLs on leg day — same inputs, every payoff in the gym and in bed.
         </p>
         <a
           href="https://www.youtube.com/watch?v=g_tea8ZNk5A"

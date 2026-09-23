@@ -16,7 +16,7 @@ export async function seedDatabase() {
     {
       id: randomUUID(),
       title: 'Hit gym split',
-      description: 'Upper A / Lower A / Upper B / Lower B — follow the current rotation',
+      description: 'Chest / Back / Arms / Legs — follow the current rotation',
       points: 100,
       isMinimumViable: false,
       category: 'fitness',
