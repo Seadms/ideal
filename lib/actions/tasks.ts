@@ -109,7 +109,7 @@ export async function adjustGoodBoyPoints(amount: number, take = false): Promise
 }
 
 // Public: the wife page posts here (untrusted input — clamp title & points).
-export async function createWifeTask(title: string, points: number): Promise<{ ok: boolean }> {
+export async function createWifeTask(title: string, points: number = 1): Promise<{ ok: boolean }> {
   const clean = title.trim().slice(0, 120)
   if (!clean) return { ok: false }
   const pts = Math.max(1, Math.min(500, Math.round(points) || 1))
@@ -119,7 +119,22 @@ export async function createWifeTask(title: string, points: number): Promise<{ o
   const { sendPushToAll } = await import('@/lib/push-server')
   await sendPushToAll({ title: 'New task from your wife', body: `${clean} (+${pts} good boy points)`, url: '/' })
   revalidatePath('/')
+  revalidatePath('/wife')
   return { ok: true }
+}
+
+// Her page may remove only her own pending tasks; completed awards stay intact.
+export async function deleteWifeTask(id: string): Promise<{ ok: boolean }> {
+  const removed = await db.update(tasks)
+    .set({ isActive: false })
+    .where(and(
+      eq(tasks.id, id), eq(tasks.source, 'wife'),
+      eq(tasks.isActive, true), eq(tasks.isCompleted, false),
+    ))
+    .returning({ id: tasks.id })
+  revalidatePath('/')
+  revalidatePath('/wife')
+  return { ok: removed.length > 0 }
 }
 
 export async function updateTask(id: string, data: Partial<{

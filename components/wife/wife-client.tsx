@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import { createWifeTask, adjustGoodBoyPoints } from '@/lib/actions/tasks'
+import { createWifeTask, deleteWifeTask, adjustGoodBoyPoints } from '@/lib/actions/tasks'
 import { createWifeReward, updateReward, deleteReward, resolveClaim } from '@/lib/actions/rewards'
 import { savePushSubscription } from '@/lib/actions/push'
 import { Button } from '@/components/ui/button'
@@ -20,7 +20,7 @@ function urlBase64ToUint8Array(base64: string) {
 
 export function WifeClient({ rewards, claims, openTasks, goodBoyPoints, vapidPublicKey }: { rewards: StoreReward[]; claims: Claim[]; openTasks: OpenTask[]; goodBoyPoints: number; vapidPublicKey: string }) {
   const [task, setTask] = useState('')
-  const [points, setPoints] = useState('50')
+  const [points, setPoints] = useState('1')
   const [reward, setReward] = useState('')
   const [cost, setCost] = useState('200')
   const [limit, setLimit] = useState('1')
@@ -36,7 +36,7 @@ export function WifeClient({ rewards, claims, openTasks, goodBoyPoints, vapidPub
     if (!task.trim()) return
     startTransition(async () => {
       const res = await createWifeTask(task, Number(points) || 1)
-      if (res.ok) { setTask(''); setPoints('50'); done("Sent! It's on his phone.") }
+      if (res.ok) { setTask(''); setPoints('1'); done("Sent! It's on his phone.") }
     })
   }
 
@@ -113,6 +113,20 @@ export function WifeClient({ rewards, claims, openTasks, goodBoyPoints, vapidPub
               <div key={t.id} className="flex items-center justify-between rounded-lg border border-zinc-800 bg-zinc-900/40 px-3 py-2.5">
                 <span className="min-w-0 flex-1 truncate text-sm text-zinc-200">{t.title}</span>
                 <span className="ml-3 shrink-0 text-xs text-sky-300">+{t.points}</span>
+                <button
+                  type="button"
+                  disabled={isPending}
+                  aria-label={`Delete ${t.title}`}
+                  className="ml-2 p-2 text-zinc-500 hover:text-rose-400 disabled:opacity-50 transition-colors"
+                  onClick={() => startTransition(async () => {
+                    try {
+                      const res = await deleteWifeTask(t.id)
+                      done(res.ok ? 'Task deleted.' : 'Task could not be deleted. It may already be completed.')
+                    } catch { done('Could not delete task. Try again.') }
+                  })}
+                >
+                  <Trash2 size={14} />
+                </button>
               </div>
             ))}
           </div>
